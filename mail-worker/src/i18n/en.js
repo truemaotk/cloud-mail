@@ -1,4 +1,9 @@
 const en = {
+	chatBotInvalid: 'Enter a valid webhook URL for this chat bot and check the settings.',
+	chatBotTestMessage: 'mail · New email notification test',
+	chatBotTestFailed: 'The bot rejected the test ({{code}}). Check its URL and security settings.',
+	chatBotTestNetwork: 'The server could not connect to the bot. Check the server’s network access.',
+	chatBotTestTimeout: 'The request to the bot timed out. Try again.',
 	IncorrectPwd: 'Incorrect password',
 	addAccountDisabled: 'Add Email Address feature is disabled',
 	regDisabled: 'Sign up is disabled',

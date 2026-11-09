@@ -9,20 +9,30 @@
                :email-read="emailRead"
                :show-unread="true"
                :highlight-text="emailStore.searchParams.text"
-               actionLeft="4px"
                @jump="jumpContent"
+               @refresh-before="emailStore.refreshUnreadCounts()"
   >
+    <template #empty>
+      <div class="inbox-empty">
+        <span class="inbox-empty-icon" aria-hidden="true">
+          <NavigationIcon name="inbox" :size="27" />
+        </span>
+        <h2>{{ $t(hasSearch ? 'noMessagesFound' : 'inboxEmptyTitle') }}</h2>
+        <p>{{ $t(hasSearch ? 'inboxSearchEmptyHint' : 'inboxEmptyHint') }}</p>
+      </div>
+    </template>
   </emailScroll>
 </template>
 
 <script setup>
+import NavigationIcon from '@/components/navigation-icon/index.vue'
 import {useAccountStore} from "@/store/account.js";
 import {useEmailStore} from "@/store/email.js";
 import {useSettingStore} from "@/store/setting.js";
 import emailScroll from "@/components/email-scroll/index.vue"
 import {emailList, emailDelete, emailLatest, emailRead} from "@/request/email.js";
 import {starAdd, starCancel} from "@/request/star.js";
-import {defineOptions, onMounted, ref, watch} from "vue";
+import {computed, defineOptions, onMounted, ref, watch} from "vue";
 import {sleep} from "@/utils/time-utils.js";
 import router from "@/router/index.js";
 import { useRoute } from 'vue-router'
@@ -36,6 +46,10 @@ const emailStore = useEmailStore();
 const accountStore = useAccountStore();
 const settingStore = useSettingStore();
 const scroll = ref({})
+const hasSearch = computed(() => {
+  const { text, startDate, endDate } = emailStore.searchParams
+  return Boolean(text || startDate || endDate)
+})
 onMounted(() => {
   emailStore.emailScroll = scroll;
   latest()
@@ -55,11 +69,7 @@ watch(
 )
 
 function jumpContent(email) {
-  emailStore.contentData.email = emailStore.toContentEmail(email)
-  emailStore.contentData.delType = 'logic'
-  emailStore.contentData.showUnread = true
-  emailStore.contentData.showStar = true
-  emailStore.contentData.showReply = true
+  emailStore.openMessage(email, 'inbox')
   router.push({name: 'content', params: {mailbox: 'inbox'}})
 }
 
@@ -99,6 +109,9 @@ async function latest() {
             emailStore.applyFullList(list)
 
             for (let email of list) {
+              if (accountId !== accountStore.currentAccountId || allReceive !== accountStore.currentAccount.allReceive) {
+                break
+              }
 
               email.reqAccountId = accountId;
               email.allReceive = allReceive;
@@ -112,6 +125,8 @@ async function latest() {
               }
 
             }
+
+            emailStore.refreshUnreadCounts()
 
           }
 
@@ -150,5 +165,37 @@ function getEmailList(emailId, size) {
 <style>
 .icon {
   cursor: pointer;
+}
+</style>
+
+<style scoped>
+.inbox-empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 20px;
+  text-align: center;
+}
+
+.inbox-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 8px;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: 14px;
+  background: var(--mail-shell-rail);
+  color: var(--mail-shell-muted);
+}
+
+.inbox-empty h2 {
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.inbox-empty p {
+  color: var(--mail-shell-muted);
+  font-size: 13px;
 }
 </style>

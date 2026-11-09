@@ -14,6 +14,11 @@ app.get('/email/latest', async (c) => {
 	return c.json(result.ok(list));
 });
 
+app.get('/email/unreadCounts', async (c) => {
+	const counts = await emailService.unreadCounts(c, userContext.getUserId(c));
+	return c.json(result.ok(counts));
+});
+
 app.delete('/email/delete', async (c) => {
 	await emailService.delete(c, c.req.query(), userContext.getUserId(c));
 	return c.json(result.ok());

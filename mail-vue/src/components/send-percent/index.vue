@@ -1,6 +1,6 @@
 <template>
   <div class="percent">
-    <Icon icon="line-md:loading-loop" width="18" height="18" />
+    <NavigationIcon name="loading" class="mail-spinner" />
     <div>
       <span>{{value}}%</span>
       <span style="margin-left: 5px">{{desc}}</span>
@@ -8,7 +8,7 @@
   </div>
 </template>
 <script setup>
-import {Icon} from "@iconify/vue";
+import NavigationIcon from '@/components/navigation-icon/index.vue'
 defineProps({
   value: [Number,String],
   desc: [String]

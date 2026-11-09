@@ -1,7 +1,9 @@
 <template>
-  <el-container class="layout">
+  <el-container class="layout" :class="{ 'mail-shell-dark': uiStore.dark }">
     <el-aside
+        id="mail-sidebar"
         class="aside"
+        :inert="!uiStore.asideShow"
         :class="uiStore.asideShow ? 'aside-show' : 'el-aside-hide'">
       <Aside />
     </el-aside>
@@ -25,27 +27,49 @@
 import Aside from '@/layout/aside/index.vue'
 import Header from '@/layout/header/index.vue'
 import Main from '@/layout/main/index.vue'
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import {useUiStore} from "@/store/ui.js";
+import { useEmailStore } from '@/store/email.js'
+import { useSettingStore } from '@/store/setting.js'
 import writer from '@/layout/write/index.vue'
 
 const uiStore = useUiStore();
+const emailStore = useEmailStore()
+const settingStore = useSettingStore()
 const writerRef = ref({})
 const isMobile = ref(window.innerWidth < 1025)
+let unreadTimer
+
+function refreshUnreadCounts() {
+  if (!document.hidden) emailStore.refreshUnreadCounts()
+}
+
+watch(() => emailStore.deleteIds, refreshUnreadCounts)
 const handleResize = () => {
-  isMobile.value = window.innerWidth < 1025
-  uiStore.asideShow = window.innerWidth > 1024;
+  const nextIsMobile = window.innerWidth < 1025
+  if (isMobile.value !== nextIsMobile) {
+    isMobile.value = nextIsMobile
+    uiStore.asideShow = !nextIsMobile
+  }
 }
 
 onMounted(() => {
   uiStore.writerRef = writerRef
 
   window.addEventListener('resize', handleResize)
+  document.addEventListener('visibilitychange', refreshUnreadCounts)
+  refreshUnreadCounts()
+  unreadTimer = window.setInterval(() => {
+    if (settingStore.settings.autoRefresh > 1) refreshUnreadCounts()
+  }, 30000)
   handleResize()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  document.removeEventListener('visibilitychange', refreshUnreadCounts)
+  window.clearInterval(unreadTimer)
+  emailStore.clearUnreadCounts()
 })
 </script>
 
@@ -56,14 +80,10 @@ onBeforeUnmount(() => {
   height: 100%;
   z-index: 100;
   transform: translateX(-100%);
-  transition: all 100ms ease;
 }
 
 .aside-show {
-  -webkit-box-shadow: var(--aside-right-border);
-  box-shadow: var(--aside-right-border);
   transform: translateX(0);
-  transition: all 100ms ease;
   z-index: 101;
   @media (max-width: 1025px) {
     position: fixed;
@@ -77,16 +97,64 @@ onBeforeUnmount(() => {
 
 .el-aside {
   width: auto;
-  transition: all 100ms ease;
+  border-inline-end: 1px solid var(--mail-shell-line);
+  transition: transform 180ms ease;
+}
+
+@media (min-width: 1025px) {
+  .el-aside {
+    position: relative;
+    flex: none;
+    width: var(--mail-sidebar-width);
+    overflow: hidden;
+    transform: none;
+    transition: width 190ms cubic-bezier(.2, .7, .3, 1);
+  }
+
+  .el-aside-hide {
+    width: 0;
+    border-inline-end: 0;
+  }
 }
 
 .layout {
+  --mail-sidebar-width: 228px;
+  --mail-shell-sidebar: #f5f5f5;
+  --mail-shell-rail: #fafafa;
+  --mail-shell-line: #e6e6e6;
+  --mail-shell-hover: #ededed;
+  --mail-shell-active: #e7e7e7;
+  --mail-shell-muted: #626262;
+  --mail-shell-marker: #353535;
+  --mail-shell-badge: #dedede;
+  --mail-shell-badge-text: #303030;
+  --mail-shell-action: var(--el-color-primary);
+  --mail-shell-action-hover: #414141;
+  --mail-shell-action-text: var(--mail-primary-text);
+  --mail-shell-header: 60px;
+  --mail-shell-toolbar: 44px;
+  --mail-shell-gutter: 16px;
+  --mail-shell-control: 32px;
+  --mailbox-rail-width: 244px;
   height: 100%;
   position: fixed;
   width: 100%;
   top: 0;
   left: 0;
   overflow: hidden;
+}
+
+.mail-shell-dark {
+  --mail-shell-sidebar: #1b1b1b;
+  --mail-shell-rail: #191919;
+  --mail-shell-line: #353535;
+  --mail-shell-hover: #2c2c2c;
+  --mail-shell-active: #373737;
+  --mail-shell-muted: #b4b4b4;
+  --mail-shell-marker: #e3e3e3;
+  --mail-shell-badge: #444;
+  --mail-shell-badge-text: #f1f1f1;
+  --mail-shell-action-hover: #d6d6d6;
 }
 
 .main-container {
@@ -101,11 +169,22 @@ onBeforeUnmount(() => {
 }
 
 .el-header {
+  --el-header-height: var(--mail-shell-header);
   background: var(--el-bg-color);
-  border-bottom: solid 1px var(--el-border-color);
-  padding: 0 0 0 0;
-  @media (max-width: 767px) {
-    height: 50px;
+  border-bottom: 1px solid var(--mail-shell-line);
+  padding: 0;
+}
+
+@media (max-width: 767px) {
+  .layout {
+    --mail-shell-header: 52px;
+    --mail-shell-gutter: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-aside {
+    transition: none;
   }
 }
 

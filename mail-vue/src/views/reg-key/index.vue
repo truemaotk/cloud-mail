@@ -1,18 +1,24 @@
 <template>
   <div class="reg-key">
-    <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAdd"/>
-      <div class="search">
+    <div class="mail-toolbar">
+      <ToolbarButton icon="add" :label="$t('addRegKey')" @click="openAdd" />
+      <div class="toolbar-group">
         <el-input
             v-model="params.code"
+            type="password"
+            autocomplete="off"
             class="search-input"
             :placeholder="$t('searchRegKeyDesc')"
+            :aria-label="$t('searchRegKeyDesc')"
+            @keyup.enter="search"
         >
         </el-input>
       </div>
-      <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
-      <Icon class="icon" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="clearNotUse"/>
+      <div class="toolbar-group">
+        <ToolbarButton icon="search" :label="$t('search')" @click="search" />
+        <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
+        <ToolbarButton icon="clear" :label="$t('clearUnusedCodes')" @click="clearNotUse" />
+      </div>
     </div>
 
     <el-scrollbar class="scrollbar">
@@ -20,11 +26,15 @@
         <loading/>
       </div>
       <div class="code-box">
-        <div class="code-item" v-for="item in regKeyData">
+        <div class="code-item" v-for="item in regKeyData" :key="item.regKeyId">
           <div class="code-info">
             <div class="info-left">
               <div class="info-left-item">
-                <span class="code" @click="copyCode(item.code)">{{ item.code }}</span>
+                <button type="button" class="code" :aria-label="$t('copy') + ' · ' + $t('regKey')"
+                        :title="$t('copy')" @click="copyCode(item.code)">
+                  <span aria-hidden="true">********</span>
+                  <NavigationIcon name="copy" />
+                </button>
               </div>
               <div class="info-left-item">
                 <div>{{ $t('remainingUses') }}：</div>
@@ -42,8 +52,8 @@
               </div>
             </div>
             <div class="info-right">
-              <el-dropdown class="setting">
-                <Icon icon="fluent:settings-24-filled" width="21" height="21" color="#909399"/>
+              <el-dropdown class="setting" trigger="click" placement="bottom-end">
+                <ToolbarButton icon="settings" :label="$t('action')" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="copyCode(item.code)">{{ $t('copy') }}</el-dropdown-item>
@@ -57,20 +67,25 @@
         </div>
       </div>
       <div class="empty" v-if="regKeyData.length === 0">
-        <el-empty v-if="!regKeyFirst" :image-size="isMobile ? 120 : null" :description="$t('noCodeFound')"/>
+        <el-empty v-if="!regKeyFirst" :image-size="52" :description="$t('noCodeFound')">
+          <template #image>
+            <span class="mail-empty-icon"><NavigationIcon name="key" :size="25" /></span>
+          </template>
+        </el-empty>
       </div>
     </el-scrollbar>
-    <el-dialog v-model="showAdd" :title="$t('addRegKey')">
+    <el-dialog close-icon="MailCloseIcon" v-model="showAdd" :title="$t('addRegKey')">
       <div class="container">
-        <el-input v-model="addForm.code" :placeholder="$t('regKey')" @keyup.enter="submit">
+        <el-input v-model="addForm.code" type="password" autocomplete="new-password"
+                  :aria-label="$t('regKey')" :placeholder="$t('regKey')" @keyup.enter="submit">
           <template #suffix>
-            <Icon @click.stop="genCode" class="gen-code" icon="bitcoin-icons:refresh-filled" width="24" height="24"/>
+            <ToolbarButton class="gen-code" icon="refresh" :label="$t('generateRegKey')" @click.stop="genCode" />
           </template>
         </el-input>
-        <el-select v-model="addForm.roleId" :placeholder="$t('roleDesc')">
+        <el-select suffix-icon="MailChevronDown" v-model="addForm.roleId" :placeholder="$t('roleDesc')">
           <el-option v-for="item in roleList" :label="item.name" :value="item.roleId" :key="item.roleId"/>
         </el-select>
-        <el-date-picker
+        <el-date-picker prefix-icon="MailCalendarIcon"
             v-model="addForm.expireTime"
             type="date"
             :placeholder="$t('validUntil')"
@@ -81,7 +96,7 @@
         </el-button>
       </div>
     </el-dialog>
-    <el-dialog class="history-list" v-model="showRegKeyHistory" :title="$t('useHistory')">
+    <el-dialog close-icon="MailCloseIcon" class="history-list" v-model="showRegKeyHistory" :title="$t('useHistory')">
       <div class="loading" :class="historyLoading ? 'loading-show' : 'loading-hide'">
         <loading/>
       </div>
@@ -96,8 +111,9 @@
 </template>
 
 <script setup>
+import ToolbarButton from '@/components/toolbar-button/index.vue'
+import NavigationIcon from '@/components/navigation-icon/index.vue'
 import {defineOptions, nextTick, reactive, ref, watch} from "vue"
-import {Icon} from "@iconify/vue";
 import loading from "@/components/loading/index.vue";
 import {useSettingStore} from "@/store/setting.js";
 import {roleSelectUse} from "@/request/role.js";
@@ -129,7 +145,6 @@ const historyList = reactive([])
 const emailColumnWidth = ref(0)
 const createTimeColumnWidth = ref(0)
 const historyLoading = ref(false)
-const isMobile = window.innerWidth < 1025
 
 const addForm = reactive({
   code: '',
@@ -366,7 +381,7 @@ function submit() {
 }
 
 function deleteRegKey(regKey) {
-  ElMessageBox.confirm(t('delConfirm', {msg: regKey.code}), {
+  ElMessageBox.confirm(t('delConfirm', {msg: '********'}), {
     confirmButtonText: t('confirm'),
     cancelButtonText: t('cancel'),
     type: 'warning'
@@ -395,22 +410,21 @@ function openAdd() {
 
 <style scoped lang="scss">
 .reg-key {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   overflow: hidden;
 }
 
 .scrollbar {
-  height: calc(100% - 48px);
+  min-height: 0;
   position: relative;
   background: var(--settings-page-background);
-  @media (max-width: 372px) {
-    height: calc(100% - 85px);
-  }
 
   .code-box {
     padding: 15px 15px 25px 15px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
     gap: 15px;
 
     .code-item {
@@ -432,12 +446,24 @@ function openAdd() {
             padding-top: 5px;
 
             .code {
-              font-weight: bold;;
-              font-size: 16px;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
+              display: inline-flex;
+              align-items: center;
+              gap: 7px;
+              padding: 4px 7px;
+              border-radius: 5px;
+              background: var(--mail-shell-rail);
+              color: var(--el-text-color-primary);
+              font: 600 14px monospace;
               cursor: pointer;
+
+              &:hover {
+                background: var(--mail-shell-hover);
+              }
+
+              svg {
+                width: 15px;
+                height: 15px;
+              }
             }
           }
 
@@ -533,39 +559,12 @@ function openAdd() {
 }
 
 .gen-code {
-  color: #606266;
-  cursor: pointer;
+  width: 25px;
+  height: 25px;
 }
 
-.header-actions {
-  padding: 9px 15px;
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  align-items: center;
-  box-shadow: inset 0 -1px 0 0 rgba(100, 121, 143, 0.12);
-  font-size: 18px;
-  @media (max-width: 767px) {
-    gap: 15px;
-  }
-
-  .search-input {
-    width: min(200px, calc(100vw - 140px));
-  }
-
-  .search {
-    :deep(.el-input-group) {
-      height: 28px;
-    }
-
-    :deep(.el-input__inner) {
-      height: 28px;
-    }
-  }
-
-  .icon {
-    cursor: pointer;
-  }
+.mail-toolbar .search-input {
+  width: min(220px, calc(100vw - 90px));
 }
 
 :deep(.el-table__inner-wrapper:before) {

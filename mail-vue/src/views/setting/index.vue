@@ -1,87 +1,99 @@
 <template>
   <div class="settings-page">
-    <el-scrollbar height="100%">
-  <div class="box">
-    <div class="container">
-      <div class="title">{{$t('profile')}}</div>
-      <div class="item setting-row">
-        <div>{{$t('username')}}</div>
-        <div>
-          <span v-if="setNameShow" class="edit-name-input">
-            <el-input v-model="accountName"  ></el-input>
-            <span class="edit-name" @click="setName">
-             {{$t('save')}}
-            </span>
-          </span>
-          <span v-else class="user-name">
-            <span >{{ userStore.user.name }}</span>
-            <span class="edit-name" @click="showSetName">
-             {{$t('change')}}
-            </span>
-          </span>
+    <SettingsWorkspace :sections="personalSections" v-slot="{ section }">
+      <section v-show="section === 'account'" class="personal-section">
+        <div class="identity-summary">
+          <span class="identity-avatar" aria-hidden="true"><NavigationIcon name="user" /></span>
+          <div>
+            <h3>{{ userStore.user.name || userStore.user.email }}</h3>
+            <p v-if="userStore.user.name">{{ userStore.user.email }}</p>
+          </div>
         </div>
-      </div>
-      <div class="item setting-row">
-        <div>{{$t('emailAccount')}}</div>
-        <div>{{ userStore.user.email }}</div>
-      </div>
-      <div class="item setting-row">
-        <div>{{$t('password')}}</div>
-        <div>
-          <el-button type="primary" @click="pwdShow = true">{{$t('changePwdBtn')}}</el-button>
+        <div class="preferences-list">
+          <div class="settings-row">
+            <span>{{ $t('username') }}</span>
+            <form v-if="setNameShow" class="edit-name-form" @submit.prevent="setName">
+              <el-input v-model="accountName" :aria-label="$t('username')" />
+              <el-button native-type="submit" type="primary">{{ $t('save') }}</el-button>
+              <el-button @click="setNameShow = false">{{ $t('cancel') }}</el-button>
+            </form>
+            <el-button v-else @click="showSetName">{{ $t('change') }}</el-button>
+          </div>
+          <div class="settings-row">
+            <span>{{ $t('password') }}</span>
+            <el-button @click="pwdShow = true">{{ $t('changePwdBtn') }}</el-button>
+          </div>
         </div>
-      </div>
-    </div>
-    <div class="language">
-      <div class="title">{{$t('language')}}</div>
-      <div class="language-row setting-row">
-        <div>{{$t('preferredLanguage')}}</div>
-        <el-select
-            :model-value="langSelect"
-            class="language-select"
-            placeholder="Select"
-            @change="changeLang"
-        >
-          <el-option label="中文" value="zh" @pointerdown.prevent.stop="changeLang('zh')"/>
-          <el-option label="English" value="en" @pointerdown.prevent.stop="changeLang('en')"/>
-        </el-select>
-      </div>
-    </div>
-    <div class="preference-item">
-      <div class="title" id="theme-label">{{$t('themeStyle')}}</div>
-      <ThemeSelector/>
-    </div>
-    <div class="preference-item">
-      <div class="title">{{$t('noticeTitle')}}</div>
-      <div class="language-row setting-row">
-        <div>{{$t('noticeInfo')}}</div>
-        <div>
-          <el-button @click="uiStore.showNotice()">{{$t('viewNotice')}}</el-button>
+        <dl class="preferences-list account-limits" :aria-label="$t('profileLimits')">
+          <div v-if="accountRole.name" class="settings-row">
+            <dt>{{ $t('profileRole') }}</dt>
+            <dd>{{ accountRole.name }}</dd>
+          </div>
+          <div class="settings-row">
+            <dt>{{ $t('profileSendQuota') }}</dt>
+            <dd>{{ sendLimit }}</dd>
+          </div>
+          <div class="settings-row">
+            <dt>{{ $t('profileAddressQuota') }}</dt>
+            <dd>{{ addressLimit }}</dd>
+          </div>
+        </dl>
+        <div v-perm="'my:delete'" class="settings-row danger-row">
+          <div>
+            <h3>{{ $t('deleteUser') }}</h3>
+            <p>{{ $t('delAccountMsg') }}</p>
+          </div>
+          <el-button @click="deleteConfirm">{{ $t('deleteUserBtn') }}</el-button>
         </div>
-      </div>
-    </div>
-    <div class="del-email" v-perm="'my:delete'">
-      <div class="title">{{$t('deleteUser')}}</div>
-      <div style="color: var(--regular-text-color);">
-        {{$t('delAccountMsg')}}
-      </div>
-      <div>
-        <el-button type="primary" @click="deleteConfirm">{{$t('deleteUserBtn')}}</el-button>
-      </div>
-    </div>
-    <el-dialog v-model="pwdShow" :title="$t('changePassword')" width="340">
-      <div class="update-pwd">
-        <el-input type="password" :placeholder="$t('newPassword')" v-model="form.password" autocomplete="off" @keyup.enter="submitPwd"/>
-        <el-input type="password" :placeholder="$t('confirmPassword')" v-model="form.newPwd" autocomplete="off" @keyup.enter="submitPwd"/>
-        <el-button type="primary" :loading="setPwdLoading" @click="submitPwd">{{$t('save')}}</el-button>
-      </div>
+      </section>
+
+      <section v-show="section === 'appearance'" class="personal-section">
+        <div class="preferences-list">
+          <div class="settings-row">
+            <span>{{ $t('preferredLanguage') }}</span>
+            <el-select suffix-icon="MailChevronDown"
+              :model-value="langSelect"
+              class="language-select"
+              :aria-label="$t('preferredLanguage')"
+              :placeholder="$t('select')"
+              @change="changeLang"
+            >
+              <el-option label="中文" value="zh" @pointerdown.prevent.stop="changeLang('zh')" />
+              <el-option label="English" value="en" @pointerdown.prevent.stop="changeLang('en')" />
+            </el-select>
+          </div>
+          <div class="theme-section">
+            <h3>{{ $t('themeStyle') }}</h3>
+            <ThemeSelector />
+          </div>
+        </div>
+      </section>
+
+      <section v-show="section === 'notice'" class="personal-section">
+        <div class="preferences-list">
+          <div class="settings-row">
+            <div class="notice-status">
+              <NavigationIcon name="bell" />
+              <p>{{ settingStore.settings.notice === 1 ? $t('noSystemNotice') : settingStore.settings.noticeTitle || $t('noticeInfo') }}</p>
+            </div>
+            <el-button :disabled="settingStore.settings.notice === 1" @click="uiStore.showNotice()">{{ $t('viewNotice') }}</el-button>
+          </div>
+        </div>
+      </section>
+    </SettingsWorkspace>
+
+
+    <el-dialog close-icon="MailCloseIcon" v-model="pwdShow" :title="$t('changePassword')" width="min(340px, calc(100vw - 32px))" append-to-body>
+      <form class="update-pwd" @submit.prevent="submitPwd">
+        <el-input type="password" :placeholder="$t('newPassword')" :aria-label="$t('newPassword')" v-model="form.password" autocomplete="new-password" />
+        <el-input type="password" :placeholder="$t('confirmPassword')" :aria-label="$t('confirmPassword')" v-model="form.newPwd" autocomplete="new-password" />
+        <el-button type="primary" native-type="submit" :loading="setPwdLoading">{{ $t('save') }}</el-button>
+      </form>
     </el-dialog>
-  </div>
-    </el-scrollbar>
   </div>
 </template>
 <script setup>
-import {reactive, ref, defineOptions} from 'vue'
+import {computed, reactive, ref, defineOptions} from 'vue'
 import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
@@ -90,7 +102,17 @@ import {useAccountStore} from "@/store/account.js";
 import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
 import {useUiStore} from "@/store/ui.js";
+import {hasPerm} from '@/perm/perm.js'
 import ThemeSelector from "@/components/theme-selector/index.vue";
+
+import SettingsWorkspace from "@/components/settings-workspace/index.vue";
+import NavigationIcon from "@/components/navigation-icon/index.vue";
+
+const personalSections = [
+  { key: 'account', label: 'personalAccount', icon: 'user', description: 'personalAccountDesc' },
+  { key: 'appearance', label: 'personalAppearance', icon: 'screen', description: 'personalAppearanceDesc' },
+  { key: 'notice', label: 'noticeTitle', icon: 'bell', description: 'personalNoticeDesc' },
+]
 
 const { t } = useI18n()
 const accountStore = useAccountStore()
@@ -101,6 +123,26 @@ const setPwdLoading = ref(false)
 const setNameShow = ref(false)
 const accountName = ref(null)
 const langSelect = ref(settingStore.lang)
+const accountRole = computed(() => userStore.user.role ?? {})
+
+const sendLimit = computed(() => {
+  const { sendType, sendCount } = accountRole.value
+  if (settingStore.settings.send === 1) return t('disabled')
+  if (!hasPerm('email:send')) return t('unauthorized')
+  if (sendType === 'ban') return t('sendBanned')
+  if (sendType === 'internal') return t('sendInternal')
+  if (!sendCount) return t('unlimited')
+  const usage = `${userStore.user.sendCount}/${sendCount}`
+  const period = { day: 'daily', count: 'total' }[sendType]
+  return period ? `${usage} · ${t(period)}` : usage
+})
+
+const addressLimit = computed(() => {
+  if (settingStore.settings.manyEmail || settingStore.settings.addEmail) return t('disabled')
+  if (!hasPerm('account:add')) return t('unauthorized')
+  const limit = accountRole.value.accountCount
+  return limit ? t('totalUserAccount', { msg: limit }) : t('unlimited')
+})
 
 defineOptions({
   name: 'setting'
@@ -230,7 +272,7 @@ function submitPwd() {
 }
 
 </script>
-<style scoped lang="scss">
+<style scoped>
 .settings-page {
   height: 100%;
   min-height: 0;
@@ -238,109 +280,142 @@ function submitPwd() {
   overflow: hidden;
 }
 
-.box {
-  padding: 40px 40px;
+.personal-section {
+  display: grid;
+  gap: 18px;
+}
 
-  @media (max-width: 767px) {
-    padding: 30px 30px;
+.identity-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: 8px;
+  background: var(--mail-shell-rail);
+  overflow-wrap: anywhere;
+}
+
+.identity-avatar {
+  display: grid;
+  flex: 0 0 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: 50%;
+  background: var(--el-bg-color);
+  color: var(--mail-shell-muted);
+}
+
+.identity-avatar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.identity-summary h3 {
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.identity-summary p,
+.danger-row p {
+  margin-top: 4px;
+  color: var(--mail-shell-muted);
+  font-size: 13px;
+}
+
+.preferences-list,
+.danger-row {
+  border: 1px solid var(--mail-shell-line);
+  border-radius: 8px;
+}
+
+.account-limits dd {
+  margin: 0;
+  color: var(--mail-shell-muted);
+  text-align: end;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 54px;
+  padding: 11px 16px;
+  font-size: 14px;
+}
+
+.settings-row + .settings-row,
+.theme-section {
+  border-top: 1px solid var(--mail-shell-line);
+}
+
+.settings-row > span,
+.personal-section h3 {
+  font-weight: 650;
+}
+
+.edit-name-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.edit-name-form .el-input {
+  flex: 1 1 130px;
+  width: 175px;
+  max-width: 100%;
+}
+
+.edit-name-form .el-button + .el-button {
+  margin-left: 0;
+}
+
+.language-select {
+  width: 144px;
+}
+
+.theme-section {
+  padding: 15px 16px 16px;
+}
+
+.theme-section h3 {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.notice-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  overflow-wrap: anywhere;
+}
+
+.notice-status svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--mail-shell-muted);
+}
+
+.update-pwd {
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 540px) {
+  .settings-row:has(.edit-name-form),
+  .danger-row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
   }
 
-  .update-pwd {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .title {
-    font-size: 18px;
-    font-weight: bold;
-  }
-
-  .container {
-    font-size: 14px;
-    display: grid;
-    gap: 20px;
-    margin-bottom: 40px;
-
-    .item {
-      position: relative;
-      .user-name {
-        display: grid;
-        grid-template-columns: minmax(0, auto) max-content;
-        justify-content: start;
-        align-items: center;
-        span:first-child {
-          min-width: 0;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
-      }
-
-      .edit-name-input {
-        position: absolute;
-        bottom: -6px;
-        .el-input {
-          width: min(200px,calc(100vw - 222px));
-        }
-      }
-
-      .edit-name {
-        color: #4dabff;
-        padding-left: 10px;
-        white-space: nowrap;
-        cursor: pointer;
-      }
-
-    }
-  }
-
-  .preference-item,
-  .language {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-bottom: 40px;
-    align-items: flex-start;
-
-  }
-
-  .setting-row {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 120px 220px;
-    align-items: center;
-    column-gap: 110px;
-    font-size: 14px;
-
-    > div:first-child {
-      font-weight: bold;
-      min-width: 0;
-      text-align: left;
-    }
-
-    > div:last-child {
-      min-width: 0;
-      overflow: hidden;
-      text-align: left;
-    }
-
-    @media (max-width: 767px) {
-      grid-template-columns: 120px minmax(0, 1fr);
-      column-gap: 24px;
-    }
-  }
-
-  .language-select {
-    width: 110px;
-    max-width: 100%;
-  }
-
-  .del-email {
-    font-size: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  .edit-name-form {
+    justify-content: flex-start;
   }
 }
 </style>

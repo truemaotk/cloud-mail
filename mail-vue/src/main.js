@@ -1,4 +1,5 @@
 import {createApp} from 'vue';
+import { CalendarDays, ChevronDown, X } from '@lucide/vue';
 import App from './App.vue';
 import router from './router';
 import './style.css';
@@ -11,6 +12,9 @@ import perm from "@/perm/perm.js";
 const pinia = createPinia().use(piniaPersistedState)
 import i18n from "@/i18n/index.js";
 const app = createApp(App).use(pinia)
+app.component('MailChevronDown', ChevronDown)
+app.component('MailCloseIcon', X)
+app.component('MailCalendarIcon', CalendarDays)
 await init()
 app.use(router).use(i18n).directive('perm',perm)
 app.config.devtools = true;

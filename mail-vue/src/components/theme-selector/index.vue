@@ -80,15 +80,16 @@ function changeDark(nextIsDark, origin) {
 <style scoped lang="scss">
 .theme-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 180px));
-  gap: 16px;
-  width: 100%;
-  max-width: 376px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 472px);
 }
 
 .theme-card {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: 8px;
+  padding: 7px;
   border: 1px solid var(--el-border-color);
   border-radius: 8px;
   cursor: pointer;
@@ -99,7 +100,7 @@ function changeDark(nextIsDark, origin) {
   }
 
   &.is-selected {
-    box-shadow: 0 0 0 1px var(--el-color-primary);
+    background: var(--mail-shell-rail);
   }
 
   &:has(input:focus-visible) {
@@ -110,7 +111,7 @@ function changeDark(nextIsDark, origin) {
 
 .theme-preview {
   display: flex;
-  aspect-ratio: 1.6;
+  height: 64px;
   overflow: hidden;
   border: 1px solid #dfe1e5;
   border-radius: 4px;
@@ -118,7 +119,7 @@ function changeDark(nextIsDark, origin) {
 
   i {
     display: block;
-    height: 6px;
+    height: 4px;
     border-radius: 2px;
     background: #e2e4e8;
   }
@@ -126,13 +127,13 @@ function changeDark(nextIsDark, origin) {
   .preview-sidebar {
     display: grid;
     align-content: start;
-    gap: 8px;
+    gap: 5px;
     width: 28%;
-    padding: 12px 6px;
+    padding: 8px 6px;
     background: #f0f1f3;
 
     i:first-child {
-      background: #91caff;
+      background: #cecece;
     }
   }
 
@@ -140,8 +141,8 @@ function changeDark(nextIsDark, origin) {
     display: grid;
     flex: 1;
     align-content: start;
-    gap: 12px;
-    padding: 12px;
+    gap: 7px;
+    padding: 8px;
 
     i:first-child {
       width: 55%;
@@ -160,7 +161,7 @@ function changeDark(nextIsDark, origin) {
       background: #303236;
 
       i:first-child {
-        background: #409eff;
+        background: #757575;
       }
     }
   }
@@ -171,7 +172,7 @@ function changeDark(nextIsDark, origin) {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 32px;
+  min-height: 28px;
   padding-top: 4px;
   font-size: 14px;
   color: var(--el-text-color-primary);

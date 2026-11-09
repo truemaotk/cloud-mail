@@ -1,7 +1,7 @@
 <template>
-  <div :class="accountShow && hasPerm('account:query') ? 'main-box-show' : 'main-box-hide'">
-    <div :class="accountShow && hasPerm('account:query') ? 'block-show' : 'block-hide'" @click="uiStore.accountShow = false"></div>
-    <account  :class="accountShow && hasPerm('account:query') ? 'show' : 'hide'" />
+  <div :class="accountShow ? 'main-box-show' : 'main-box-hide'">
+    <div :class="accountShow ? 'block-show' : 'block-hide'" @click="uiStore.accountShow = false"></div>
+    <account id="mailbox-rail" :class="accountShow ? 'show' : 'hide'" :inert="!accountShow" />
     <router-view class="main-view" v-slot="{ Component,route }">
       <keep-alive :include="['email','all-email','send','sys-setting','star','user','role','analysis','reg-key','draft']">
         <component :is="Component" :key="route.name"/>
@@ -25,7 +25,7 @@ let  innerWidth =  window.innerWidth
 let elNotification = null
 
 const accountShow = computed(() => {
-  return uiStore.accountShow && settingStore.settings.manyEmail === 0
+  return uiStore.accountShow && settingStore.settings.manyEmail === 0 && hasPerm('account:query')
 })
 
 watch(() => uiStore.changeNotice, () => {
@@ -128,7 +128,7 @@ const handleResize = () => {
   @media (max-width: 767px) {
     position: fixed;
     z-index: 100;
-    width: 260px;
+    width: min(var(--mailbox-rail-width), calc(100vw - 24px));
   }
 }
 
@@ -138,7 +138,7 @@ const handleResize = () => {
   transform: translateX(-100%);
   opacity: 0;
   @media (max-width: 1024px) {
-    width: 260px;
+    width: min(var(--mailbox-rail-width), calc(100vw - 24px));
     z-index: 100;
   }
 }
@@ -146,8 +146,8 @@ const handleResize = () => {
 
 .main-box-show {
   display: grid;
-  grid-template-columns: 260px  1fr;
-  height: calc(100% - 60px);
+  grid-template-columns: var(--mailbox-rail-width) minmax(0, 1fr);
+  height: calc(100% - var(--mail-shell-header));
   @media (max-width: 767px) {
     grid-template-columns: 1fr;
   }
@@ -155,8 +155,8 @@ const handleResize = () => {
 
 .main-box-hide {
   display: grid;
-  grid-template-columns: 1fr;
-  height: calc(100% - 60px);
+  grid-template-columns: minmax(0, 1fr);
+  height: calc(100% - var(--mail-shell-header));
 }
 
 

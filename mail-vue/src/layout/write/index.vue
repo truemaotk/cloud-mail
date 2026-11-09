@@ -4,21 +4,19 @@
       <div class="title">
         <div class="title-left">
           <span class="title-text">
-            <Icon icon="hugeicons:quill-write-01" width="28" height="28"/>
+            <NavigationIcon name="compose" />
           </span>
           <span class="sender">{{ $t('sender') }}:</span>
           <span class="sender-name">{{ form.name }}</span>
           <span class="send-email"><{{ form.sendEmail }}></span>
         </div>
-        <div @click="close" style="cursor: pointer;">
-          <Icon icon="material-symbols-light:close-rounded" width="22" height="22"/>
-        </div>
+        <ToolbarButton icon="close" :label="$t('closeComposer')" @click="close" />
       </div>
       <div class="container">
         <el-input-tag  @add-tag="addTagChange" tag-type="primary" @input="inputChange" size="default" v-model="form.receiveEmail" >
           <template #prefix>
             <div class="item-title" >{{ $t('recipient') }}</div>
-            <el-select
+            <el-select suffix-icon="MailChevronDown"
                 ref="mySelect"
                 class="write-select"
                 popper-class="write-select"
@@ -39,29 +37,27 @@
           </template>
           <template #suffix>
             <div style="display: flex;margin-right: 3px;">
-              <Icon icon="fa7-solid:user-plus" width="20" height="20" class="add-contact" @click.stop="openContacts" />
+              <ToolbarButton class="add-contact" icon="user-add" :label="$t('recentContacts')" @click.stop="openContacts" />
             </div>
           </template>
         </el-input-tag>
         <el-input v-model="form.subject" :placeholder="t('subject')" />
         <tinyEditor :def-value="defValue" ref="editor" @change="change" @focus="focusChange" />
         <div class="button-item">
-          <div class="att-add" @click="chooseFile">
-            <Icon icon="iconamoon:attachment-fill" width="24" height="24"/>
-          </div>
-          <div class="att-clear" @click="clearContent">
-            <Icon icon="icon-park-outline:clear-format" width="24" height="24 "/>
+          <div class="toolbar-group">
+            <ToolbarButton icon="attach" :label="$t('addAttachment')" @click="chooseFile" />
+            <ToolbarButton icon="clear" :label="$t('clearMessageContent')" @click="clearContent" />
           </div>
           <div class="att-list">
             <div class="att-item" v-for="(item,index) in form.attachments" :key="index">
-              <Icon v-bind="getIconByName(item.filename)"/>
+              <NavigationIcon :name="getIconByName(item.filename)" :size="22" />
               <span class="att-filename">{{ item.filename }}</span>
               <span class="att-size">{{ formatBytes(item.size) }}</span>
-              <Icon style="cursor: pointer;" icon="material-symbols-light:close-rounded" @click="delAtt(index)"
-                    width="22" height="22"/>
+              <ToolbarButton class="remove-attachment" icon="close"
+                             :label="$t('delete') + ' · ' + item.filename" @click="delAtt(index)" />
             </div>
           </div>
-          <div>
+          <div class="send-actions">
             <el-dropdown split-button type="primary" trigger="click" @click="sendEmail" @command="selectSendMode">
               {{ sendButtonLabel }}
               <template #dropdown>
@@ -79,7 +75,7 @@
         </div>
       </div>
     </div>
-    <el-dialog top="10vh" v-model="showContacts" @closed="clearSelectContact" :title="t('recentContacts')">
+    <el-dialog close-icon="MailCloseIcon" top="10vh" v-model="showContacts" @closed="clearSelectContact" :title="t('recentContacts')">
       <el-table ref="contactsTabRef" row-key="email" :data="contacts" style="height: 445px">
         <el-table-column type="selection" width="32" />
         <el-table-column property="email" :label="t('emailAccount')" >
@@ -90,7 +86,7 @@
         <el-table-column width="55" label="" >
           <template #default>
             <div style="display: flex;">
-              <Icon icon="mage:user" style="color: var(--el-text-color-primary)" width="22" height="22" color="#606266" />
+              <NavigationIcon name="user" />
             </div>
           </template>
         </el-table-column>
@@ -103,9 +99,10 @@
   </div>
 </template>
 <script setup>
+import ToolbarButton from '@/components/toolbar-button/index.vue'
+import NavigationIcon from '@/components/navigation-icon/index.vue'
 import tinyEditor from '@/components/tiny-editor/index.vue'
 import {h, nextTick, onMounted, onUnmounted, reactive, ref, toRaw, computed} from "vue";
-import {Icon} from "@iconify/vue";
 import {useUserStore} from "@/store/user.js";
 import {emailSend} from "@/request/email.js";
 import {isEmail} from "@/utils/verify-utils.js";
@@ -628,13 +625,6 @@ function close() {
 
 </script>
 <style>
-.write-select .el-select-dropdown__list {
-  padding: 4px 4px !important;
-}
-.write-select .el-select-dropdown__item {
-  padding: 0 10px 0 10px;
-}
-
 .write-select .el-select-dropdown {
   min-width: 0 !important;
 }
@@ -722,27 +712,20 @@ function close() {
 
       .button-item {
         display: grid;
-        grid-template-columns: auto auto 1fr auto;
-
-        .att-add {
-          cursor: pointer;
-        }
-
-        .att-clear {
-          cursor: pointer;
-          margin-left: 10px;
-        }
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
 
         .att-list {
           display: grid;
           gap: 5px;
-          grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-          padding-left: 10px;
-          padding-right: 10px;
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
           max-height: 110px;
           overflow-y: auto;
           @media (max-width: 450px) {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            grid-column: 1 / -1;
+            grid-row: 2;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
           }
 
           .att-item {
@@ -759,6 +742,18 @@ function close() {
               text-overflow: ellipsis;
               overflow: hidden;
             }
+          }
+        }
+
+        @media (max-width: 450px) {
+          grid-template-columns: auto minmax(0, 1fr);
+
+          .att-list:empty {
+            display: none;
+          }
+
+          .send-actions {
+            justify-self: end;
           }
         }
       }
@@ -788,8 +783,11 @@ function close() {
   margin-top: 10px;
 }
 
-.add-contact {
-  color: var(--regular-text-color)
+.toolbar-button.add-contact,
+.toolbar-button.remove-attachment {
+  flex-basis: 26px;
+  width: 26px;
+  height: 26px;
 }
 
 .write-select {

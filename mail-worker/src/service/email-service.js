@@ -24,9 +24,27 @@ import account from "../entity/account";
 import { att } from '../entity/att';
 import telegramService from './telegram-service';
 import webhookService from './webhook-service';
+import chatBotService from './chat-bot-service';
 import forwardMime from '../utils/forward-mime';
 
 const emailService = {
+
+	async unreadCounts(c, userId) {
+		return orm(c)
+			.select({ accountId: email.accountId, unread: count() })
+			.from(email)
+			.innerJoin(account, eq(account.accountId, email.accountId))
+			.where(and(
+				eq(email.userId, userId),
+				eq(account.userId, userId),
+				eq(email.type, emailConst.type.RECEIVE),
+				eq(email.unread, emailConst.unread.UNREAD),
+				eq(email.isDel, isDel.NORMAL),
+				eq(account.isDel, isDel.NORMAL)
+			))
+			.groupBy(email.accountId)
+			.all();
+	},
 
 	async list(c, params, userId) {
 
@@ -970,6 +988,8 @@ const emailService = {
 			const emails = ruleEmail.split(',');
 			emailRowList = emailRowList.filter(emailRow => emails.includes(emailRow.toEmail));
 		}
+
+		if (emailRowList.length) await chatBotService.forward(c.env, c.executionCtx, emailRowList);
 
 		for (const emailRow of emailRowList) {
 

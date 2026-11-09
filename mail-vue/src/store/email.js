@@ -1,16 +1,23 @@
 import { defineStore } from 'pinia'
 import { EmailUnreadEnum } from '@/enums/email-enum.js'
 import { sanitizeEmailHtml } from '@/utils/email-html.js'
+import { emailUnreadCounts } from '@/request/email.js'
+import { useUserStore } from '@/store/user.js'
+
+let unreadRequestVersion = 0
 
 export const useEmailStore = defineStore('email', {
     state: () => ({
         deleteIds: 0,
+        unreadByAccount: {},
         starScroll: null,
         emailScroll: null,
         cancelStarEmailId: 0,
         addStarEmailId: 0,
         contentData: {
             email: null,
+            mailbox: null,
+            viewerId: null,
             delType: null,
             showStar: true,
             showReply: true,
@@ -28,7 +35,25 @@ export const useEmailStore = defineStore('email', {
     persist: {
         pick: ['contentData'],
     },
+    getters: {
+        unreadTotal: state => Object.values(state.unreadByAccount).reduce((total, count) => total + count, 0),
+    },
     actions: {
+        async refreshUnreadCounts() {
+            const version = ++unreadRequestVersion
+            try {
+                const rows = await emailUnreadCounts()
+                if (version === unreadRequestVersion) {
+                    this.unreadByAccount = Object.fromEntries(rows.map(({ accountId, unread }) => [accountId, unread]))
+                }
+            } catch {
+                // Keep the last successful count while the connection is unavailable.
+            }
+        },
+        clearUnreadCounts() {
+            ++unreadRequestVersion
+            this.unreadByAccount = {}
+        },
         setSearchParams(params) {
             this.searchParams = {
                 ...this.searchParams,
@@ -64,6 +89,18 @@ export const useEmailStore = defineStore('email', {
                 if (currentId && item.emailId === currentId) {
                     this.contentData.email = item
                 }
+            }
+        },
+        openMessage(email, mailbox) {
+            const administrative = mailbox === 'all-mail'
+            this.contentData = {
+                email: this.toContentEmail(email),
+                mailbox,
+                viewerId: useUserStore().user.userId,
+                delType: administrative ? 'physics' : 'logic',
+                showStar: !administrative,
+                showReply: !administrative,
+                showUnread: mailbox === 'inbox',
             }
         },
         toContentEmail(email) {

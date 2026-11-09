@@ -8,8 +8,6 @@ import {websiteConfig} from "@/request/setting.js";
 import i18n from "@/i18n/index.js";
 
 export async function init() {
-    document.title = '\u200B'
-
     const settingStore = useSettingStore();
     const userStore = useUserStore();
     const accountStore = useAccountStore();
@@ -35,7 +33,6 @@ export async function init() {
         setting = s;
         settingStore.settings = setting;
         settingStore.domainList = setting.domainList;
-        document.title = setting.title;
 
         if (user) {
             accountStore.currentAccountId = user.account.accountId;
@@ -52,6 +49,5 @@ export async function init() {
         setting = await websiteConfig();
         settingStore.settings = setting;
         settingStore.domainList = setting.domainList;
-        document.title = setting.title;
     }
 }

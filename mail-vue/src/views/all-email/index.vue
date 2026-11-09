@@ -8,66 +8,56 @@
                  :show-star="false"
                  show-user-info
                  show-status
-                 actionLeft="4px"
                  :show-account-icon="false"
                  :time-sort="params.timeSort"
-                 :item-height="65"
                  @jump="jumpContent"
-                 @refresh-before="refreshBefore"
                  @right-search="rightSearch"
                  :highlight-text="appliedSearchText"
                  :type="'all-email'"
 
     >
       <template #first>
-        <el-input
-            v-model="searchValue"
-            :placeholder="$t('searchByContent')"
-            class="search-input"
-        >
-          <template #prefix>
-            <div @click.stop="openSelect">
-              <el-select
-                  ref="mySelect"
-                  v-model="params.searchType"
-                  :placeholder="$t('select')"
-                  class="select"
-              >
-                <el-option key="3" :label="$t('sender')" :value="'name'"/>
-                <el-option key="4" :label="$t('subject')" :value="'subject'"/>
-                <el-option key="1" :label="$t('user')" :value="'user'"/>
-                <el-option key="2" :label="$t('selectEmail')" :value="'account'"/>
-              </el-select>
-              <div class="search-type">
-                <span>{{ selectTitle }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
-              </div>
-            </div>
-          </template>
-        </el-input>
-        <el-select v-model="params.type" placeholder="Select" class="status-select" @change="typeSelectChange">
-          <el-option key="1" :label="$t('all')" value="all"/>
-          <el-option key="3" :label="$t('received')" value="receive"/>
-          <el-option key="2" :label="$t('sent')" value="send"/>
-          <el-option key="4" :label="$t('selectDeleted')" value="delete"/>
-          <el-option key="4" :label="$t('noRecipientTitle')" value="noone"/>
-        </el-select>
-        <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-        <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
-              v-if="params.timeSort === 0" width="28" height="28"/>
-        <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-up-outline" v-else
-              width="28" height="28"/>
-        <Icon class="icon clear" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="openBathDelete"/>
+        <form class="all-mail-filters" @submit.prevent="search">
+          <el-select suffix-icon="MailChevronDown" v-model="params.searchType" :aria-label="$t('searchType')" class="search-field">
+            <el-option :label="$t('sender')" value="name" />
+            <el-option :label="$t('subject')" value="subject" />
+            <el-option :label="$t('user')" value="user" />
+            <el-option :label="$t('selectEmail')" value="account" />
+          </el-select>
+          <el-input v-model="searchValue" class="search-input"
+                    :aria-label="$t('searchByContent')" :placeholder="$t('searchByContent')"
+                    clearable @clear="search">
+            <template #prefix>
+              <NavigationIcon name="search" :size="16" />
+            </template>
+          </el-input>
+          <el-button type="primary" native-type="submit" class="search-submit">{{ $t('search') }}</el-button>
+          <el-select suffix-icon="MailChevronDown" v-model="params.type" :aria-label="$t('tabStatus')" class="status-select" @change="typeSelectChange">
+            <el-option :label="$t('all')" value="all" />
+            <el-option :label="$t('received')" value="receive" />
+            <el-option :label="$t('sent')" value="send" />
+            <el-option :label="$t('selectDeleted')" value="delete" />
+            <el-option :label="$t('noRecipientTitle')" value="noone" />
+          </el-select>
+        </form>
+      </template>
+      <template #actions>
+        <ToolbarButton
+          :icon="params.timeSort === 0 ? 'sort-new' : 'sort-old'"
+          :label="$t(params.timeSort === 0 ? 'sortNewest' : 'sortOldest')"
+          @click="changeTimeSort"
+        />
+        <ToolbarButton icon="clear" :label="$t('clearEmail')" @click="openBatchDelete" />
       </template>
     </emailScroll>
-    <el-dialog v-model="showBathDelete" :title="$t('clearEmail')" width="335"
+    <el-dialog close-icon="MailCloseIcon" v-model="showBathDelete" :title="$t('clearEmail')" width="335"
                @closed="closedClear">
       <div class="clear-email">
         <el-input v-model="clearParams.sendName" :placeholder="$t('sender')" @keyup.enter="batchDelete"/>
         <el-input v-model="clearParams.subject" :placeholder="$t('subject')" @keyup.enter="batchDelete"/>
         <el-input v-model="clearParams.sendEmail" :placeholder="$t('sendEmailAddress')" @keyup.enter="batchDelete"/>
         <el-input v-model="clearParams.toEmail" :placeholder="$t('toEmail')" @keyup.enter="batchDelete"/>
-        <el-date-picker popper-class="my-date-picker"
+        <el-date-picker prefix-icon="MailCalendarIcon" popper-class="my-date-picker"
                         v-model="clearTime"
                         type="daterange"
                         :teleported="false"
@@ -76,7 +66,7 @@
                         size="default"
         />
         <div class="clear-button">
-          <el-select v-model="clearParams.type" style="width: 200px">
+          <el-select suffix-icon="MailChevronDown" v-model="clearParams.type" style="width: 200px">
             <el-option key="eq" :label="t('equal')" value="eq"/>
             <el-option key="left" :label="t('leading')" value="left"/>
             <el-option key="include" :label="t('include')" value="include"/>
@@ -99,7 +89,8 @@ import {
   allEmailBatchDelete,
   allEmailLatest
 } from "@/request/all-email.js";
-import {Icon} from "@iconify/vue";
+import ToolbarButton from '@/components/toolbar-button/index.vue'
+import NavigationIcon from '@/components/navigation-icon/index.vue'
 import router from "@/router/index.js";
 import {useI18n} from 'vue-i18n';
 import {toUtc} from "@/utils/day.js";
@@ -118,17 +109,12 @@ const settingStore = useSettingStore();
 const clearTime = ref('')
 const sysEmailScroll = ref({})
 const searchValue = ref('')
-const mySelect = ref()
 const showBathDelete = ref(false)
 const clearLoading = ref(false)
 
 onMounted(() => {
   latest();
 })
-
-const openSelect = () => {
-  mySelect.value.toggleMenu()
-}
 
 const params = reactive({
   timeSort: 0,
@@ -168,20 +154,13 @@ function closedClear() {
 
 const appliedSearchText = computed(() => params.name || params.subject || params.userEmail || params.accountEmail || '')
 
-const selectTitle = computed(() => {
-  if (params.searchType === 'user') return t('user')
-  if (params.searchType === 'account') return t('selectEmail')
-  if (params.searchType === 'name') return t('sender')
-  if (params.searchType === 'subject') return t('subject')
-})
-
 const paramsStar = localStorage.getItem('all-email-params')
 if (paramsStar) {
   const locaParams = JSON.parse(paramsStar)
   params.type = locaParams.type
   params.timeSort = locaParams.timeSort
   params.status = locaParams.status
-  params.searchType = locaParams.searchType
+  params.searchType = locaParams.searchType ?? params.searchType
 }
 
 watch(() => params, () => {
@@ -190,7 +169,7 @@ watch(() => params, () => {
   deep: true
 })
 
-function openBathDelete() {
+function openBatchDelete() {
   showBathDelete.value = true
 }
 
@@ -219,6 +198,7 @@ function batchDelete() {
     clearLoading.value = true
 
     allEmailBatchDelete(clearParams).then(() => {
+      emailStore.refreshUnreadCounts()
       ElMessage({
         message: t('clearSuccess'),
         type: "success",
@@ -236,17 +216,6 @@ function rightSearch(type, value) {
   params.searchType = type;
   searchValue.value = value;
   search();
-}
-
-function refreshBefore() {
-  searchValue.value = null
-  params.timeSort = 0
-  params.type = 'receive'
-  params.userEmail = null
-  params.accountEmail = null
-  params.name = null
-  params.subject = null
-  params.searchType = 'name'
 }
 
 function search() {
@@ -285,10 +254,7 @@ function typeSelectChange() {
 }
 
 function jumpContent(email) {
-  emailStore.contentData.email = emailStore.toContentEmail(email)
-  emailStore.contentData.delType = 'physics'
-  emailStore.contentData.showStar = false
-  emailStore.contentData.showReply = false
+  emailStore.openMessage(email, 'all-mail')
   router.push({name: 'content', params: {mailbox: 'all-mail'}})
 }
 
@@ -405,36 +371,40 @@ async function latest() {
 }
 
 
-.search {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.select {
-  position: absolute;
-  width: 40px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.search-type {
+.all-mail-filters {
   display: flex;
-  color: var(--el-text-color-regular);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-:deep(.header-actions) {
-  padding-top: 8px;
-  padding-bottom: 8px;
+.search-field {
+  width: 110px;
 }
 
 .search-input {
-  width: 100%;
-  max-width: 280px;
-  height: 28px;
+  flex: 1 1 180px;
+  min-width: 130px;
+  max-width: 320px;
+}
 
-  .setting-icon {
-    position: relative;
-    top: 3px;
+.search-submit {
+  margin: 0;
+}
+
+.status-select {
+  width: 112px;
+}
+
+@media (max-width: 480px) {
+  .search-field {
+    width: 92px;
+  }
+
+  .search-input {
+    min-width: 105px;
+    flex-basis: 105px;
   }
 }
 
@@ -454,64 +424,7 @@ async function latest() {
   }
 }
 
-.status-select {
-  margin-bottom: 2px;
-  width: 102px;
-
-  :deep(.el-select__wrapper) {
-    min-height: 28px;
-  }
-}
-
-.input-with-select {
-  max-width: 200px;
-  border-radius: 0 4px 4px 0;
-}
-
-:deep(.input-with-select .el-input-group__append) {
-  background-color: var(--el-fill-color-blank);
-}
-
-:deep(.el-select__wrapper) {
-  padding: 2px 10px;
-  min-height: 28px;
-}
-
 :deep(.el-date-editor.el-input__wrapper) {
   width: 303px;
-}
-
-.icon {
-  cursor: pointer;
-}
-
-.clear {
-  @media (max-width: 419px) {
-    position: absolute;
-    top: 41px;
-    left: 242px;
-  }
-}
-
-:deep(.reload) {
-  @media (max-width: 419px) {
-    position: absolute;
-    top: 42px;
-    left: 208px;
-  }
-}
-
-:deep(.delete) {
-  @media (max-width: 456px) {
-    position: absolute;
-    top: 43px;
-    left: 294px;
-  }
-
-  @media (max-width: 419px) {
-    position: absolute;
-    top: 43px;
-    left: 282px;
-  }
 }
 </style>

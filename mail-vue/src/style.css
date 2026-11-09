@@ -59,6 +59,17 @@ button, input, select, textarea {
     outline: none;
 }
 
+:where(.layout, #login-box) :where(a, button):focus-visible {
+    outline: 2px solid var(--el-text-color-secondary);
+    outline-offset: 2px;
+}
+
+.layout .el-table {
+    --el-table-header-bg-color: var(--mail-shell-rail);
+    --el-table-row-hover-bg-color: var(--mail-shell-hover);
+    --el-table-border-color: var(--mail-shell-line);
+}
+
 .el-message {
     white-space: nowrap !important;
 }
@@ -105,33 +116,51 @@ button, input, select, textarea {
     max-height: 220px !important;
 }
 
-:root {
-    --el-color-primary: #1890ff;
-    --el-color-primary-dark-2: #1064c0;
-    --el-color-primary-light-3: #4dabff;
-    --el-color-primary-light-5: #69c0ff;
-    --el-color-primary-light-7: #91d5ff;
-    --el-color-primary-light-9: #e6f7ff;
+html:root {
+    --mail-radius-control: 8px;
+    --mail-radius-card: 11px;
+    --mail-radius-menu: 12px;
+    --mail-radius-dialog: 14px;
+    --el-border-radius-base: var(--mail-radius-control);
+    --mail-primary-text: #fff;
+    --mail-primary-tint: #fff;
+    --el-color-primary: #252525;
+    --el-color-primary-rgb: 37, 37, 37;
+    --el-color-primary-dark-2: #171717;
+    --el-color-primary-light-3: color-mix(in srgb, var(--el-color-primary) 82%, var(--mail-primary-tint));
+    --el-color-primary-light-5: color-mix(in srgb, var(--el-color-primary) 50%, var(--mail-primary-tint));
+    --el-color-primary-light-7: color-mix(in srgb, var(--el-color-primary) 30%, var(--mail-primary-tint));
+    --el-color-primary-light-8: color-mix(in srgb, var(--el-color-primary) 20%, var(--mail-primary-tint));
+    --el-color-primary-light-9: color-mix(in srgb, var(--el-color-primary) 8%, var(--mail-primary-tint));
 
-    --extra-light-fill: #FAFCFF;
-    --settings-page-background: #fafbfc;
-    --light-ill: #F5F7FA;
-    --light-border: #E4E7ED;
+    --el-text-color-primary: #252525;
+    --el-text-color-secondary: #666;
+    --el-border-color: #d8d8d8;
+    --el-border-color-light: #e4e4e4;
+    --el-border-color-lighter: #ededed;
+    --el-fill-color: #f0f0f0;
+    --el-fill-color-light: #f5f5f5;
+    --el-fill-color-lighter: #fafafa;
+
+    --extra-light-fill: #fafafa;
+    --settings-page-background: #fafafa;
+    --light-ill: #f5f5f5;
+    --light-border: #e4e4e4;
     --header-actions-border: inset 0 -1px 0 0 var(--el-border-color-lighter);
     --aside-backgound: #191A23;
     --aside-menu-active-background: #27282D;
     --loadding-background: rgba(255, 255, 255, 0.8);
-    --dark-border: #CDD0D6;
-    --base-fill: #F0F2F5;
-    --regular-text-color: #585d69;
-    --light-border-color: #e7e9ec;
+    --dark-border: #d0d0d0;
+    --base-fill: #f0f0f0;
+    --regular-text-color: #595959;
+    --light-border-color: #e6e6e6;
     --aside-right-border: 3px 0 5px rgba(0, 21, 41, .35);
     --choose-account-background: var(--el-color-primary-light-8);
     --el-text-color-regular: var(--el-text-color-primary);
-    --email-scroll-content-color: rgba(25, 41, 59, 0.4);
-    --search-hit-background: #ffe58f;
-    --email-hover-background: #F2F6FC;
-    --email-right-click-background: #FDF6EC;
+    --email-scroll-content-color: #666;
+    --search-hit-background: #dedede;
+    --email-hover-background: #f7f7f7;
+    --email-right-click-background: #ededed;
     --login-border: none;
     --form-desc-color: #71717a;
     --login-switch-color: #006be6;
@@ -146,7 +175,19 @@ button, input, select, textarea {
     --vt-easing: ease-out;
 }
 
-.dark {
+html:root.dark {
+    --mail-primary-text: #202020;
+    --mail-primary-tint: #171717;
+    --el-color-primary: #ededed;
+    --el-color-primary-rgb: 237, 237, 237;
+    --el-color-primary-dark-2: #fff;
+    --el-text-color-primary: #ededed;
+    --el-text-color-secondary: #b4b4b4;
+    --el-border-color-light: #353535;
+    --el-border-color-lighter: #2e2e2e;
+    --el-fill-color: #292929;
+    --el-fill-color-light: #242424;
+    --el-fill-color-lighter: #1d1d1d;
     --extra-light-fill: #191919;
     --settings-page-background: var(--extra-light-fill);
     --light-ill: #262727;
@@ -161,10 +202,10 @@ button, input, select, textarea {
     --light-border-color: #414243;
     --aside-right-border: 3px 0 5px #0A0A0A;
     --choose-account-background: #39393A;
-    --email-scroll-content-color: rgba(255, 255, 255, 0.3);
-    --search-hit-background: #8a6a12;
-    --email-hover-background: #1D1E1F;
-    --email-right-click-background: var(--email-hover-background);
+    --email-scroll-content-color: #b4b4b4;
+    --search-hit-background: #484848;
+    --email-hover-background: #242424;
+    --email-right-click-background: #303030;
     --login-border: none;
     --form-desc-color: #8D9095;
     --login-switch-color: rgb(102, 177, 255);
@@ -173,6 +214,233 @@ button, input, select, textarea {
     --secondary-text-color: #A3A6AD;
     --message-block-color: rgba(30, 30, 30, 0.2);
     --el-border-color: #414243 !important;
+}
+
+.el-button.el-button--primary:not(:where(.is-plain, .is-text, .is-link)) {
+    --el-button-text-color: var(--mail-primary-text);
+    --el-button-hover-text-color: var(--mail-primary-text);
+    --el-button-active-text-color: var(--mail-primary-text);
+}
+
+.el-checkbox.el-checkbox {
+    --el-checkbox-checked-icon-color: var(--mail-primary-text);
+}
+
+.el-card {
+    --el-card-border-radius: var(--mail-radius-card);
+}
+
+.el-overlay .el-dialog:not(.is-fullscreen) {
+    --el-dialog-border-radius: var(--mail-radius-dialog);
+}
+
+.el-message-box {
+    border-radius: var(--mail-radius-dialog);
+}
+
+.mail-empty-icon {
+    display: inline-grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border: 1px solid var(--el-border-color-light);
+    border-radius: var(--mail-radius-dialog);
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-secondary);
+}
+
+.el-empty__image .mail-empty-icon svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+}
+
+.el-popper:is(.el-dropdown__popper, .el-select__popper, .el-picker__popper, .mail-profile-popper, .mail-envelope-popover) {
+    border-radius: var(--mail-radius-menu);
+    --el-dropdown-menuItem-hover-fill: var(--el-fill-color);
+    --el-dropdown-menuItem-hover-color: var(--el-text-color-primary);
+}
+
+.el-popper.mail-envelope-popover {
+    width: min(360px, calc(100vw - 32px));
+    padding: 12px 14px;
+}
+
+.el-popper.mail-profile-popper {
+    width: 216px;
+    max-width: calc(100vw - 24px);
+    padding: 0;
+    border-color: var(--el-border-color-light);
+    background: var(--el-bg-color-overlay);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 10%);
+}
+
+.mail-profile-popper[data-popper-placement='right-end'] {
+    border-end-start-radius: 0;
+}
+
+.mail-profile-popper[data-popper-placement^='top'] {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+}
+
+.el-dropdown__popper .el-dropdown-menu,
+.el-select-dropdown .el-select-dropdown__list {
+    padding: 5px;
+    border-radius: var(--mail-radius-menu);
+}
+
+.el-dropdown__popper .el-dropdown-menu {
+    min-width: 124px;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item,
+.el-select-dropdown .el-select-dropdown__item {
+    border-radius: var(--mail-radius-control);
+    padding-inline: 9px;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item {
+    gap: 8px;
+    min-height: 32px;
+    padding-block: 4px;
+    font-size: 13px;
+}
+
+.el-select-dropdown .el-select-dropdown__item.is-hovering {
+    background: var(--el-fill-color);
+}
+
+.mail-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: var(--mail-shell-toolbar);
+    padding: 5px var(--mail-shell-gutter);
+    border-bottom: 1px solid var(--mail-shell-line);
+    background: var(--el-bg-color);
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.toolbar-group + .toolbar-group {
+    margin-inline-start: 4px;
+    padding-inline-start: 10px;
+    border-inline-start: 1px solid var(--mail-shell-line);
+}
+
+.toolbar-button {
+    display: grid;
+    flex: 0 0 var(--mail-shell-control, 32px);
+    width: var(--mail-shell-control, 32px);
+    height: var(--mail-shell-control, 32px);
+    place-items: center;
+    border: 0;
+    border-radius: var(--mail-radius-control);
+    background: transparent;
+    color: var(--mail-shell-muted, var(--el-text-color-secondary));
+    cursor: pointer;
+    transition: background-color 140ms ease, color 140ms ease;
+}
+
+.toolbar-button:hover:not(:disabled) {
+    background: var(--mail-shell-hover, var(--el-fill-color));
+    color: var(--el-text-color-primary);
+}
+
+.toolbar-button:focus-visible {
+    outline: 2px solid var(--el-text-color-secondary);
+    outline-offset: -2px;
+}
+
+.toolbar-button:disabled {
+    color: var(--el-text-color-disabled);
+    cursor: not-allowed;
+}
+
+.el-select .el-select__caret:not(.el-select__clear),
+.el-dropdown__caret-button .el-dropdown__icon {
+    transform: rotate(-90deg);
+    transition: transform 150ms ease;
+}
+
+.el-select .el-select__caret.is-reverse,
+.el-dropdown__caret-button[aria-expanded='true'] .el-dropdown__icon {
+    transform: rotate(0deg);
+}
+
+.disclosure-chevron {
+    flex-shrink: 0;
+    transition: transform 150ms ease;
+}
+
+[aria-expanded='true'] .disclosure-chevron {
+    transform: rotate(90deg);
+}
+
+.action-menu-trigger .disclosure-chevron {
+    margin-inline-start: 4px;
+}
+
+.mail-spinner {
+    animation: mail-spin 900ms linear infinite;
+}
+
+@keyframes mail-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toolbar-button,
+    .el-select .el-select__caret,
+    .el-dropdown__caret-button .el-dropdown__icon,
+    .disclosure-chevron {
+        transition: none;
+    }
+
+    .mail-spinner {
+        animation: none;
+    }
+}
+
+.mail-address-input .el-input-group__append {
+    max-width: 52%;
+    padding: 0;
+    background: var(--el-fill-color-light);
+}
+
+.mail-address-domain {
+    display: block;
+    overflow: hidden;
+    padding-inline: 11px;
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mail-address-input .mail-address-domain-select {
+    width: 150px;
+    max-width: 100%;
+    margin: 0;
+}
+
+.mail-address-domain-select .el-select__wrapper:not(.is-focused) {
+    box-shadow: none;
+}
+
+#nprogress .bar {
+    background: var(--el-color-primary);
+}
+
+#nprogress .peg {
+    box-shadow: none;
 }
 
 .el-input {

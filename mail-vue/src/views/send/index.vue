@@ -6,7 +6,6 @@
                :emailDelete="emailDelete"
                :star-add="starAdd"
                show-status
-               actionLeft="4px"
                :star-cancel="starCancel"
                :highlight-text="sendStore.searchParams.text"
                @jump="jumpContent"
@@ -50,10 +49,7 @@ watch(
 )
 
 function jumpContent(email) {
-  emailStore.contentData.email = emailStore.toContentEmail(email)
-  emailStore.contentData.delType = 'logic'
-  emailStore.contentData.showStar = true
-  emailStore.contentData.showReply = true
+  emailStore.openMessage(email, 'sent')
   router.push({name: 'content', params: {mailbox: 'sent'}})
 }
 

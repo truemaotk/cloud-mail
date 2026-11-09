@@ -1,8 +1,8 @@
 <template>
   <div class="perm-box">
-    <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAddRole"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
+    <div class="mail-toolbar">
+      <ToolbarButton icon="add" :label="$t('addRoleTitle')" @click="openAddRole" />
+      <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
     </div>
     <el-scrollbar class="perm-scrollbar">
       <div class="loading" :class="tableLoading ? 'loading-show' : 'loading-hide'"
@@ -33,8 +33,8 @@
         </el-table-column>
         <el-table-column :label="$t('tabSetting')" :width="settingWidth">
           <template #default="props">
-            <el-dropdown trigger="click">
-              <el-button size="small" type="primary">{{ $t('action') }}</el-button>
+            <el-dropdown trigger="click" placement="bottom-end">
+              <el-button class="action-menu-trigger" size="small">{{ $t('action') }}<NavigationIcon class="disclosure-chevron" name="chevron" :size="14" /></el-button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="openRoleSet(props.row)">{{ $t('change') }}</el-dropdown-item>
@@ -47,7 +47,7 @@
         </el-table-column>
       </el-table>
     </el-scrollbar>
-    <el-dialog top="5vh" class="dialog" v-model="roleFormShow" @closed="resetForm">
+    <el-dialog close-icon="MailCloseIcon" top="5vh" class="dialog" v-model="roleFormShow" @closed="resetForm">
       <template #header>
         <span style="font-size: 18px">{{ dialogType.title }}</span>
         <el-popover
@@ -56,7 +56,7 @@
             placement="bottom"
         >
           <template #reference>
-            <Icon class="warning" icon="fe:warning" width="18" height="18"/>
+            <NavigationIcon name="info" class="warning" />
           </template>
           <div style="font-weight: bold;;margin-bottom: 2px;">{{ t('emailInterception') }}</div>
           <div>{{ t('emailInterceptionDesc') }}</div>
@@ -73,7 +73,7 @@
                   :placeholder="$t('description')" autocomplete="off" @keyup.enter="roleFormClick"/>
         <el-input-tag class="dialog-input" tag-type="warning" v-model="form.banEmail"
                       @add-tag="banEmailAddTag" type="text" :placeholder="$t('emailInterception')" autocomplete="off"/>
-        <el-select
+        <el-select suffix-icon="MailChevronDown"
             class="dialog-input"
             v-model="form.availDomain"
             multiple
@@ -119,7 +119,7 @@
                 <el-input-number v-if="form.sendType === 'day' || form.sendType === 'count'" v-model="form.sendCount" controls-position="right" :min="0" :max="99999" size="small"
                                  :placeholder="$t('total')">
                 </el-input-number>
-                  <el-select v-model="form.sendType" placeholder="Select" size="small"
+                  <el-select suffix-icon="MailChevronDown" v-model="form.sendType" placeholder="Select" size="small"
                              :style="`width: ${ locale === 'zh' ? 65 : 85 }px;margin-left: 5px;`">
                     <el-option :label="$t('total')" value="count"/>
                     <el-option :label="$t('daily')" value="day"/>
@@ -143,7 +143,8 @@
   </div>
 </template>
 <script setup>
-import {Icon} from "@iconify/vue";
+import NavigationIcon from '@/components/navigation-icon/index.vue'
+import ToolbarButton from '@/components/toolbar-button/index.vue'
 import {defineOptions, nextTick, reactive, ref} from "vue";
 import {roleAdd, roleDelete, rolePermTree, roleRoleList, roleSet, roleSetDef} from "@/request/role.js";
 import loading from '@/components/loading/index.vue';
@@ -417,12 +418,14 @@ window.onresize = () => {
 <style scoped lang="scss">
 
 .perm-box {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   overflow: hidden;
   width: 100%;
 
   .perm-scrollbar {
-    height: 100%;
+    min-height: 0;
   }
 }
 
@@ -437,29 +440,6 @@ window.onresize = () => {
 .def-tag {
   margin-left: 10px;
   height: 20px;
-}
-
-.header-actions {
-  padding: 9px 15px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  box-shadow: var(--header-actions-border);
-  font-size: 18px;
-
-  .search {
-    :deep(.el-input-group) {
-      height: 28px;
-    }
-
-    :deep(.el-input__inner) {
-      height: 28px;
-    }
-  }
-
-  .icon {
-    cursor: pointer;
-  }
 }
 
 .warning {

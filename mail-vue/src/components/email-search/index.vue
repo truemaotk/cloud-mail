@@ -1,11 +1,11 @@
 <template>
   <div ref="searchRef" class="email-search">
-    <div class="search-placeholder" @click="openSearch">
-      <Icon icon="akar-icons:search" width="20" height="20"/>
+    <button type="button" class="search-placeholder" :aria-label="t('searchMail')" :aria-expanded="visible" @click="openSearch">
+      <NavigationIcon name="search" />
       <span class="search-placeholder-text" :class="{ 'has-search-text': savedSearchSummary }" :title="savedSearchSummary">
         {{ savedSearchSummary || t('searchMail') }}
       </span>
-    </div>
+    </button>
     <el-button
       class="mobile-search-button"
       size="default"
@@ -14,7 +14,7 @@
       @click="openSearch"
     >
       <el-icon :size="20">
-        <Icon icon="akar-icons:search"/>
+        <NavigationIcon name="search" />
       </el-icon>
     </el-button>
     <Transition name="search-panel-fade" @after-enter="focusInputOnDesktop">
@@ -41,7 +41,7 @@
             <div class="search-date-range">
               <div class="search-date-field">
                 <div class="search-date-label">{{ t('searchDateFrom') }}</div>
-                <el-date-picker
+                <el-date-picker prefix-icon="MailCalendarIcon"
                   v-model="startDate"
                   type="date"
                   :editable="false"
@@ -51,7 +51,7 @@
               </div>
               <div class="search-date-field">
                 <div class="search-date-label">{{ t('searchDateTo') }}</div>
-                <el-date-picker
+                <el-date-picker prefix-icon="MailCalendarIcon"
                   v-model="endDate"
                   type="date"
                   :editable="false"
@@ -74,7 +74,7 @@
 
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
-import {Icon} from '@iconify/vue'
+import NavigationIcon from '@/components/navigation-icon/index.vue'
 import {useI18n} from 'vue-i18n'
 
 const {t} = useI18n()
@@ -281,37 +281,32 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .email-search {
   position: absolute;
-  left: -1;
+  left: min(195px, 29%);
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  width: min(450px, calc(100% - 20px));
+  width: min(430px, calc(100% - min(195px, 29%) - 16px));
   height: 36px;
-  @media (max-width: 1080px) {
-    width: min(400px, calc(100% - 20px));
-  }
 }
 
 @media (min-width: 768px) {
   .email-search.account-show {
-    left: 259px;
+    left: calc(var(--mailbox-rail-width) + 16px);
+    width: min(430px, calc(100% - var(--mailbox-rail-width) - 32px));
   }
 }
 
 .search-placeholder {
   width: 100%;
   height: 36px;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
-.search-placeholder {
+  border: 1px solid var(--mail-shell-line);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
+  background: var(--mail-shell-rail);
+  color: var(--mail-shell-muted);
   text-align: left;
   white-space: nowrap;
   cursor: text;
@@ -319,11 +314,20 @@ onBeforeUnmount(() => {
   z-index: 0;
 }
 
+.search-placeholder:hover {
+  background: var(--mail-shell-hover);
+}
+
+.search-placeholder:focus-visible {
+  outline: 2px solid var(--mail-shell-muted);
+  outline-offset: -2px;
+}
+
 .search-placeholder-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .search-placeholder-text.has-search-text {

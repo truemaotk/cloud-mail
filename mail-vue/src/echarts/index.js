@@ -1,7 +1,7 @@
 
 import * as echarts from 'echarts/core';
 
-import { BarChart,PieChart,LineChart,GaugeChart} from 'echarts/charts';
+import { BarChart, LineChart } from 'echarts/charts';
 // 引入标题，提示框，直角坐标系，数据集，内置数据转换器组件，组件后缀都为 Component
 import {
     TooltipComponent,
@@ -13,9 +13,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { LegendComponent } from 'echarts/components';
 // 注册必须的组件
 echarts.use([
-    GaugeChart,
     LegendComponent,
-    PieChart,
     TooltipComponent,
     GridComponent,
     BarChart,

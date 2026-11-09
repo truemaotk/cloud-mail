@@ -13,6 +13,10 @@ export function emailLatest(emailId, accountId, allReceive) {
     return http.get('/email/latest', {params: {emailId, accountId, allReceive}, noMsg: true, timeout: 35 * 1000})
 }
 
+export function emailUnreadCounts() {
+    return http.get('/email/unreadCounts', {noMsg: true, timeout: 10000})
+}
+
 export function emailRead(emailIds) {
     return http.put('/email/read', {emailIds})
 }

@@ -12,6 +12,7 @@ import userService from '../service/user-service';
 import telegramService from '../service/telegram-service';
 import aiService from '../service/ai-service';
 import webhookService from '../service/webhook-service';
+import chatBotService from '../service/chat-bot-service';
 
 export async function email(message, env, ctx) {
 
@@ -170,6 +171,8 @@ export async function email(message, env, ctx) {
 			}
 
 		}
+
+		await chatBotService.forward(env, ctx, [emailRow]);
 
 		//转发到TG
 		if (tgBotStatus === settingConst.tgBotStatus.OPEN && tgChatId) {

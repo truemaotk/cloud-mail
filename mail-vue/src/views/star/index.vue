@@ -7,7 +7,6 @@
                :star-add="starAdd"
                :star-cancel="starCancel"
                @jump="jumpContent"
-               actionLeft="6px"
                :show-account-icon="false"
   />
 </template>
@@ -28,10 +27,7 @@ const scroll = ref({})
 const emailStore = useEmailStore();
 
 function jumpContent(email) {
-  emailStore.contentData.email = emailStore.toContentEmail(email)
-  emailStore.contentData.delType = 'logic'
-  emailStore.contentData.showStar = true
-  emailStore.contentData.showReply = true
+  emailStore.openMessage(email, 'starred')
   router.push({name: 'content', params: {mailbox: 'starred'}})
 }
 

@@ -1,4 +1,9 @@
 const zh = {
+	chatBotInvalid: '请填写对应平台的机器人 Webhook 地址，并检查配置。',
+	chatBotTestMessage: 'mail · 新邮件通知测试\n机器人已收到测试消息。',
+	chatBotTestFailed: '机器人未接受测试消息（{{code}}），请检查地址和机器人安全设置。',
+	chatBotTestNetwork: '服务端未能连接机器人，请检查运行环境到机器人地址的网络。',
+	chatBotTestTimeout: '连接机器人超时，请稍后重试。',
 	IncorrectPwd: '密码输入错误',
 	addAccountDisabled: '添加邮箱功能已关闭',
 	regDisabled: '注册功能已关闭',

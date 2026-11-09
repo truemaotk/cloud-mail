@@ -1,38 +1,59 @@
 <template>
   <div class="account-box">
     <div class="head-opt">
-      <Icon v-perm="'account:add'" class="icon add" icon="ion:add-outline" width="23" height="23" @click="add"/>
-      <Icon class="icon refresh" icon="ion:reload" width="18" height="18" @click="refresh"/>
+      <h2>{{ $t('account') }}</h2>
+      <ToolbarButton v-perm="'account:add'" icon="add" :label="$t('addAccount')" @click="add" />
+      <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
     </div>
     <el-scrollbar class="scrollbar" ref="scrollbarRef">
       <div v-infinite-scroll="getAccountList" :infinite-scroll-distance="600" :infinite-scroll-immediate="false">
-        <el-card class="item" :class="itemBg(item.accountId)" v-for="(item, index) in accounts" :key="item.accountId"
+        <el-card shadow="never" class="item" :class="itemBg(item.accountId)" v-for="(item, index) in accounts" :key="item.accountId"
                  @click="changeAccount(item)">
-          <div class="account">
-            {{ item.email }}
-          </div>
-          <div class="opt">
-            <div class="send-email" @click.stop>
-              <Icon @click="setAllReceive(item)" v-if="!item.allReceive" icon="eva:email-fill" width="22" height="22" color="#fccb1a"/>
-              <Icon @click="setAllReceive(item)" v-else icon="flat-color-icons:folder" width="22" height="22" color="#23c4f1" />
-            </div>
-            <div class="settings" @click.stop>
-              <Icon icon="fluent-color:clipboard-24" width="22" height="22" @click.stop="copyAccount(item.email)"/>
-              <Icon icon="fluent:settings-24-filled" width="21" height="21" color="#909399"
-                    v-if="showNullSetting(item)"/>
-              <el-dropdown v-else>
-                <Icon icon="fluent:settings-24-filled" width="21" height="21" color="#909399"/>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item v-if="hasPerm('email:send')" @click="openSetName(item)">{{ $t('rename') }}</el-dropdown-item>
-                    <el-dropdown-item v-if="item.accountId !== userStore.user.account.accountId" @click="setAsTop(item, index)">{{ $t('pin') }}</el-dropdown-item>
-                    <el-dropdown-item v-if="item.accountId !== userStore.user.account.accountId && hasPerm('account:delete')"
-                                      @click="remove(item)">{{ $t('delete') }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
+          <button class="account" type="button"
+                  :aria-pressed="accountStore.currentAccountId === item.accountId"
+                  @click.stop="changeAccount(item)">
+            <span class="account-address" :title="item.email">{{ item.email }}</span>
+            <UnreadBadge :count="emailStore.unreadByAccount[item.accountId]" />
+          </button>
+          <div class="account-actions">
+            <button
+              type="button"
+              class="account-action account-receive"
+              :aria-pressed="!!item.allReceive"
+              :title="$t('receiveAllMail')"
+              :aria-label="$t('receiveAllMail')"
+              @click.stop="setAllReceive(item)"
+            >
+              <NavigationIcon :name="item.allReceive ? 'folder' : 'mail'" />
+            </button>
+            <button type="button" class="account-action" :title="$t('copy')" :aria-label="$t('copy')" @click.stop="copyAccount(item.email)">
+              <NavigationIcon name="copy" />
+            </button>
+            <el-dropdown
+              v-if="!showNullSetting(item)"
+              trigger="click"
+              placement="bottom-end"
+              :show-arrow="false"
+              :offset="7"
+            >
+              <button type="button" class="account-action" :title="$t('mailboxSettings')" :aria-label="$t('mailboxSettings')" @click.stop>
+                <NavigationIcon name="settings" />
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-if="hasPerm('email:send')" @click="openSetName(item)">
+                    <NavigationIcon name="compose" />{{ $t('rename') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="item.accountId !== userStore.user.account.accountId" @click="setAsTop(item, index)">
+                    <NavigationIcon name="pin" />{{ $t('pin') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="item.accountId !== userStore.user.account.accountId && hasPerm('account:delete')"
+                                    @click="remove(item)">
+                    <NavigationIcon name="delete" />{{ $t('delete') }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </el-card>
 
@@ -41,10 +62,9 @@
           <el-skeleton v-for="i in skeletonRows" :key="i" animated>
             <template #template>
               <el-card class="item">
-                <el-skeleton-item variant="p" style="width: 70%; height: 20px; margin-bottom: 25px"/>
-                <div style="display: flex; justify-content: space-between">
-                  <el-skeleton-item variant="text" style="width: 20px"/>
-                  <el-skeleton-item variant="text" style="width: 20px"/>
+                <el-skeleton-item variant="text" class="account-skeleton-address" />
+                <div class="account-skeleton-actions">
+                  <el-skeleton-item v-for="icon in 3" :key="icon" variant="text" />
                 </div>
               </el-card>
             </template>
@@ -56,48 +76,48 @@
           <el-skeleton animated>
             <template #template>
               <el-card class="item">
-                <el-skeleton-item variant="p" style="width: 70%; height: 20px; margin-bottom: 20px"/>
-                <div style="display: flex; justify-content: space-between">
-                  <el-skeleton-item variant="text" style="width: 20px"/>
-                  <el-skeleton-item variant="text" style="width: 20px"/>
+                <el-skeleton-item variant="text" class="account-skeleton-address" />
+                <div class="account-skeleton-actions">
+                  <el-skeleton-item v-for="icon in 3" :key="icon" variant="text" />
                 </div>
               </el-card>
             </template>
           </el-skeleton>
         </template>
 
-        <div class="noLoading" v-if="noLoading && accounts.length > 0">
-          <div>{{ $t('noMoreData') }}</div>
-        </div>
         <div class="empty" v-if="noLoading && accounts.length === 0">
-          <el-empty :description="$t('noMessagesFound')"/>
+          <el-empty :image-size="52" :description="$t('noMailboxes')">
+            <template #image>
+              <span class="mail-empty-icon"><NavigationIcon name="mailbox" :size="25" /></span>
+            </template>
+          </el-empty>
         </div>
       </div>
 
     </el-scrollbar>
-    <el-dialog v-model="showAdd" :title="$t('addAccount')">
+    <el-dialog close-icon="MailCloseIcon" v-model="showAdd" :title="$t('addAccount')">
       <div class="container">
-        <el-input v-model="addForm.email" ref="addRef" type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="submit">
-          <template #append>
-            <div @click.stop="openSelect">
-              <el-select
-                  ref="mySelect"
-                  v-model="addForm.suffix"
-                  :placeholder="$t('select')"
-                  class="select"
-              >
-                <el-option
-                    v-for="item in domainList"
-                    :key="item"
-                    :label="item"
-                    :value="item"
-                />
-              </el-select>
-              <div>
-                <span>{{ addForm.suffix }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
-              </div>
-            </div>
+        <el-input
+          ref="addRef"
+          v-model="addForm.email"
+          class="mail-address-input"
+          :aria-label="$t('emailAccount')"
+          :placeholder="$t(domainList.length ? 'loginEmailPrefix' : 'emailAccount')"
+          autocomplete="off"
+          autocapitalize="none"
+          :spellcheck="false"
+          @keyup.enter="submit"
+        >
+          <template v-if="domainList.length" #append>
+            <el-select suffix-icon="MailChevronDown"
+              v-if="domainList.length > 1"
+              v-model="addForm.suffix"
+              :aria-label="$t('loginEmailDomain')"
+              class="mail-address-domain-select"
+            >
+              <el-option v-for="domain in domainList" :key="domain" :label="domain" :value="domain" />
+            </el-select>
+            <span v-else class="mail-address-domain" :title="addForm.suffix">{{ addForm.suffix }}</span>
           </template>
         </el-input>
         <el-button class="btn" type="primary" @click="submit" :loading="addLoading"
@@ -116,7 +136,7 @@
         <span style="font-size: 12px;color: #F56C6C" v-if="botJsError">{{ $t('verifyModuleFailed', {action: $t('add')}) }}</span>
       </div>
     </el-dialog>
-    <el-dialog v-model="setNameShow" :title="$t('changeUserName')">
+    <el-dialog close-icon="MailCloseIcon" v-model="setNameShow" :title="$t('changeUserName')">
       <div class="container">
         <el-input v-model="accountName" type="text" :placeholder="$t('username')" autocomplete="off" @keyup.enter="setName">
         </el-input>
@@ -128,7 +148,7 @@
   </div>
 </template>
 <script setup>
-import {Icon} from "@iconify/vue";
+import ToolbarButton from '@/components/toolbar-button/index.vue'
 import {computed, nextTick, reactive, ref, watch} from "vue";
 import {
   accountList,
@@ -142,6 +162,8 @@ import {sleep} from "@/utils/time-utils.js"
 import {isEmail} from "@/utils/verify-utils.js";
 import {useSettingStore} from "@/store/setting.js";
 import {useAccountStore} from "@/store/account.js";
+import NavigationIcon from '@/components/navigation-icon/index.vue'
+import UnreadBadge from '@/components/unread-badge/index.vue'
 import {useEmailStore} from "@/store/email.js";
 import {useUserStore} from "@/store/user.js";
 import {hasPerm} from "@/perm/perm.js"
@@ -178,14 +200,12 @@ const turnstileContainerKey = ref(0)
 let first = true
 const addForm = reactive({
   email: '',
-  suffix: settingStore.domainList[0]
+  suffix: ''
 })
 let skeletonRows = 10
 const queryParams = {
   size: 30
 }
-
-const mySelect = ref()
 
 if (hasPerm('account:query')) {
   getAccountList()
@@ -195,16 +215,11 @@ watch(() => accountStore.changeUserAccountName, () => {
   accounts[0].name = accountStore.changeUserAccountName
 })
 
-watch(() => settingStore.domainList, (list) => {
-  if (!addForm.suffix && list.length > 0) {
-    addForm.suffix = list[0]
+watch(domainList, (list) => {
+  if (!list.includes(addForm.suffix)) {
+    addForm.suffix = list[0] ?? ''
   }
 }, {immediate: true})
-
-
-const openSelect = () => {
-  mySelect.value.toggleMenu()
-}
 
 async function recoverTurnstile() {
   if (turnstileRecoveryAttempted) return
@@ -302,6 +317,7 @@ function setAllReceive(account) {
   let allReceiveAccount = accounts.find(account => account.allReceive === AccountAllReceiveEnum.ENABLED);
   if (allReceiveAccount && allReceiveAccount.accountId !== account.accountId) allReceiveAccount.allReceive = AccountAllReceiveEnum.DISABLED;
   account.allReceive = account.allReceive === AccountAllReceiveEnum.DISABLED ? AccountAllReceiveEnum.ENABLED : AccountAllReceiveEnum.DISABLED;
+  changeAccount(account);
   accountSetAllReceive(account.accountId).catch(() => {
     account.allReceive = account.allReceive === AccountAllReceiveEnum.DISABLED ? AccountAllReceiveEnum.ENABLED : AccountAllReceiveEnum.DISABLED;
     if (allReceiveAccount) allReceiveAccount.allReceive = AccountAllReceiveEnum.ENABLED;
@@ -313,7 +329,6 @@ function setAllReceive(account) {
         plain: true,
       })
     }
-    changeAccount(account);
     emailStore.emailScroll?.refreshList();
     emailStore.sendScroll?.refreshList();
   })
@@ -337,6 +352,7 @@ function remove(account) {
     type: 'warning'
   }).then(() => {
     accountDelete(account.accountId).then(() => {
+      emailStore.refreshUnreadCounts()
       const index = accounts.findIndex(item => item.accountId === account.accountId);
       accounts.splice(index, 1);
       if (accounts.length < queryParams.size) {
@@ -355,6 +371,7 @@ function refresh() {
   if (loading.value) {
     return
   }
+  emailStore.refreshUnreadCounts()
   loading.value = false
   followLoading.value = false
   noLoading.value = false
@@ -372,7 +389,6 @@ function changeAccount(account) {
 }
 
 function add() {
-  addForm.suffix = addForm.suffix || settingStore.domainList[0]
   showAdd.value = true
   setTimeout(() => {
     addRef.value.focus()
@@ -475,7 +491,8 @@ function submit() {
     return
   }
 
-  if (!isEmail(addForm.email + addForm.suffix)) {
+  const address = addForm.email + addForm.suffix
+  if (!isEmail(address)) {
     ElMessage({
       message: t('notEmailMsg'),
       type: "error",
@@ -514,7 +531,7 @@ function submit() {
   }
 
   addLoading.value = true
-  accountAdd(addForm.email + addForm.suffix, verifyToken).then(account => {
+  accountAdd(address, verifyToken).then(account => {
     addLoading.value = false
     addForm.email = ''
     accounts.push(account)
@@ -552,42 +569,61 @@ path[fill="#ffdda1"] {
 <style scoped lang="scss">
 .account-box {
 
-  border-right: 1px solid var(--el-border-color) !important;
-  background-color: var(--el-bg-color);
+  border-right: 1px solid var(--mail-shell-line);
+  background-color: var(--mail-shell-rail);
   height: 100%;
   overflow: hidden;
 
   .head-opt {
     display: flex;
     align-items: center;
-    height: 38px;
-    box-shadow: var(--header-actions-border);
-    padding-left: 10px;
-    padding-right: 10px;
+    gap: 3px;
+    height: var(--mail-shell-toolbar);
+    border-bottom: 1px solid var(--mail-shell-line);
+    padding: 0 12px 0 16px;
 
-    .icon {
-      cursor: pointer;
+    h2 {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 650;
+    }
+  }
+
+  .account-action {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--mail-radius-control);
+    color: var(--mail-shell-muted);
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
     }
 
-    .refresh {
-      margin-left: 10px;
+    &:hover {
+      background: var(--mail-shell-hover);
+      color: var(--el-text-color-primary);
     }
 
-    .add {
-      margin-left: 2px;
+    &[aria-pressed="true"] {
+      background: var(--mail-shell-hover);
+      color: var(--el-text-color-primary);
     }
 
-    .head-opt:not(.add) .refresh {
-      margin-left: 5px;
+    &:focus-visible {
+      outline: 2px solid var(--mail-shell-muted);
+      outline-offset: -2px;
     }
   }
 
   .scrollbar {
     width: 100%;
-    height: calc(100% - 38px);
-    overflow: auto;
+    height: calc(100% - var(--mail-shell-toolbar));
     @media (max-width: 767px) {
-      height: calc(100% - 98px);
+      height: calc(100% - var(--mail-shell-toolbar) - var(--mail-shell-header));
     }
 
     .empty {
@@ -597,13 +633,6 @@ path[fill="#ffdda1"] {
       height: 100%;
     }
 
-    .noLoading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 10px 0;
-      color: var(--secondary-text-color);
-    }
   }
 
   .btn {
@@ -612,39 +641,72 @@ path[fill="#ffdda1"] {
   }
 
   .item {
+    position: relative;
     background-color: var(--el-bg-color);
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 11px;
-    margin-left: 10px;
-    margin-right: 10px;
+    border-color: var(--mail-shell-line);
+    border-radius: var(--mail-radius-card);
+    padding: 7px 9px 8px 11px;
+    margin: 0 10px 7px;
     cursor: pointer;
+    transition: border-color 140ms ease;
+
+    &:hover {
+      border-color: var(--el-border-color);
+    }
 
     .account {
-      font-weight: 400;
-      font-size: 15px;
-      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      min-height: 22px;
+      font-weight: 600;
+      font-size: 13px;
+      padding-inline: 1px;
+      color: var(--el-text-color-primary);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .account:focus-visible {
+      outline: 2px solid var(--mail-shell-muted);
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+
+    .account-address {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
     }
 
-    .opt {
+    .account-actions,
+    .account-skeleton-actions {
       display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: #888;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 3px;
+      min-height: 26px;
+      margin-top: 7px;
+    }
 
-      .settings {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
+    .account-receive,
+    .account-skeleton-actions > :first-child {
+      margin-inline-end: auto;
+    }
 
-      .send-email {
-        display: flex;
-        align-items: center;
-      }
+    .account-skeleton-actions .el-skeleton__item {
+      width: 16px;
+      height: 13px;
+      margin-inline: 4px;
+    }
+
+    .account-skeleton-address {
+      display: block;
+      width: 70%;
+      height: 14px;
+      margin-block: 4px;
     }
 
     :deep(.el-card__body) {
@@ -657,20 +719,17 @@ path[fill="#ffdda1"] {
   }
 
   .item-choose {
-    background: var(--choose-account-background);
+    background: var(--mail-shell-active);
+
+    &::before {
+      position: absolute;
+      inset: 8px auto 8px 0;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--mail-shell-marker);
+      content: '';
+    }
   }
-}
-
-
-.setting-icon {
-  position: relative;
-  top: 6px;
-}
-
-:deep(.el-input-group__append) {
-  padding: 0 !important;
-  padding-left: 8px !important;
-  background: var(--el-bg-color);
 }
 
 :deep(.el-dialog) {
@@ -680,14 +739,6 @@ path[fill="#ffdda1"] {
     margin-right: 20px !important;
     margin-left: 20px !important;
   }
-}
-
-.select {
-  position: absolute;
-  right: 30px;
-  width: 100px;
-  opacity: 0;
-  pointer-events: none;
 }
 
 :deep(.el-pagination .el-select) {

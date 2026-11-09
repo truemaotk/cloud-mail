@@ -1,77 +1,104 @@
 <template>
   <div class="box">
-    <div class="header-actions">
-      <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
-      <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
-      <span class="star" v-if="emailStore.contentData.showStar">
-        <Icon class="icon" @click="changeStar" v-if="email.isStar" icon="fluent-color:star-16" width="20" height="20"/>
-        <Icon class="icon" @click="changeStar" v-else icon="solar:star-line-duotone" width="18.5" height="18.5"/>
-      </span>
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="fluent-mdl2:reply" width="19" height="19" />
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
-    </div>
-    <div></div>
-    <el-scrollbar class="scrollbar">
-      <div class="container">
-        <div class="email-title">
-          {{ email.subject }}
-        </div>
-        <div class="content">
-          <div class="email-info">
-            <div>
-              <div class="send"><span class="send-source">{{$t('from')}}</span>
-                <div class="send-name" ref="sendNameRef" :class="{ 'is-wrapped': senderWrapped }">
-                  <span class="send-name-title">{{ email.name }}</span>
-                  <span class="send-email"><{{ email.sendEmail }}></span>
-                  <span class="sent-via" v-if="sentViaEmail">
-                    <el-tooltip effect="dark" :content="$t('sentVia', { email: sentViaEmail })">
-                      <span>
-                        <el-tag size="small" disable-transitions>{{ $t('sentViaTag') }}</el-tag>
-                      </span>
-                    </el-tooltip>
-                  </span>
+    <section class="reader-surface" :aria-label="$t('message')">
+      <div class="mail-toolbar">
+        <ToolbarButton icon="back" :label="$t('goBack')" @click="handleBack" />
+        <ToolbarButton v-perm="'email:delete'" icon="delete" :label="$t('delete')" @click="handleDelete" />
+      </div>
+      <el-scrollbar class="scrollbar">
+        <article class="reader">
+          <header class="reader-header">
+            <div class="subject-row">
+              <h2 class="email-title">{{ email.subject || $t('noSubject') }}</h2>
+              <span v-if="mailboxLabel" class="mailbox-label">{{ $t(mailboxLabel) }}</span>
+            </div>
+            <div class="envelope">
+              <span class="sender-icon"><NavigationIcon name="user" :size="19" /></span>
+              <div class="sender">
+                <div class="sender-line">
+                  <strong>{{ senderName }}</strong>
+                  <span v-if="senderAddress" class="sender-email">&lt;{{ senderAddress }}&gt;</span>
+                  <el-tooltip v-if="sentViaEmail" effect="dark" :content="$t('sentVia', { email: sentViaEmail })">
+                    <el-tag size="small" disable-transitions>{{ $t('sentViaTag') }}</el-tag>
+                  </el-tooltip>
                 </div>
+                <el-tooltip v-model:visible="showEnvelope" trigger="click" placement="bottom-start"
+                            role="dialog" effect="light" :aria-label="$t('mailHeaderDetails')"
+                            popper-class="mail-envelope-popover" :show-arrow="false" :offset="6"
+                            :popper-options="envelopePosition">
+                  <button type="button" class="recipient-line" @keydown.esc.stop="showEnvelope = false">
+                    <span>{{ $t('recipient') }}</span>
+                    <span class="recipient-address">{{ recipientAddresses || email.toEmail || '—' }}</span>
+                    <NavigationIcon name="chevron" class="recipient-chevron" :size="12" />
+                  </button>
+                  <template #content>
+                    <section class="envelope-panel" @keydown.esc.stop="showEnvelope = false">
+                      <h3>{{ $t('mailHeaderDetails') }}</h3>
+                      <dl class="envelope-details">
+                        <dt>{{ $t('from') }}</dt>
+                        <dd>
+                          <strong>{{ senderName }}</strong>
+                          <span v-if="senderAddress" class="envelope-address">{{ senderAddress }}</span>
+                        </dd>
+                        <dt>{{ $t('recipient') }}</dt>
+                        <dd>{{ recipientAddresses || email.toEmail || '—' }}</dd>
+                        <dt v-if="email.createTime">{{ $t('date') }}</dt>
+                        <dd v-if="email.createTime">{{ formatDetailDate(email.createTime) }}</dd>
+                      </dl>
+                    </section>
+                  </template>
+                </el-tooltip>
               </div>
-              <div class="receive"><span class="source">{{$t('recipient')}}</span><span class="receive-email">{{  formateReceive(email.recipient) }}</span></div>
-              <div class="date">
-                <div>{{ formatDetailDate(email.createTime) }}</div>
+              <div class="envelope-actions">
+                <time v-if="email.createTime" class="email-date">{{ formatDetailDate(email.createTime) }}</time>
+                <ToolbarButton v-if="emailStore.contentData.showStar" :icon="email.isStar ? 'star-fill' : 'star'"
+                               :label="$t('star')" :aria-pressed="!!email.isStar" @click="changeStar" />
+                <ToolbarButton v-if="canReply" icon="reply" :label="$t('reply')" @click="openReply" />
               </div>
             </div>
             <el-alert v-if="email.status === 3" :closable="false" :title="toMessage(email.message)" class="email-msg" type="error" show-icon />
             <el-alert v-if="email.status === 4" :closable="false" :title="$t('complained')" class="email-msg" type="warning" show-icon />
             <el-alert v-if="email.status === 5" :closable="false" :title="$t('delayed')" class="email-msg" type="warning" show-icon />
+          </header>
+          <div class="reader-body">
+            <ShadowHtml v-if="email.content" class="shadow-html" :html="formatImage(email.content)" />
+            <pre v-else class="email-text">{{ email.text }}</pre>
           </div>
-          <el-scrollbar class="htm-scrollbar" :class="!email.attList?.length ? 'bottom-distance' : ''">
-            <ShadowHtml class="shadow-html" :html="formatImage(email.content)" v-if="email.content" />
-            <pre v-else class="email-text" >{{email.text}}</pre>
-          </el-scrollbar>
-          <div class="att" v-if="email.attList?.length > 0">
+          <section v-if="email.attList?.length" class="att" :aria-label="$t('attachments')">
             <div class="att-title">
-              <span>{{$t('attachments')}}</span>
-              <span>{{$t('attCount',{total: email.attList.length})}}</span>
+              <span>{{ $t('attachments') }}</span>
+              <span>{{ $t('attCount', { total: email.attList.length }) }}</span>
             </div>
             <div class="att-box">
-
-              <div class="att-item" v-for="att in email.attList" :key="att.attId">
-                <div class="att-icon" @click="showImage(att.key)">
-                  <Icon v-bind="getIconByName(att.filename)" />
+              <div v-for="att in email.attList" :key="att.attId" class="att-item">
+                <div class="att-icon">
+                  <NavigationIcon :name="getIconByName(att.filename)" :size="22" />
                 </div>
-                <div class="att-name" @click="showImage(att.key)">
-                  {{ att.filename }}
-                </div>
+                <div class="att-name" :title="att.filename">{{ att.filename }}</div>
                 <div class="att-size">{{ formatBytes(att.size) }}</div>
-                <div class="opt-icon att-icon">
-                  <Icon v-if="isImage(att.filename)" icon="hugeicons:view" width="22" height="22" @click="showImage(att.key)"/>
-                  <a :href="cvtR2Url(att.key)" download>
-                    <Icon icon="system-uicons:push-down" width="22" height="22"/>
+                <div class="att-icon">
+                  <ToolbarButton v-if="isImage(att.filename)" icon="eye" :label="$t('preview')" @click="showImage(att.key)" />
+                  <a class="toolbar-button" :href="cvtR2Url(att.key)" :aria-label="$t('download') + ' ' + att.filename"
+                     :title="$t('download')" download>
+                    <NavigationIcon name="download" />
                   </a>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </el-scrollbar>
+          </section>
+          <footer v-if="canReply" class="reader-footer">
+            <button type="button" class="reply-button" @click="openReply">
+              <NavigationIcon name="reply" :size="17" />
+              {{ $t('reply') }}
+            </button>
+            <button type="button" class="reply-button" @click="openForward">
+              <NavigationIcon name="forward" :size="17" />
+              {{ $t('forward') }}
+            </button>
+          </footer>
+        </article>
+      </el-scrollbar>
+    </section>
     <el-image-viewer
         v-if="showPreview"
         :url-list="srcList"
@@ -81,14 +108,16 @@
   </div>
 </template>
 <script setup>
+import NavigationIcon from '@/components/navigation-icon/index.vue'
+import ToolbarButton from '@/components/toolbar-button/index.vue'
 import ShadowHtml from '@/components/shadow-html/index.vue'
-import {computed, reactive, ref, watch, onMounted, onUnmounted, nextTick} from "vue";
-import {useRouter} from 'vue-router'
+import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
+import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {emailDelete, emailRead} from "@/request/email.js";
-import {Icon} from "@iconify/vue";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
+import {useUserStore} from "@/store/user.js";
 import {formatDetailDate} from "@/utils/day.js";
 import {starAdd, starCancel} from "@/request/star.js";
 import {getExtName, formatBytes} from "@/utils/file-utils.js";
@@ -99,18 +128,22 @@ import {allEmailDelete} from "@/request/all-email.js";
 import {useUiStore} from "@/store/ui.js";
 import {useI18n} from "vue-i18n";
 import {EmailUnreadEnum} from "@/enums/email-enum.js";
+import {hasPerm} from "@/perm/perm.js";
 const { t } = useI18n()
 
 const uiStore = useUiStore();
 const settingStore = useSettingStore();
 const accountStore = useAccountStore();
 const emailStore = useEmailStore();
+const userStore = useUserStore();
 const router = useRouter()
-const sendNameRef = ref(null)
-const senderWrapped = ref(false)
-let senderResizeObserver = null
+const route = useRoute()
+const canReply = computed(() => emailStore.contentData.showReply && hasPerm('email:send'))
+const mailboxLabel = computed(() => ['inbox', 'sent', 'starred'].find(folder => folder === route.params.mailbox))
 
 const showPreview = ref(false)
+const showEnvelope = ref(false)
+const envelopePosition = { modifiers: [{ name: 'preventOverflow', options: { padding: 12 } }] }
 const srcList = reactive([])
 
 
@@ -131,36 +164,23 @@ const sentViaEmail = computed(() => {
   return address
 })
 
+const senderName = computed(() => email.value.name || email.value.sendEmail || '—')
+const senderAddress = computed(() => email.value.sendEmail !== senderName.value ? email.value.sendEmail : '')
+const recipientAddresses = computed(() => {
+  try {
+    const recipients = JSON.parse(email.value.recipient || '[]')
+    return Array.isArray(recipients)
+      ? [...new Set(recipients.map(item => item?.address).filter(Boolean))].join('、') : ''
+  } catch {
+    return ''
+  }
+})
+
 watch(() => accountStore.currentAccountId, () => {
   handleBack()
 })
 
 let readRequesting = false
-
-function contentWidth(el) {
-  const range = document.createRange()
-  range.selectNodeContents(el)
-  const width = range.getBoundingClientRect().width
-  range.detach()
-  return width
-}
-
-function updateSenderWrap() {
-  const root = sendNameRef.value
-  if (!root) return
-  const name = root.querySelector('.send-name-title')
-  const mail = root.querySelector('.send-email')
-  const tag = root.querySelector('.sent-via')
-  if (!name || !mail) {
-    senderWrapped.value = false
-    return
-  }
-  const gap = 6
-  let need = contentWidth(name) + gap + contentWidth(mail)
-  if (tag) need += gap + contentWidth(tag)
-  senderWrapped.value = need > root.clientWidth + 0.5
-}
-
 
 function tryMarkRead() {
   if (!emailStore.contentData.showUnread || readRequesting) return
@@ -179,7 +199,11 @@ function tryMarkRead() {
     emailStore.detailMap[emailId].unread = EmailUnreadEnum.READ
   }
   emailStore.markListRead(emailId)
-  emailRead([emailId]).finally(() => {
+  emailRead([emailId]).then(() => {
+    emailStore.refreshUnreadCounts()
+  }).catch(() => {
+    // The request layer displays the error.
+  }).finally(() => {
     readRequesting = false
   })
 }
@@ -195,29 +219,29 @@ watch(
   { flush: 'post' }
 )
 
-watch(
-  () => [email.value?.name, email.value?.sendEmail, sentViaEmail.value],
-  () => nextTick(updateSenderWrap)
-)
-
 onMounted(() => {
+  const { mailbox, viewerId } = emailStore.contentData
+  if (!email.value.emailId || mailbox !== route.params.mailbox || viewerId !== userStore.user.userId) {
+    router.replace('/' + route.params.mailbox)
+    return
+  }
   tryMarkRead()
   window.addEventListener('keydown', handleKeyDown);
-  senderResizeObserver = new ResizeObserver(() => updateSenderWrap())
-  if (sendNameRef.value) senderResizeObserver.observe(sendNameRef.value)
-  nextTick(updateSenderWrap)
 })
 
 onUnmounted(() => {
   emailStore.contentData.showUnread = false;
   readRequesting = false
   window.removeEventListener('keydown', handleKeyDown);
-  senderResizeObserver?.disconnect()
 })
 
 function handleKeyDown(event) {
   if (event.key !== 'Escape') return;
   if (showPreview.value) return;
+  if (showEnvelope.value) {
+    showEnvelope.value = false
+    return
+  }
   if (document.querySelector('.el-message-box')) return;
   const writeBox = document.querySelector('.write-box');
   if (writeBox && writeBox.offsetParent !== null) return;
@@ -233,7 +257,11 @@ function openForward() {
 }
 
 function toMessage(message) {
-  return  message ? JSON.parse(message).message : '';
+  try {
+    return JSON.parse(message)?.message || t('bounced')
+  } catch {
+    return message || t('bounced')
+  }
 }
 
 function formatImage(content) {
@@ -252,12 +280,6 @@ function showImage(key) {
 
 function isImage(filename) {
   return ['png', 'jpg', 'jpeg', 'bmp', 'gif','jfif'].includes(getExtName(filename))
-}
-
-function formateReceive(recipient) {
-  if (!recipient) return ''
-  recipient = JSON.parse(recipient)
-  return recipient.map(item => item.address).join(', ')
 }
 
 function changeStar() {
@@ -323,231 +345,329 @@ const handleDelete = () => {
 </script>
 <style scoped lang="scss">
 .box {
+  --reader-canvas: #f6f8fc;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px clamp(16px, 2.5vw, 48px) 16px 10px;
+  background-color: var(--reader-canvas);
+}
+
+:global(.mail-shell-dark) .box {
+  --reader-canvas: var(--mail-shell-rail);
+}
+
+.reader-surface {
+  --reader-gutter: 16px;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
+  border-radius: 16px;
+  background: var(--el-bg-color);
 }
 
-.header-actions {
-  padding: 9px 15px 9px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  box-shadow: var(--header-actions-border);
-  font-size: 18px;
-  .star {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 21px;
-  }
-  .icon {
-    cursor: pointer;
-  }
+.mail-toolbar {
+  flex-shrink: 0;
+  min-height: 48px;
+  padding-inline: 10px;
+  border-bottom: 0;
 }
-
 
 .scrollbar {
-  height: calc(100% - 38px);
-  width: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
-.container {
+.reader {
+  --avatar-size: 40px;
+  --avatar-gap: 16px;
+  --message-indent: calc(var(--avatar-size) + var(--avatar-gap));
+  padding: 18px clamp(16px, 1.7vw, 32px) 48px var(--reader-gutter);
+}
+
+.subject-row, .reader-body, .reader-footer, .email-msg, .att {
+  margin-inline-start: var(--message-indent);
+}
+
+.subject-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-block-end: 20px;
+}
+
+.email-title {
+  min-width: 0;
+  font-size: clamp(20px, 1.4vw, 24px);
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.mailbox-label {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--mail-shell-hover);
+  color: var(--mail-shell-muted);
+  font-size: 12px;
+}
+
+.envelope {
+  display: grid;
+  grid-template-columns: var(--avatar-size) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px var(--avatar-gap);
+}
+
+.sender-icon {
+  display: grid;
+  place-items: center;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  background: var(--mail-shell-hover);
+  color: var(--mail-shell-muted);
+}
+
+.sender-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
+  overflow-wrap: anywhere;
+}
+
+.sender-line strong {
   font-size: 14px;
-  padding-left: 20px;
-  padding-right: 20px;
-  padding-top: 10px;
-  @media (max-width: 1023px) {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
+  font-weight: 600;
+}
 
-  .email-title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
+.sender-email, .recipient-line, .email-date {
+  color: var(--mail-shell-muted);
+  font-size: 13px;
+}
 
-  .htm-scrollbar {
-  }
+.recipient-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 1px 6px;
+  margin-inline-start: -6px;
+  border-radius: var(--mail-radius-control);
+  text-align: start;
+  cursor: pointer;
 
-  .content {
-    display: flex;
-    flex-direction: column;
-
-    .att {
-      margin-top: 30px;
-      margin-bottom: 30px;
-      border: 1px solid var(--light-border-color);
-      padding: 14px;
-      border-radius: 6px;
-      width: fit-content;
-      .att-box {
-        min-width: min(410px,calc(100vw - 60px));
-        max-width: 600px;
-        display: grid;
-        gap: 12px;
-        grid-template-rows: 1fr;
-      }
-
-      .att-title {
-        margin-bottom: 8px;
-        display: flex;
-        justify-content: space-between;
-        span:first-child {
-          font-weight: bold;
-        }
-      }
-
-      .att-item {
-        cursor: pointer;
-        div {
-          align-self: center;
-        }
-        background: var(--light-ill);
-        padding: 5px 7px;
-        border-radius: 4px;
-        align-self: start;
-        display: grid;
-        grid-template-columns: auto 1fr auto auto;
-        .att-icon {
-          display: grid;
-        }
-
-        .att-size {
-          color: var(--secondary-text-color);
-        }
-
-        .att-name {
-          margin-left: 8px;
-          margin-right: 8px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          word-break: break-all;
-        }
-
-        .att-image {
-          width: 60px;
-          height: 60px;
-          object-fit: contain;
-        }
-
-        .opt-icon {
-          padding-left: 10px;
-          color: var(--secondary-text-color);
-          align-items: center;
-          display: flex;
-          gap: 8px;
-          cursor: pointer;
-          a {
-            color: var(--secondary-text-color);
-            align-items: center;
-            display: flex;
-          }
-        }
-      }
-    }
-
-    .email-info {
-
-      border-bottom: 1px solid var(--light-border-color);
-      margin-bottom: 20px;
-      padding-bottom: 8px;
-      @media (max-width: 1024px) {
-        margin-bottom: 15px;
-      }
-      .date {
-        color: var(--regular-text-color);
-        margin-bottom: 6px;
-      }
-
-      .email-msg {
-        max-width: 400px;
-        width: fit-content;
-        margin-bottom: 15px;
-      }
-
-      .send {
-        display: flex;
-        margin-bottom: 6px;
-
-        .send-name {
-          color: var(--regular-text-color);
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          column-gap: 6px;
-
-          .send-email {
-            max-width: 100%;
-            overflow-wrap: anywhere;
-          }
-
-          &.is-wrapped {
-            .send-name-title {
-              order: 1;
-            }
-
-            .sent-via {
-              order: 2;
-            }
-
-            .send-email {
-              order: 3;
-              flex-basis: 100%;
-            }
-          }
-        }
-      }
-
-      .receive {
-        margin-bottom: 6px;
-        display: flex;
-        .receive-email {
-          max-width: 700px;
-          word-break: break-word;
-        }
-        span:nth-child(2) {
-          color: var(--regular-text-color);
-        }
-      }
-
-      .send-source {
-        white-space: nowrap;
-        font-weight: bold;
-        padding-right: 10px;
-      }
-
-      .source {
-        white-space: nowrap;
-        font-weight: bold;
-        padding-right: 10px;
-      }
-    }
+  &:hover, &[aria-expanded="true"] {
+    background: var(--mail-shell-hover);
   }
 }
 
-.shadow-html::after  {
-  content: "";
+.recipient-address {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recipient-line > :first-child,
+.recipient-chevron {
+  flex: none;
+}
+
+.recipient-chevron {
+  transition: transform 140ms ease;
+}
+
+.recipient-line[aria-expanded="true"] .recipient-chevron {
+  transform: rotate(90deg);
+}
+
+.envelope-panel h3 {
+  margin: 0;
+  padding-block-end: 9px;
+  border-bottom: 1px solid var(--mail-shell-line);
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.envelope-details {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+
+  dt {
+    color: var(--mail-shell-muted);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--el-text-color-primary);
+  }
+}
+
+.envelope-address {
+  display: block;
+  color: var(--mail-shell-muted);
+}
+
+.envelope-actions {
+  align-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.email-date {
+  padding-inline-end: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.email-msg {
+  margin-top: 14px;
+}
+
+.reader-body {
+  margin-block-start: 21px;
+}
+
+.shadow-html {
+  position: relative;
+}
+
+.shadow-html::after {
+  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--message-block-color); /* 半透明黑色蒙层 */
-  pointer-events: none; /* 不影响点击 */
+  inset: 0;
+  background: var(--message-block-color);
+  pointer-events: none;
 }
 
 .email-text {
-  font-family: inherit;
-  white-space: pre-wrap;
-  word-break: break-word;
   margin: 0;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-.bottom-distance {
-  margin-bottom: 30px;
+.att {
+  max-width: 680px;
+  margin-block-start: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mail-shell-line);
 }
 
+.att-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-weight: 600;
 
+  > span:last-child {
+    color: var(--mail-shell-muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+}
+
+.att-box {
+  display: grid;
+  gap: 8px;
+}
+
+.att-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: 8px;
+  background: var(--mail-shell-rail);
+}
+
+.att-icon {
+  display: flex;
+  color: var(--mail-shell-muted);
+}
+
+.att-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.att-size {
+  color: var(--mail-shell-muted);
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.reader-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 32px;
+}
+
+.reply-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 104px;
+  min-height: 36px;
+  padding-inline: 16px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 18px;
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--mail-shell-hover);
+  }
+}
+
+@media (max-width: 620px) {
+  .box {
+    padding: 4px 6px 8px;
+  }
+
+  .reader-surface {
+    border-radius: 12px;
+  }
+
+  .reader {
+    --avatar-size: 36px;
+    --avatar-gap: 10px;
+  }
+
+  .subject-row, .reader-body, .reader-footer, .email-msg, .att {
+    margin-inline-start: 0;
+  }
+
+  .envelope {
+    grid-template-columns: var(--avatar-size) minmax(0, 1fr);
+  }
+
+  .envelope-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
 </style>

@@ -1,29 +1,30 @@
 <template>
   <div class="user-box">
-    <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAdd"/>
-      <div class="search">
+    <div class="mail-toolbar">
+      <ToolbarButton icon="add" :label="$t('addUser')" @click="openAdd" />
+      <div class="toolbar-group">
         <el-input
             v-model="params.email"
             class="search-input"
             :placeholder="$t('searchByEmail')"
+            :aria-label="$t('searchByEmail')"
+            @keyup.enter="search"
         >
         </el-input>
+        <el-select suffix-icon="MailChevronDown" v-model="params.status" :aria-label="$t('tabStatus')" class="status-select">
+          <el-option :label="$t('all')" :value="-1"/>
+          <el-option :label="$t('active')" :value="0"/>
+          <el-option :label="$t('banned')" :value="1"/>
+          <el-option :label="$t('deleted')" :value="-2"/>
+        </el-select>
       </div>
-      <el-select v-model="params.status" placeholder="Select" class="status-select"
-                 :style="`width: ${locale === 'en' ? 95 : 80 }px`">
-        <el-option :key="-1" :label="$t('all')" :value="-1"/>
-        <el-option :key="0" :label="$t('active')" :value="0"/>
-        <el-option :key="1" :label="$t('banned')" :value="1"/>
-        <el-option :key="-2" :label="$t('deleted')" :value="-2"/>
-      </el-select>
-      <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-      <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
-            v-if="params.timeSort === 1" width="28" height="28"/>
-      <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-up-outline" v-else width="28"
-            height="28"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
-      <Icon class="icon" icon="uiw:delete" width="16" height="16" @click="delUser"/>
+      <div class="toolbar-group">
+        <ToolbarButton icon="search" :label="$t('search')" @click="search" />
+        <ToolbarButton :icon="params.timeSort === 0 ? 'sort-new' : 'sort-old'"
+                       :label="$t(params.timeSort === 0 ? 'sortNewest' : 'sortOldest')" @click="changeTimeSort" />
+        <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
+        <ToolbarButton icon="delete" :label="$t('delete')" @click="delUser" />
+      </div>
     </div>
     <el-scrollbar ref="scrollbarRef" class="scrollbar">
       <div>
@@ -94,8 +95,8 @@
           <el-table-column :label="$t('tabSetting')" :width="settingWidth">
             <template #default="props">
               <el-button size="small" type="primary" v-if="(props.row.type === 0 && userStore.user.type !== 0)" >{{ $t('action') }}</el-button>
-              <el-dropdown v-else >
-                <el-button size="small" type="primary">{{ $t('action') }}</el-button>
+              <el-dropdown v-else trigger="click" placement="bottom-end">
+                <el-button class="action-menu-trigger" size="small">{{ $t('action') }}<NavigationIcon class="disclosure-chevron" name="chevron" :size="14" /></el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="openSetPwd(props.row)" >{{ $t('chgPwd') }}</el-dropdown-item>
@@ -143,7 +144,7 @@
         </div>
       </div>
     </el-scrollbar>
-    <el-dialog class="dialog" v-model="setPwdShow" :title="$t('changePassword')" @closed="resetUserForm">
+    <el-dialog close-icon="MailCloseIcon" class="dialog" v-model="setPwdShow" :title="$t('changePassword')" @closed="resetUserForm">
       <div class="dialog-box">
         <el-input v-model="userForm.password" type="password" :placeholder="$t('newPassword')" autocomplete="off" @keyup.enter="updatePwd">
         </el-input>
@@ -152,10 +153,10 @@
         </el-button>
       </div>
     </el-dialog>
-    <el-dialog class="dialog" v-model="setTypeShow" :title="$t('changePerm')" @closed="resetUserForm">
+    <el-dialog close-icon="MailCloseIcon" class="dialog" v-model="setTypeShow" :title="$t('changePerm')" @closed="resetUserForm">
       <div class="dialog-box">
         <el-input disabled :model-value="$t('admin')" v-if="userForm.type === 0"/>
-        <el-select v-else v-model="userForm.type" placeholder="Select">
+        <el-select suffix-icon="MailChevronDown" v-else v-model="userForm.type" placeholder="Select">
           <el-option v-for="item in roleList" :label="item.name" :value="item.roleId" :key="item.roleId"/>
         </el-select>
         <el-button :disabled="userForm.type === 0" class="btn" :loading="settingLoading" type="primary" @click="setType"
@@ -163,35 +164,32 @@
         </el-button>
       </div>
     </el-dialog>
-    <el-dialog v-model="showAdd" :title="$t('addUser')" @closed="resetAddForm">
+    <el-dialog close-icon="MailCloseIcon" v-model="showAdd" :title="$t('addUser')" @closed="resetAddForm">
       <div class="container">
-        <el-input v-model="addForm.email" type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="submit">
-          <template #append>
-            <div @click.stop="openSelect">
-              <div inert>
-                <el-select
-                    ref="mySelect"
-                    v-model="addForm.suffix"
-                    :placeholder="$t('select')"
-                    class="select"
-                >
-                  <el-option
-                      v-for="item in domainList"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                  />
-                </el-select>
-              </div>
-              <div>
-                <span>{{ addForm.suffix }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
-              </div>
-            </div>
+        <el-input
+          v-model="addForm.email"
+          class="mail-address-input"
+          :aria-label="$t('emailAccount')"
+          :placeholder="$t(domainList.length ? 'loginEmailPrefix' : 'emailAccount')"
+          autocomplete="off"
+          autocapitalize="none"
+          :spellcheck="false"
+          @keyup.enter="submit"
+        >
+          <template v-if="domainList.length" #append>
+            <el-select suffix-icon="MailChevronDown"
+              v-if="domainList.length > 1"
+              v-model="addForm.suffix"
+              :aria-label="$t('loginEmailDomain')"
+              class="mail-address-domain-select"
+            >
+              <el-option v-for="domain in domainList" :key="domain" :label="domain" :value="domain" />
+            </el-select>
+            <span v-else class="mail-address-domain" :title="addForm.suffix">{{ addForm.suffix }}</span>
           </template>
         </el-input>
         <el-input type="password" v-model="addForm.password" :placeholder="$t('password')" @keyup.enter="submit"/>
-        <el-select v-model="addForm.type" :placeholder="$t('perm')">
+        <el-select suffix-icon="MailChevronDown" v-model="addForm.type" :placeholder="$t('perm')">
           <el-option v-for="item in roleList" :label="item.name" :value="item.roleId" :key="item.roleId"/>
         </el-select>
         <el-button class="btn" type="primary" @click="submit" :loading="addLoading"
@@ -199,7 +197,7 @@
         </el-button>
       </div>
     </el-dialog>
-    <el-dialog class="account-dialog" v-model="accountShow" :title="t('userAccount')" @closed="resetAccountList" >
+    <el-dialog close-icon="MailCloseIcon" class="account-dialog" v-model="accountShow" :title="t('userAccount')" @closed="resetAccountList" >
       <el-table :data="accountList" style="height: 480px" v-loading="accountLoading" element-loading-background="transparent" :empty-text="accountLoading ? '' : null">
         <el-table-column property="email" :label="t('emailAccount')" >
           <template #default="props">
@@ -237,7 +235,7 @@
         />
       </div>
     </el-dialog>
-    <el-dialog class="account-dialog" v-model="detailsShow" :title="t('userDetails')"  >
+    <el-dialog close-icon="MailCloseIcon" class="account-dialog" v-model="detailsShow" :title="t('userDetails')"  >
       <div class="details">
         <div v-if="userDetails.platform || userDetails.username" class="oauth-details">
           <el-avatar :src="userDetails.avatar" :size="30" class="oauth-avatar"/>
@@ -336,12 +334,12 @@
           <el-dropdown-item v-if="rightClickUser.type !== 0">
             <template #default>
               <div class="right-dropdown-item" v-if="rightClickUser.isDel !== 1" @click="setStatus(rightClickUser)" >
-                <Icon icon="ion:reload" v-if="rightClickUser.status" style="margin-left: 1px;margin-right: 1px" width="19" height="19" />
-                <Icon icon="ion:ban-outline" v-else style="margin-left: 1px;margin-right: 1px" width="19" height="19" />
+                <NavigationIcon name="refresh" v-if="rightClickUser.status" :size="19" />
+                <NavigationIcon name="ban" v-else :size="19" />
                 <span>{{ setRightStatusName(rightClickUser) }}</span>
               </div>
               <div class="right-dropdown-item" v-else @click="restore(rightClickUser)">
-                <Icon icon="ion:reload" style="margin-left: 1px;margin-right: 1px" width="19" height="19" />
+                <NavigationIcon name="refresh" :size="19" />
                 <span>{{ t('restoreUser') }}</span>
               </div>
             </template>
@@ -349,7 +347,7 @@
           <el-dropdown-item @click="openAccountList(rightClickUser.userId)" >
             <template #default>
               <div class="right-dropdown-item" >
-                <Icon icon="hugeicons:mailbox-01" width="20" height="20" />
+                <NavigationIcon name="mailbox" :size="20" />
                 <span>{{ t('userEmail') }}</span>
               </div>
             </template>
@@ -357,7 +355,7 @@
           <el-dropdown-item @click="openDetails(rightClickUser)" >
             <template #default>
               <div class="right-dropdown-item" >
-                <Icon icon="si:user-alt-2-line" width="20" height="20" />
+                <NavigationIcon name="user" :size="20" />
                 <span>{{ t('userDetails') }}</span>
               </div>
             </template>
@@ -365,7 +363,7 @@
           <el-dropdown-item v-if="rightClickUser.type !== 0" @click="delOneUser(rightClickUser)" >
             <template #default>
               <div class="right-dropdown-item" >
-                <Icon icon="uiw:delete" width="18" height="18" style="margin-left: 1px;margin-right: 1px" />
+                <NavigationIcon name="delete" />
                 <span>{{ t('adminDeleteUser') }}</span>
               </div>
             </template>
@@ -377,7 +375,9 @@
 </template>
 
 <script setup>
-import {defineOptions, h, reactive, ref, watch} from 'vue'
+import NavigationIcon from '@/components/navigation-icon/index.vue'
+import ToolbarButton from '@/components/toolbar-button/index.vue'
+import {computed, defineOptions, h, reactive, ref, watch} from 'vue'
 import {
   userList,
   userDelete,
@@ -459,14 +459,18 @@ const triggerRef = ref({
     return position.value;
   }
 })
-const domainList = settingStore.domainList
+const domainList = computed(() => settingStore.domainList)
 
 const addForm = reactive({
   email: '',
-  suffix: settingStore.domainList[0],
+  suffix: '',
   password: '',
   type: null,
 })
+
+watch(domainList, (domains) => {
+  if (!domains.includes(addForm.suffix)) addForm.suffix = domains[0] ?? ''
+}, { immediate: true })
 
 const params = reactive({
   email: '',
@@ -491,7 +495,6 @@ const pagerCount = ref(10)
 const settingLoading = ref(false)
 const tableLoading = ref(true)
 const roleList = reactive([])
-const mySelect = ref({})
 const accountList = reactive([])
 const accountParams = reactive({
   size: 10,
@@ -699,10 +702,6 @@ function setRightStatusName(user) {
 
 const tableRowFormatter = (data) => {
   return data.row.email
-}
-
-const openSelect = () => {
-  mySelect.value.toggleMenu()
 }
 
 function resetAddForm() {
@@ -1088,6 +1087,8 @@ function adjustWidth() {
 }
 
 .user-box {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   height: 100%;
 }
@@ -1110,32 +1111,12 @@ function adjustWidth() {
   }
 }
 
-.header-actions {
-  padding: 9px 15px;
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-  align-items: center;
-  box-shadow: var(--header-actions-border);
-  font-size: 18px;
+.mail-toolbar .search-input {
+  width: min(220px, calc(100vw - 180px));
+}
 
-  .search-input {
-    width: min(200px, calc(100vw - 140px));
-  }
-
-  .search {
-    :deep(.el-input-group) {
-      height: 28px;
-    }
-
-    :deep(.el-input__inner) {
-      height: 28px;
-    }
-  }
-
-  .icon {
-    cursor: pointer;
-  }
+.mail-toolbar .status-select {
+  width: 100px;
 }
 
 .container {
@@ -1156,11 +1137,7 @@ function adjustWidth() {
 
 .scrollbar {
   width: 100%;
-  overflow: auto;
-  height: calc(100% - 50px);
-  @media (max-width: 464px) {
-    height: calc(100% - 90px);
-  }
+  min-height: 0;
 }
 
 .details {
@@ -1221,12 +1198,6 @@ function adjustWidth() {
   text-overflow: ellipsis;
 }
 
-.status-select {
-  :deep(.el-select__wrapper) {
-    min-height: 28px;
-  }
-}
-
 .dialog {
   .dialog-box {
     .el-button {
@@ -1234,14 +1205,6 @@ function adjustWidth() {
       margin-top: 15px;
     }
   }
-}
-
-.select {
-  position: absolute;
-  right: 30px;
-  width: 100px;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .loading {
@@ -1268,11 +1231,6 @@ function adjustWidth() {
   opacity: 0;
 }
 
-.setting-icon {
-  position: relative;
-  top: 6px;
-}
-
 .right-dropdown-item {
   display: flex;
   gap: 10px;
@@ -1284,12 +1242,6 @@ function adjustWidth() {
 
 :deep(.el-pagination .el-select) {
   width: 100px;
-  background: var(--el-bg-color);
-}
-
-:deep(.el-input-group__append) {
-  padding: 0 !important;
-  padding-left: 8px !important;
   background: var(--el-bg-color);
 }
 
