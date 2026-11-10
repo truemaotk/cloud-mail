@@ -1,4 +1,7 @@
 const en = {
+    forgotPassword: 'Forgot password?',
+    forgotPasswordHint: 'Ask the site administrator to reset your password in All users. After signing in you can change it in Settings.',
+    forgotPasswordOk: 'OK',
     mailSentTo: 'to',
     mailPositionOf: '{index} of {total}',
     mailMoreMessageActions: 'More',

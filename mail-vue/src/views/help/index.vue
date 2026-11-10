@@ -2,7 +2,7 @@
   <section class="project-help">
     <div class="help-inner">
       <header class="help-intro">
-        <h1>{{ $t('project.title') }}</h1>
+        <h1 class="visually-hidden">{{ $t('project.title') }}</h1>
         <p>{{ $t('project.intro') }}</p>
       </header>
 

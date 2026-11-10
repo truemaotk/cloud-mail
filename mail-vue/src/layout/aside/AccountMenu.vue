@@ -29,7 +29,7 @@
         @keydown.esc="closeFromKeyboard"
         @pointerdown="keyboardOpening = false"
       >
-        <span class="profile-avatar"><NavigationIcon name="user" :size="18" /></span>
+        <span class="profile-avatar" aria-hidden="true">{{ avatarInitial }}</span>
         <span class="profile-identity">
           <strong>{{ user.name || user.email }}</strong>
           <span :title="user.email">{{ user.email }}</span>
@@ -77,6 +77,7 @@ const { t } = useI18n()
 const uiStore = useUiStore()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+const avatarInitial = computed(() => (Array.from(String(user.value?.name || user.value?.email || '?'))[0] || '?').toUpperCase())
 const trigger = ref(null)
 const { width: triggerWidth } = useElementSize(trigger, undefined, { box: 'border-box' })
 const copyButton = ref(null)
@@ -138,8 +139,8 @@ function clickLogout() {
   padding: 0;
   border: 1px solid var(--mac-line) !important;
   border-bottom: 0 !important;
-  border-radius: var(--mail-radius-card) var(--mail-radius-card) 0 0;
-  background: var(--mac-surface);
+  border-radius: 10px 10px 0 0;
+  background: var(--mac-surface) !important;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow: 0 -10px 24px rgb(0 0 0 / 8%) !important;
@@ -151,12 +152,11 @@ function clickLogout() {
 .account-menu:not(.is-compact) :deep(.mail-profile-popper.el-fade-in-linear-enter-from),
 .account-menu:not(.is-compact) :deep(.mail-profile-popper.el-fade-in-linear-leave-to) {
   opacity: 0;
-  transform: none !important;
   clip-path: inset(100% 0 0 0 round 12px 12px 0 0);
 }
 
 .account-menu.is-compact { margin-inline: 12px; }
-.is-compact :deep(.mail-profile-popper.el-popper) { border-bottom: 1px solid var(--mac-line) !important; border-radius: var(--mail-radius-card); box-shadow: var(--mac-shadow-pop) !important; }
+.is-compact :deep(.mail-profile-popper.el-popper) { border-bottom: 1px solid var(--mac-line) !important; border-radius: 10px; box-shadow: var(--mac-shadow-pop) !important; }
 .is-compact .profile-trigger {
   grid-template-columns: 1fr;
   justify-items: center;
@@ -167,7 +167,7 @@ function clickLogout() {
   background: transparent;
 }
 .is-compact .profile-trigger:hover { background: var(--mac-hover); }
-.is-compact .profile-avatar { width: 30px; height: 30px; }
+.is-compact .profile-avatar { width: 28px; height: 28px; font-size: 12px; }
 .is-compact :is(.profile-identity, .profile-chevron) { display: none; }
 
 .profile-trigger {
@@ -180,7 +180,7 @@ function clickLogout() {
   padding: 6px 8px 6px 6px;
   padding-inline-end: var(--rail-trailing-inset);
   border: 1px solid var(--mac-line);
-  border-radius: var(--mail-radius-card);
+  border-radius: 10px;
   background: var(--mac-surface);
   color: var(--mac-text);
   cursor: pointer;
@@ -203,18 +203,23 @@ function clickLogout() {
 }
 
 .account-menu:not(.is-compact) .profile-trigger[aria-expanded='true'] {
-  border-radius: 0 0 var(--mail-radius-card) var(--mail-radius-card);
+  border-radius: 0 0 10px 10px;
 }
 
+/* 账户头像：圆形首字母，与左上邮箱图标区分 */
 .profile-avatar {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   place-items: center;
-  border: 1px solid var(--mac-line);
-  border-radius: 8px;
-  background: var(--mac-chrome);
-  color: var(--mac-text-2);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #A1A1A6, #6E6E73);
+  box-shadow: inset 0 0 0 .5px rgb(0 0 0 / 12%), inset 0 1px 0 rgb(255 255 255 / 22%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
 }
 
 .profile-identity {

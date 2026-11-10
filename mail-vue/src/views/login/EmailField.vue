@@ -1,5 +1,5 @@
 <template>
-  <div class="login-field">
+  <div class="login-field" :style="{ '--domain-width': domainWidth }">
     <label :for="id">{{ $t('emailAccount') }}</label>
     <el-input
       :id="id"
@@ -29,7 +29,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   id: { type: String, required: true },
   domains: { type: Array, required: true },
   fullAddress: Boolean,
@@ -37,4 +39,10 @@ defineProps({
 
 const email = defineModel({ type: String, required: true })
 const suffix = defineModel('suffix', { type: String, required: true })
+// 后缀宽度按最长域名的字符数计算（下拉多留箭头位置），前缀自动拿剩余宽度
+const domainWidth = computed(() => {
+  const longest = Math.max(0, ...props.domains.map(domain => String(domain).length + 1))
+  // 单个域名时后缀按文字实际宽度收紧（auto），多个域名的下拉按最长域名留宽
+  return props.domains.length > 1 ? `calc(${longest} * .6em + 40px)` : 'auto'
+})
 </script>

@@ -124,24 +124,25 @@ button, input, select, textarea {
  */
 html:root, html:root.dark {
     color-scheme: light;
-    --mac-app: #F2F2F2;
-    --mac-sidebar: #EBEBEB;
+    /* 苹果系统灰阶：文字 #1D1D1F、次要 #6E6E73 系、分隔 #E5E5EA、底色 #F5F5F7；按钮用石墨灰而非纯黑 */
+    --mac-app: #F5F5F7;
+    --mac-sidebar: #EDEDF0;
     --mac-surface: #FFFFFF;
-    --mac-chrome: #FAFAFA;
-    --mac-line: #E3E3E3;
-    --mac-line-strong: #D2D2D2;
+    --mac-chrome: #FBFBFD;
+    --mac-line: #E5E5EA;
+    --mac-line-strong: #D2D2D7;
     --mac-text: #1D1D1F;
-    --mac-text-2: #5E5E62;
-    --mac-text-3: #707074;
-    --mac-hover: rgb(0 0 0 / 5%);
-    --mac-press: rgb(0 0 0 / 9%);
-    --mac-selected: rgb(0 0 0 / 8%);
-    --mac-selected-solid: #E8E8E8;
+    --mac-text-2: #6A6A6F;
+    --mac-text-3: #86868B;
+    --mac-hover: rgb(0 0 0 / 4%);
+    --mac-press: rgb(0 0 0 / 7%);
+    --mac-selected: rgb(0 0 0 / 6%);
+    --mac-selected-solid: #EBEBF0;
     --mac-selected-text: #1D1D1F;
     --mac-link: #1D1D1F;
-    --mac-focus: rgb(29 29 31 / 55%);
-    --mac-focus-ring: 0 0 0 3.5px rgb(29 29 31 / 16%);
-    --mac-accent: #1D1D1F;
+    --mac-focus: rgb(60 60 67 / 50%);
+    --mac-focus-ring: 0 0 0 3px rgb(60 60 67 / 14%);
+    --mac-accent: #2C2C2E;
     --mac-accent-hover: #3A3A3C;
     --mac-accent-text: #FFFFFF;
     --mac-star: #D99A00;
@@ -152,15 +153,15 @@ html:root, html:root.dark {
     --mac-badge-text: #3A3A3C;
 
     /* Liquid Glass：半透明 + 模糊 + 镜面高光；不支持 backdrop-filter 时回退为实色 */
-    --glass-bg: rgb(255 255 255 / 62%);
-    --glass-bg-strong: rgb(255 255 255 / 78%);
-    --glass-bg-solid: #FBFBFB;
+    --glass-bg: rgb(255 255 255 / 72%);
+    --glass-bg-strong: rgb(252 252 253 / 92%);
+    --glass-bg-solid: #FBFBFD;
     --glass-blur: blur(28px) saturate(180%);
     --glass-edge: inset 0 1px 0 rgb(255 255 255 / 85%), inset 0 0 0 .5px rgb(255 255 255 / 55%), inset 0 -1px 0 rgb(0 0 0 / 4%);
     --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 10%), 0 10px 30px rgb(0 0 0 / 10%), 0 2px 8px rgb(0 0 0 / 6%);
-    --glass-sidebar: rgb(246 246 246 / 66%);
+    --glass-sidebar: rgb(248 248 250 / 74%);
     --mac-wallpaper: radial-gradient(1200px 700px at 12% -10%, #FFFFFF 0%, transparent 60%),
-        radial-gradient(900px 600px at 100% 110%, #E4E4E4 0%, transparent 55%), #EFEFEF;
+        radial-gradient(900px 600px at 100% 110%, #E6E6EB 0%, transparent 55%), #F2F2F5;
     --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 10%), 0 12px 32px rgb(0 0 0 / 14%), 0 2px 6px rgb(0 0 0 / 6%);
     --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 10%), 0 24px 64px rgb(0 0 0 / 18%), 0 4px 14px rgb(0 0 0 / 8%);
     --mac-sidebar-glass: var(--glass-sidebar);
@@ -173,6 +174,17 @@ html:root, html:root.dark {
     --mac-dur-2: 220ms;
     --mac-dur-3: 340ms;
     --mac-dur-4: 480ms;
+
+    /* 圆角：外大内小（内层 = 外层 − 间距），配合 superellipse 连续曲率 */
+    --r-window: 24px;
+    --r-sheet: 20px;
+    --r-panel: 18px;
+    --r-pop: 14px;
+    --r-card: 12px;
+    --r-control: 9px;
+    --r-item: 8px;
+    --r-small: 6px;
+    --mac-corner: superellipse(1.6);
 
     /* 字体与字号（CSS 像素） */
     /* 苹果设备用 SF + 苹方；其他系统拉丁字符用 Segoe UI，中文落到与苹方最接近的思源黑体，最后才是微软雅黑 */
@@ -194,12 +206,12 @@ html:root, html:root.dark {
 
     --el-component-size: 32px;
     --el-component-size-small: 26px;
-    --mail-radius-control: 8px;
-    --mail-radius-close: 6px;
-    --mail-radius-card: 12px;
-    --mail-radius-menu: 12px;
-    --mail-radius-dialog: 16px;
-    --mail-radius-surface: 14px;
+    --mail-radius-control: var(--r-control);
+    --mail-radius-close: var(--r-small);
+    --mail-radius-card: var(--r-card);
+    --mail-radius-menu: var(--r-pop);
+    --mail-radius-dialog: var(--r-sheet);
+    --mail-radius-surface: var(--r-panel);
     --el-border-radius-base: var(--mail-radius-control);
     --el-border-radius-small: 6px;
     --el-font-family: var(--mac-font);
@@ -208,8 +220,8 @@ html:root, html:root.dark {
     --mail-primary-text: var(--mac-accent-text);
     --mail-primary-tint: #fff;
     --el-color-primary: var(--mac-accent);
-    --el-color-primary-rgb: 29, 29, 31;
-    --el-color-primary-dark-2: #000000;
+    --el-color-primary-rgb: 44, 44, 46;
+    --el-color-primary-dark-2: #1D1D1F;
     --el-color-primary-light-3: color-mix(in srgb, var(--mac-accent) 75%, var(--mail-primary-tint));
     --el-color-primary-light-5: color-mix(in srgb, var(--mac-accent) 50%, var(--mail-primary-tint));
     --el-color-primary-light-7: color-mix(in srgb, var(--mac-accent) 30%, var(--mail-primary-tint));
@@ -274,25 +286,25 @@ html:root, html:root.dark {
 
 html:root.dark {
     color-scheme: dark;
-    --mac-app: #161617;
-    --mac-sidebar: #1E1E20;
-    --mac-surface: #1E1E1F;
+    --mac-app: #121214;
+    --mac-sidebar: #1C1C1E;
+    --mac-surface: #1C1C1E;
     --mac-chrome: #232325;
-    --mac-line: #343436;
-    --mac-line-strong: #444447;
+    --mac-line: #38383A;
+    --mac-line-strong: #48484A;
     --mac-text: #F5F5F7;
-    --mac-text-2: #B4B4B8;
-    --mac-text-3: #9A9A9E;
-    --mac-hover: rgb(255 255 255 / 7%);
-    --mac-press: rgb(255 255 255 / 12%);
-    --mac-selected: rgb(255 255 255 / 11%);
-    --mac-selected-solid: #333335;
+    --mac-text-2: #A1A1A6;
+    --mac-text-3: #8E8E93;
+    --mac-hover: rgb(255 255 255 / 6%);
+    --mac-press: rgb(255 255 255 / 10%);
+    --mac-selected: rgb(255 255 255 / 9%);
+    --mac-selected-solid: #2C2C2E;
     --mac-selected-text: #F5F5F7;
     --mac-link: #F5F5F7;
-    --mac-focus: rgb(245 245 247 / 55%);
-    --mac-focus-ring: 0 0 0 3.5px rgb(245 245 247 / 18%);
-    --mac-accent: #F2F2F4;
-    --mac-accent-hover: #D9D9DC;
+    --mac-focus: rgb(235 235 245 / 45%);
+    --mac-focus-ring: 0 0 0 3px rgb(235 235 245 / 16%);
+    --mac-accent: #E5E5EA;
+    --mac-accent-hover: #D1D1D6;
     --mac-accent-text: #1D1D1F;
     --mac-star: #F2C14E;
     --mac-success: #4CC27A;
@@ -300,19 +312,19 @@ html:root.dark {
     --mac-warning: #F2C14E;
     --mac-badge: rgb(255 255 255 / 12%);
     --mac-badge-text: #E8E8EA;
-    --glass-bg: rgb(44 44 46 / 58%);
-    --glass-bg-strong: rgb(44 44 46 / 76%);
+    --glass-bg: rgb(44 44 46 / 70%);
+    --glass-bg-strong: rgb(40 40 42 / 92%);
     --glass-bg-solid: #2A2A2C;
     --glass-edge: inset 0 1px 0 rgb(255 255 255 / 14%), inset 0 0 0 .5px rgb(255 255 255 / 10%), inset 0 -1px 0 rgb(0 0 0 / 25%);
     --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 34px rgb(0 0 0 / 45%), 0 2px 8px rgb(0 0 0 / 30%);
-    --glass-sidebar: rgb(38 38 40 / 62%);
-    --mac-wallpaper: radial-gradient(1200px 700px at 12% -10%, #2A2A2C 0%, transparent 60%),
-        radial-gradient(900px 600px at 100% 110%, #0E0E0F 0%, transparent 55%), #171718;
+    --glass-sidebar: rgb(36 36 38 / 72%);
+    --mac-wallpaper: radial-gradient(1200px 700px at 12% -10%, #2A2A2D 0%, transparent 60%),
+        radial-gradient(900px 600px at 100% 110%, #0A0A0B 0%, transparent 55%), #141416;
     --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 32px rgb(0 0 0 / 45%), inset 0 0 0 .5px rgb(255 255 255 / 8%);
     --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 60%), 0 24px 64px rgb(0 0 0 / 55%), inset 0 0 0 .5px rgb(255 255 255 / 10%);
 
     --mail-primary-tint: var(--mac-surface);
-    --el-color-primary-rgb: 242, 242, 244;
+    --el-color-primary-rgb: 229, 229, 234;
     --el-color-primary-dark-2: #FFFFFF;
     --el-mask-color: rgb(0 0 0 / 50%);
     --el-overlay-color-lighter: rgb(0 0 0 / 28%);
@@ -591,24 +603,24 @@ html:root.dark {
 }
 
 .el-popper.mail-envelope-popover {
-    width: min(360px, calc(100vw - 32px));
-    padding: 12px 14px;
+    width: min(380px, calc(100vw - 32px));
+    padding: 14px 16px;
 }
 
 .el-dropdown__popper .el-dropdown-menu,
 .el-select-dropdown .el-select-dropdown__list {
-    padding: 5px;
-    border-radius: var(--mail-radius-menu);
+    padding: 6px;
+    border-radius: var(--r-pop);
 }
 
 .el-dropdown__popper .el-dropdown-menu {
-    min-width: 124px;
+    min-width: 160px;
 }
 
 .el-dropdown__popper .el-dropdown-menu__item,
 .el-select__popper .el-select-dropdown__item {
-    border-radius: var(--mail-radius-control);
-    padding-inline: 10px;
+    border-radius: var(--r-item);
+    padding-inline: 12px;
     font-size: 13px;
 }
 
@@ -812,9 +824,10 @@ html:root.dark {
 }
 
 .mail-address-input .el-input-group__append {
-    max-width: 52%;
+    flex: 0 0 auto;
+    width: var(--domain-width, auto);
+    max-width: 60%;
     padding: 0;
-    background: var(--el-fill-color-light);
 }
 
 .mail-address-domain {
@@ -828,7 +841,7 @@ html:root.dark {
 }
 
 .mail-address-input .mail-address-domain-select {
-    width: 150px;
+    width: 100%;
     max-width: 100%;
     margin: 0;
 }
@@ -1008,6 +1021,12 @@ html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !import
 .el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-textarea__inner:focus, .el-input-tag.is-focused .el-input-tag__wrapper {
     box-shadow: 0 0 0 1px var(--mac-focus) inset, var(--mac-focus-ring) !important;
 }
+/* 内联字段（写信、表格单元、工具栏紧凑控件）不画框也不发光 */
+:where(.write-box, .compose-field, .mail-inline-field) :is(.el-input__wrapper, .el-select__wrapper, .el-input-tag__wrapper, .el-input-tag),
+:where(.write-box, .compose-field, .mail-inline-field) :is(.el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-input-tag.is-focused .el-input-tag__wrapper) {
+    box-shadow: none !important;
+    background: transparent !important;
+}
 .el-input-group:has(.el-input-group__append, .el-input-group__prepend) {
     border-radius: var(--mail-radius-control);
     box-shadow: 0 0 0 1px var(--mac-line-strong);
@@ -1028,7 +1047,17 @@ html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !import
 .el-input-group__append { border-inline-start: 1px solid var(--mac-line) !important; }
 .el-input-group__prepend { border-inline-end: 1px solid var(--mac-line) !important; }
 .el-radio { --el-radio-input-border-color-hover: var(--mac-text-2); --el-radio-checked-text-color: var(--mac-text); }
-.el-tag.el-tag { --el-tag-border-radius: 6px; }
+.el-tag.el-tag {
+    --el-tag-border-radius: var(--r-small);
+    --el-tag-bg-color: var(--mac-hover);
+    --el-tag-border-color: transparent;
+    --el-tag-hover-color: var(--mac-text);
+    --el-tag-text-color: var(--mac-text);
+    font-weight: 500;
+}
+.el-tag.el-tag--danger { --el-tag-text-color: var(--mac-danger); }
+.el-tag .el-tag__close { color: var(--mac-text-2); }
+.el-tag .el-tag__close:hover { background: var(--mac-press); color: var(--mac-text); }
 
 /* 分段控件：滑块以弹簧移动 */
 .el-segmented.el-segmented {
@@ -1124,9 +1153,9 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
 .el-overlay.is-message-box.fade-in-linear-enter-from, .el-overlay.is-message-box.fade-in-linear-leave-to { opacity: 0; }
 .dialog-fade-enter-active .el-overlay-dialog, .dialog-fade-leave-active .el-overlay-dialog,
 .fade-in-linear-enter-active .el-overlay-message-box, .fade-in-linear-leave-active .el-overlay-message-box { animation: none !important; }
-.dialog-fade-enter-active .el-dialog, .fade-in-linear-enter-active .el-message-box { animation: mac-sheet-in var(--mac-dur-3) var(--mac-spring) both; }
+.dialog-fade-enter-active .el-dialog, .fade-in-linear-enter-active .el-message-box { animation: mac-sheet-in var(--mac-dur-3) var(--mac-ease-out) both; }
 .dialog-fade-leave-active .el-dialog, .fade-in-linear-leave-active .el-message-box { animation: mac-sheet-out var(--mac-dur-2) var(--mac-ease) both; }
-@keyframes mac-sheet-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes mac-sheet-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes mac-sheet-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.97); } }
 
 /* 浮层：玻璃材质，贴着触发器，从触发器方向缩放出现 */
@@ -1136,14 +1165,14 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
     --el-bg-color-overlay: transparent;
     border: 0 !important;
     border-radius: var(--mail-radius-menu);
-    background: var(--glass-bg-strong);
+    background: var(--glass-bg-strong) !important;
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
     box-shadow: var(--glass-edge), var(--mac-shadow-pop) !important;
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .el-popper.is-light, .el-dropdown__popper.el-popper, .el-select__popper.el-popper, .el-picker__popper.el-popper,
-    .el-popover.el-popper { background: var(--glass-bg-solid); }
+    .el-popover.el-popper { background: var(--glass-bg-solid) !important; }
 }
 .el-dropdown-menu, .el-select-dropdown, .el-picker-panel, .el-date-picker { background: transparent !important; }
 .el-popper.is-dark {
@@ -1157,17 +1186,27 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
     line-height: var(--mac-lh-caption);
     padding: 4px 8px;
 }
+/* 浮层出现：只用独立的 scale / opacity，不改动 Element 用来定位的 transform，避免浮层从角落"飞"过来 */
 .el-zoom-in-top-enter-active, .el-zoom-in-top-leave-active,
 .el-zoom-in-bottom-enter-active, .el-zoom-in-bottom-leave-active,
 .el-fade-in-linear-enter-active, .el-fade-in-linear-leave-active {
-    transition: opacity var(--mac-dur-2) var(--mac-ease), transform var(--mac-dur-3) var(--mac-spring) !important;
+    transition: opacity var(--mac-dur-2) var(--mac-ease), scale var(--mac-dur-2) var(--mac-ease-out) !important;
 }
 .el-zoom-in-top-leave-active, .el-zoom-in-bottom-leave-active, .el-fade-in-linear-leave-active {
-    transition: opacity var(--mac-dur-1) ease, transform var(--mac-dur-1) ease !important;
+    transition: opacity var(--mac-dur-1) ease, scale var(--mac-dur-1) ease !important;
 }
-.el-zoom-in-top-enter-from, .el-zoom-in-top-leave-to { opacity: 0; transform: scale(.96) translateY(-4px) !important; }
-.el-zoom-in-bottom-enter-from, .el-zoom-in-bottom-leave-to { opacity: 0; transform: scale(.96) translateY(4px) !important; }
-.el-popper.is-light.el-fade-in-linear-enter-from, .el-popper.is-light.el-fade-in-linear-leave-to { opacity: 0; transform: scale(.97); }
+.el-zoom-in-top-enter-from, .el-zoom-in-top-leave-to,
+.el-zoom-in-bottom-enter-from, .el-zoom-in-bottom-leave-to,
+.el-popper.is-light.el-fade-in-linear-enter-from, .el-popper.is-light.el-fade-in-linear-leave-to { opacity: 0; scale: .97; }
+/* 缩放原点随弹出方向：从触发器那一侧展开，不产生位移 */
+.el-popper[data-popper-placement="bottom-start"] { transform-origin: top left; }
+.el-popper[data-popper-placement="bottom-end"] { transform-origin: top right; }
+.el-popper[data-popper-placement="bottom"] { transform-origin: top center; }
+.el-popper[data-popper-placement="top-start"] { transform-origin: bottom left; }
+.el-popper[data-popper-placement="top-end"] { transform-origin: bottom right; }
+.el-popper[data-popper-placement="top"] { transform-origin: bottom center; }
+.el-popper[data-popper-placement^="right"] { transform-origin: left center; }
+.el-popper[data-popper-placement^="left"] { transform-origin: right center; }
 .el-dropdown__popper .el-dropdown-menu__item:not(.is-disabled):is(:hover, :focus),
 .el-select__popper .el-select-dropdown__item.is-hovering:not(.is-disabled) {
     background: var(--mac-selected);
@@ -1186,7 +1225,7 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
     box-shadow: var(--glass-edge), var(--mac-shadow-pop);
 }
 .el-message-fade-enter-from, .el-message-fade-leave-to { opacity: 0; transform: translate(-50%, -12px) scale(.96) !important; }
-.el-message { transition: opacity var(--mac-dur-2) var(--mac-ease), transform var(--mac-dur-3) var(--mac-spring), top var(--mac-dur-3) var(--mac-ease) !important; }
+.el-message { transition: opacity var(--mac-dur-2) var(--mac-ease), transform var(--mac-dur-3) var(--mac-ease-out), top var(--mac-dur-3) var(--mac-ease) !important; }
 
 /* 目录树（权限）：展开图标放在右侧，行高 32，悬停柔和 */
 .el-tree.el-tree {
@@ -1198,7 +1237,10 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
     border-radius: 7px;
     transition: background-color var(--mac-dur-1) ease;
 }
-.el-tree-node:focus > .el-tree-node__content { background: var(--mac-hover); }
+/* 只有悬停才高亮，避免点击后"焦点行 + 悬停行"同时变灰 */
+.el-tree-node:focus > .el-tree-node__content { background: transparent; }
+.el-tree-node:focus-visible > .el-tree-node__content { box-shadow: inset 0 0 0 2px var(--mac-focus); }
+.el-tree-node__content:hover { background: var(--mac-hover) !important; }
 .el-tree-node__expand-icon {
     transition: transform var(--mac-dur-2) var(--mac-ease) !important;
 }
@@ -1250,4 +1292,57 @@ html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
         animation-iteration-count: 1 !important;
         transition-duration: 1ms !important;
     }
+}
+
+
+/* ===== 连续曲率圆角（不支持时自动退回普通圆角） ===== */
+@supports (corner-shape: superellipse(2)) {
+    :is(.el-dialog, .el-message-box, .el-popper:not(.is-dark), .el-button:not(.is-circle), .el-input__wrapper, .el-select__wrapper,
+        .el-textarea__inner, .el-input-group, .el-input-group__append, .el-input-group__prepend, .el-tag, .el-segmented, .el-segmented__item-selected,
+        .el-radio-group, .el-radio-button__inner, .el-dropdown-menu__item, .el-select-dropdown__item, .el-tree-node__content, .el-card,
+        .mail-table-panel, .mail-workspace, .sidebar, .toolbar-button:not(.row-star):not(.sidebar-toggle), .nav-main, .nav-group-toggle, .nav-child,
+        .compose-bar, .mailbox-switch-trigger, .profile-trigger, .write-box, .settings-index, .settings-surface, .section-link,
+        .help-section, .analysis-metric, .analysis-card, .login-shell, .login-mode, .login-mode-thumb, .search-filters,
+        .att-item, .unread-badge, .mailbox-label, .profile-action, .mail-envelope-popover) {
+        corner-shape: var(--mac-corner);
+    }
+}
+
+/* ===== TinyMCE：去掉默认蓝色，统一为灰阶与苹果式按钮 ===== */
+.tox .tox-tbtn:focus::after, .tox .tox-tbtn--enabled:focus::after, .tox .tox-split-button:focus::after,
+.tox .tox-number-input button:focus::after,
+.tox .tox-collection--toolbar .tox-collection__item--active:not(.tox-collection__item--state-disabled):focus::after,
+.tox .tox-collection--grid .tox-collection__item--active:not(.tox-collection__item--state-disabled):focus::after {
+    box-shadow: none !important;
+}
+.tox .tox-tbtn:focus-visible::after, .tox .tox-split-button:focus-visible::after {
+    box-shadow: 0 0 0 2px var(--mac-focus) !important;
+    border-radius: 7px !important;
+}
+.tox .tox-collection--list .tox-collection__item--active:not(.tox-collection__item--state-disabled) {
+    background-color: var(--mac-selected) !important;
+    color: var(--mac-text) !important;
+}
+.tox .tox-image-selector-menu .tox-collection__item-checkmark svg path { fill: var(--mac-text) !important; stroke: var(--mac-text) !important; }
+.tox .tox-custom-editor:focus-within, .tox .tox-focusable-wrapper:focus, .tox .tox-listboxfield .tox-listbox--select:focus,
+.tox .tox-textarea-wrap:focus, .tox .tox-textfield:focus {
+    border-color: var(--mac-focus) !important;
+    box-shadow: var(--mac-focus-ring) !important;
+}
+.tox .tox-button:not(.tox-button--secondary, .tox-button--naked, .tox-button--icon) {
+    border-color: var(--mac-accent) !important;
+    background-color: var(--mac-accent) !important;
+    color: var(--mac-accent-text) !important;
+}
+.tox .tox-button::before { box-shadow: none !important; }
+.tox .tox-toolbar-slider__input::-webkit-slider-thumb { background-color: var(--mac-accent) !important; }
+.tox .tox-tooltip__body { border-radius: 7px !important; background: rgb(40 40 42 / 92%) !important; font-size: 12px !important; }
+.tox .tox-tooltip__arrow { display: none !important; }
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }

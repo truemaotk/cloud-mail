@@ -26,11 +26,13 @@
           <label>
             <span>{{ t('searchDateFrom') }}</span>
             <el-date-picker v-model="startDate" type="date" :editable="false" :teleported="false"
+                            placement="bottom-start" :fallback-placements="['bottom-start', 'bottom-end']"
                             value-format="YYYY-MM-DD" :placeholder="t('searchStartDate')" />
           </label>
           <label>
             <span>{{ t('searchDateTo') }}</span>
             <el-date-picker v-model="endDate" type="date" :editable="false" :teleported="false"
+                            placement="bottom-end" :fallback-placements="['bottom-end', 'bottom-start']"
                             value-format="YYYY-MM-DD" :placeholder="t('searchEndDate')" :disabled-date="disableEndDate" />
           </label>
         </div>

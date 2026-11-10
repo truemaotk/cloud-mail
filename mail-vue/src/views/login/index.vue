@@ -71,7 +71,10 @@
               :full-address="hideLoginDomain"
             />
             <div class="login-field">
-              <label for="login-password">{{ $t('password') }}</label>
+              <div class="login-label-row">
+                <label for="login-password">{{ $t('password') }}</label>
+                <button type="button" class="login-forgot" @click="showForgot">{{ $t('forgotPassword') }}</button>
+              </div>
               <el-input id="login-password" v-model="form.password" :placeholder="$t('password')" type="password" autocomplete="current-password" show-password />
             </div>
             <el-button class="login-submit" type="primary" native-type="submit" :loading="loginLoading">
@@ -158,6 +161,7 @@
 <script setup>
 import router from "@/router";
 import EmailField from './EmailField.vue';
+import { ElMessageBox } from 'element-plus';
 import {useRoute} from "vue-router";
 import {computed, nextTick, reactive, ref} from "vue";
 import {login} from "@/request/login.js";
@@ -188,6 +192,15 @@ const oauthLoading = ref(false);
 const showBindForm = ref(false);
 const show = ref('login')
 const loginPanel = ref(null)
+
+function showForgot() {
+  ElMessageBox.alert(t('forgotPasswordHint'), t('forgotPassword').replace(/[？?]$/, ''), {
+    confirmButtonText: t('forgotPasswordOk'),
+    customClass: 'mail-forgot-box',
+    closeOnPressEscape: true,
+    closeOnClickModal: true,
+  }).catch(() => {})
+}
 
 function switchMode(mode) {
   show.value = mode
@@ -910,13 +923,31 @@ function submitRegister() {
   caret-color: var(--login-ink);
 }
 
+/* 域名后缀按字符长度分配宽度，最多占 60%，前缀拿剩下的；整组仍是一个输入框 */
 .login-form :deep(.el-input-group__append) {
-  max-width: 52%;
+  flex: 0 0 auto;
+  width: var(--domain-width, auto);
+  max-width: 60%;
   padding: 0;
-  border-radius: 0 8px 8px 0;
-  background: var(--login-surface);
-  box-shadow: 0 1px 0 var(--login-line) inset, 0 -1px 0 var(--login-line) inset, -1px 0 0 var(--login-line) inset;
+  border-radius: 0 var(--r-control) var(--r-control) 0;
 }
+.login-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.login-forgot {
+  padding: 2px 6px;
+  margin-inline-end: -6px;
+  border-radius: var(--r-small);
+  color: var(--login-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color var(--mac-dur-1) ease, color var(--mac-dur-1) ease;
+}
+.login-forgot:hover { background: var(--mac-hover); color: var(--login-ink); }
+.login-forgot:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
 
 .login-form :deep(.login-domain-text) {
   display: block;
@@ -929,7 +960,7 @@ function submitRegister() {
 }
 
 .login-form :deep(.login-domain-select) {
-  width: 156px;
+  width: 100%;
   max-width: 100%;
   margin: 0;
 }
@@ -937,7 +968,7 @@ function submitRegister() {
 .login-form :deep(.login-domain-select .el-select__wrapper) {
   min-height: var(--login-control-height);
   padding-inline: 10px;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--r-control) var(--r-control) 0;
   background: transparent;
   box-shadow: none;
   font-size: 13px;

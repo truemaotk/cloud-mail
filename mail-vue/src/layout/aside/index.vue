@@ -228,7 +228,7 @@ function followLink(event, navigate) {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  border-radius: 18px;
+  border-radius: var(--r-sheet);
   background: var(--glass-sidebar);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -278,7 +278,7 @@ function followLink(event, navigate) {
   padding: 0 12px;
   overflow: hidden;
   white-space: nowrap;
-  border-radius: var(--mail-radius-control);
+  border-radius: var(--r-item);
   background: var(--mail-shell-action);
   color: var(--mail-shell-action-text);
   box-shadow: 0 1px 1px rgb(0 0 0 / 8%), inset 0 .5px 0 rgb(255 255 255 / 18%);
@@ -328,7 +328,7 @@ function followLink(event, navigate) {
   width: 100%;
   min-height: 32px;
   padding: 4px 8px;
-  border-radius: var(--mail-radius-control);
+  border-radius: var(--r-item);
   color: var(--mac-text);
   font-size: var(--mac-fs-chrome);
   line-height: var(--mac-lh-chrome);
@@ -520,6 +520,7 @@ function followLink(event, navigate) {
 
 .rail-hint {
   position: absolute;
+  corner-shape: var(--mac-corner);
   z-index: 3;
   inset-inline-start: calc(100% + 8px);
   transform: translateY(-50%);

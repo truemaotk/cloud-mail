@@ -502,7 +502,8 @@ window.onresize = () => {
 :deep(.permission-tree .el-tree-node__content) {
   display: flex;
   gap: 4px;
-  padding-inline-end: 4px;
+  margin-block: 1px;
+  padding-inline-end: 6px;
 }
 :deep(.permission-tree .el-tree-node__content > .el-checkbox) { margin: 0 6px 0 8px; }
 :deep(.permission-tree .el-tree-node__content > div) { flex: 1 1 auto; min-width: 0; }

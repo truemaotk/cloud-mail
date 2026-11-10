@@ -589,6 +589,10 @@ async function discardDrafts() {
 
 function handleKeys(event) {
   if (event.key !== 'Escape' || event.defaultPrevented || !messageId.value) return
+  // 菜单、浮层打开时 Esc 只负责关闭它们，不关闭阅读区
+  if (event.target?.closest?.('.el-popper, .el-dropdown-menu, [aria-expanded="true"]')
+    || [...document.querySelectorAll('.el-popper')].some(popper => popper.getClientRects().length
+      && getComputedStyle(popper).display !== 'none' && popper.getAttribute('aria-hidden') !== 'true')) return
   if (document.querySelector('.el-overlay:not([style*="display: none"]), .write-box:not([style*="display: none"])')
     && [...document.querySelectorAll('.el-overlay, .write-box')].some(element => element.getClientRects().length)) return
   closeReader()
@@ -854,7 +858,7 @@ onBeforeUnmount(() => {
 .wide-reading .unread .message-sender { font-weight: 600; }
 .wide-reading .message-snippet { flex: 1 1 0; min-width: 0; font-size: var(--mac-fs-chrome); line-height: 20px; }
 .wide-reading .message-snippet::before { content: '  —  '; white-space: pre; }
-.draft-row .message-sender { color: var(--mac-danger); }
+.draft-row .message-sender { color: var(--mac-text-2); font-weight: 500; }
 
 .workspace-empty {
   display: flex;

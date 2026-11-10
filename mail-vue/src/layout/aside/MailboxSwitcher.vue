@@ -99,7 +99,7 @@ function closeFromKeyboard() {
   padding: 6px 8px 6px 6px;
   padding-inline-end: var(--rail-trailing-inset);
   border: 1px solid var(--mac-line);
-  border-radius: var(--mail-radius-card);
+  border-radius: 10px;
   background: var(--mac-surface);
   color: var(--mac-text);
   text-align: start;
@@ -143,8 +143,8 @@ function closeFromKeyboard() {
   padding: 4px 6px 6px;
   border: 1px solid var(--mac-line) !important;
   border-top: 0 !important;
-  border-radius: 0 0 var(--mail-radius-card) var(--mail-radius-card);
-  background: var(--mac-surface);
+  border-radius: 0 0 10px 10px;
+  background: var(--mac-surface) !important;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow: 0 10px 24px rgb(0 0 0 / 10%) !important;
@@ -152,7 +152,7 @@ function closeFromKeyboard() {
 }
 .mailbox-switcher:not(.is-compact) .mailbox-switch-trigger[aria-expanded='true'] {
   border-bottom-color: transparent;
-  border-radius: var(--mail-radius-card) var(--mail-radius-card) 0 0;
+  border-radius: 10px 10px 0 0;
   background: var(--mac-surface);
 }
 .mailbox-switcher:not(.is-compact) .mailbox-switch-trigger[aria-expanded='true']::after {
@@ -173,13 +173,12 @@ function closeFromKeyboard() {
 .mailbox-switcher:not(.is-compact) :deep(.mailbox-switch-popover.el-fade-in-linear-enter-from),
 .mailbox-switcher:not(.is-compact) :deep(.mailbox-switch-popover.el-fade-in-linear-leave-to) {
   opacity: 0;
-  transform: none !important;
   clip-path: inset(0 0 100% 0 round 0 0 12px 12px);
 }
 .mailbox-switcher.is-compact :deep(.mailbox-switch-popover.el-popper) {
   width: 232px;
   border-top: 1px solid var(--mac-line) !important;
-  border-radius: var(--mail-radius-card);
+  border-radius: 10px;
   box-shadow: var(--mac-shadow-pop) !important;
 }
 

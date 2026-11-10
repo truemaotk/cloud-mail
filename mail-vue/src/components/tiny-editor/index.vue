@@ -230,13 +230,21 @@ function destroyEditor() {
 }
 
 :deep(.tox-toolbar__group) {
-  padding-left: 0 !important;
+  gap: 2px;
+  padding: 0 6px 0 0 !important;
   margin: 0 !important;
 }
 
 :deep(.tox-tbtn) {
   margin: 0 !important;
 }
+
+/* 工具栏离窗口边缘留出间距，按钮之间留 2px，避免高亮相互贴住 */
+:deep(.tox .tox-toolbar__primary), :deep(.tox .tox-toolbar__overflow) {
+  padding: 6px 12px !important;
+  background-image: none !important;
+}
+:deep(.tox .tox-toolbar__overflow) { border-top: 1px solid var(--mac-line) !important; }
 
 :deep(.tox .tox-edit-area::before) {
   display: none;
@@ -254,16 +262,24 @@ function destroyEditor() {
 :deep(.tox .tox-edit-area__iframe) { background: var(--mac-surface) !important; }
 :deep(.tox .tox-tbtn) {
   height: 30px;
-  border-radius: 6px;
+  min-width: 30px;
+  background: transparent !important;
+  border-radius: 7px;
   color: var(--mac-text-2);
+  corner-shape: var(--mac-corner);
 }
 :deep(.tox .tox-tbtn svg) { fill: var(--mac-text-2) !important; }
-:deep(.tox .tox-tbtn:hover), :deep(.tox .tox-tbtn--enabled), :deep(.tox .tox-tbtn--enabled:hover) {
-  background: var(--mac-hover) !important;
+:deep(.tox .tox-tbtn:hover), :deep(.tox .tox-tbtn--enabled), :deep(.tox .tox-tbtn--enabled:hover),
+:deep(.tox .tox-split-button:hover .tox-tbtn) {
+  background: var(--mac-selected) !important;
   color: var(--mac-text);
 }
 :deep(.tox .tox-tbtn--enabled svg), :deep(.tox .tox-tbtn:hover svg) { fill: var(--mac-text) !important; }
 :deep(.tox .tox-tbtn__select-label) { color: var(--mac-text-2); font-size: 13px; }
-:deep(.tox .tox-split-button:hover) { box-shadow: 0 0 0 1px var(--mac-line) inset; border-radius: 6px; }
+:deep(.tox .tox-tbtn--bespoke), :deep(.tox .tox-tbtn--select) { background: transparent !important; }
+:deep(.tox .tox-tbtn--bespoke:hover), :deep(.tox .tox-tbtn--select:hover) { background: var(--mac-hover) !important; }
+:deep(.tox .tox-split-button) { background: transparent !important; }
+:deep(.tox .tox-split-button:hover) { box-shadow: none !important; border-radius: 7px; background: var(--mac-hover) !important; }
+:deep(.tox .tox-toolbar__group:not(:last-of-type)) { border-right: 0 !important; }
 
 </style>

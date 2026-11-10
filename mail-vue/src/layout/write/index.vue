@@ -666,14 +666,14 @@ async function close() {
 .compose-address { color: var(--mac-text); }
 .compose-field :deep(.el-input__wrapper),
 .compose-field :deep(.el-input-tag) { box-shadow: none; padding-inline: 0; min-width: 0; }
-.compose-field:focus-within { box-shadow: inset 0 -2px var(--mac-focus); }
+.compose-field:focus-within .compose-label { color: var(--mac-text); }
 
 .recipient-tools { gap: 3px; }
 .recipient-tools button {
   flex-shrink: 0;
-  padding: 2px 6px;
-  border-radius: 6px;
-  color: var(--mac-text-2);
+  padding: 3px 8px;
+  border-radius: var(--r-small);
+  color: var(--mac-text-2) !important;
   font-size: var(--mac-fs-chrome);
   cursor: pointer;
 }

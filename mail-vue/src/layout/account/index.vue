@@ -120,6 +120,7 @@
           ref="addRef"
           v-model="addForm.email"
           class="mail-address-input"
+          :style="{ '--domain-width': domainWidth }"
           :aria-label="$t('emailAccount')"
           :placeholder="$t(domainList.length ? 'loginEmailPrefix' : 'emailAccount')"
           autocomplete="off"
@@ -203,6 +204,12 @@ const emailStore = useEmailStore();
 const showAdd = ref(false)
 const addLoading = ref(false);
 const domainList = computed(() => settingStore.domainList)
+// 域名后缀按长度分配宽度（最多 60%），前缀输入框拿剩余宽度
+const domainWidth = computed(() => {
+  const longest = Math.max(0, ...domainList.value.map(domain => String(domain).length + 1))
+  // 单个域名时后缀按文字实际宽度收紧（auto），多个域名的下拉按最长域名留宽
+  return domainList.value.length > 1 ? `calc(${longest} * .6em + 40px)` : 'auto'
+})
 const accounts = reactive([])
 accountStore.mailboxes = accounts
 const noLoading = ref(false)

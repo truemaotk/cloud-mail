@@ -396,7 +396,7 @@ const handleDelete = () => {
   background-color: var(--mac-app);
 }
 .reader-surface {
-  --reader-gutter: 32px;
+  --reader-gutter: 24px;
   --reader-dock: 76px;
   position: relative;
   display: flex;
@@ -419,7 +419,7 @@ const handleDelete = () => {
   align-items: center;
   gap: 12px;
   min-height: var(--workspace-toolbar, 52px);
-  padding: 0 16px;
+  padding: 0 calc(var(--reader-gutter) - 8px);
   border-bottom: 1px solid var(--mac-line);
   background: var(--mac-chrome);
   overflow-x: auto;
@@ -434,7 +434,6 @@ const handleDelete = () => {
   --avatar-size: 40px;
   --avatar-gap: 12px;
   --message-indent: calc(var(--avatar-size) + var(--avatar-gap));
-  max-width: 980px;
   padding: 24px var(--reader-gutter) calc(var(--reader-dock) + 24px);
 }
 .subject-row, .reader-body, .email-msg, .att {
@@ -458,10 +457,10 @@ const handleDelete = () => {
 }
 .mailbox-label {
   flex: none;
-  margin-top: 4px;
+  margin-top: 5px;
   padding: 0 8px;
-  border-radius: 6px;
-  background: var(--mac-hover);
+  border-radius: var(--r-small);
+  background: var(--mac-selected);
   color: var(--mac-text-2);
   font-size: var(--mac-fs-caption);
   line-height: 20px;
@@ -520,10 +519,10 @@ const handleDelete = () => {
   align-items: center;
   gap: 4px;
   max-width: 100%;
-  min-height: 20px;
-  padding: 0 4px;
-  margin-inline-start: -4px;
-  border-radius: 5px;
+  min-height: 22px;
+  padding: 1px 6px;
+  margin-inline-start: -6px;
+  border-radius: var(--r-small);
   font-size: var(--mac-fs-caption);
   line-height: var(--mac-lh-caption);
   text-align: start;
@@ -552,6 +551,7 @@ const handleDelete = () => {
   transform: rotate(-90deg);
 }
 .envelope-panel { min-width: 300px; }
+.envelope-details dd strong { font-weight: 600; }
 .envelope-panel h3 {
   margin: 0;
   padding-block-end: 8px;
@@ -582,12 +582,14 @@ const handleDelete = () => {
   display: block;
   color: var(--mac-text-2);
 }
+/* 右侧操作按钮外缘与工具栏最右按钮外缘对齐 */
 .envelope-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 2px;
   margin-top: -6px;
+  margin-inline-end: -8px;
 }
 .envelope-actions .toolbar-button { color: var(--mac-text-2); }
 .email-date {
@@ -676,51 +678,44 @@ const handleDelete = () => {
   font-size: var(--mac-fs-caption);
   font-variant-numeric: tabular-nums;
 }
-/* 回复/转发：Gmail 式描边胶囊，放在左下的液态玻璃托盘里 */
+/* 回复/转发：Gmail 式胶囊，各自独立悬浮，左缘与正文对齐，间距宽松 */
 .reader-footer {
   position: absolute;
   z-index: 2;
   inset-inline-start: calc(var(--reader-gutter) + 52px);
-  inset-block-end: 18px;
+  inset-block-end: 20px;
   display: flex;
-  gap: 8px;
-  padding: 5px;
-  border-radius: 24px;
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-edge), var(--glass-shadow);
-  animation: mac-dock-in var(--mac-dur-4) var(--mac-spring) both;
+  gap: 12px;
+  pointer-events: none;
+  animation: mac-dock-in var(--mac-dur-3) var(--mac-ease-out) both;
 }
-@keyframes mac-dock-in { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .reader-footer { background: var(--glass-bg-solid); }
-}
+@keyframes mac-dock-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .reply-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 96px;
-  height: 36px;
-  padding-inline: 16px 18px;
-  border: 1px solid var(--mac-line-strong);
-  border-radius: 18px;
-  background: var(--mac-surface);
+  min-width: 104px;
+  height: 38px;
+  padding-inline: 18px 22px;
+  border-radius: 19px;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 1px var(--mac-line-strong), 0 4px 14px rgb(0 0 0 / 8%);
   color: var(--mac-text);
   font-size: var(--mac-fs-chrome);
   font-weight: 500;
   cursor: pointer;
+  pointer-events: auto;
   transition: background-color var(--mac-dur-1) ease, transform var(--mac-dur-1) var(--mac-ease), box-shadow var(--mac-dur-1) ease;
   &:hover {
-    background: color-mix(in srgb, var(--mac-surface) 94%, var(--mac-text));
+    background: color-mix(in srgb, var(--mac-surface) 92%, var(--mac-text));
   }
-  &:active { transform: scale(.96); }
-  &:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
+  &:active { transform: scale(.97); }
+  &:focus-visible { outline: none; box-shadow: var(--glass-edge), 0 0 0 1px var(--mac-focus), var(--mac-focus-ring); }
 }
-@media (max-width: 1280px) {
-  .reader-surface { --reader-gutter: 24px; }
-}
+
 @media (max-width: 620px) {
   .box {
     padding: 4px 6px 0;
