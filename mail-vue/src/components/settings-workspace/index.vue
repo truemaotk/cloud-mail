@@ -52,8 +52,8 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
   gap: 16px;
   height: 100%;
   min-height: 0;
-  padding-block: var(--mail-shell-gutter);
-  background: var(--mail-shell-rail);
+  padding-block: 12px var(--mail-shell-gutter);
+  background: transparent;
 }
 
 .settings-index {
@@ -62,15 +62,16 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
   gap: 3px;
   min-width: 0;
   padding: 8px;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: var(--mail-radius-card);
-  background: var(--el-bg-color);
+  border: 1px solid var(--mac-line);
+  border-radius: var(--mail-radius-surface);
+  background: var(--mac-surface);
 }
 
 .settings-index > p {
-  padding: 7px 8px 5px;
-  color: var(--mail-shell-muted);
-  font-size: 12px;
+  padding: 4px 8px;
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-caption);
+  line-height: var(--mac-lh-caption);
   font-weight: 600;
 }
 
@@ -79,11 +80,12 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
-  padding: 7px 9px;
+  min-height: 32px;
+  padding: 4px 8px;
   border-radius: var(--mail-radius-control);
-  color: var(--mail-shell-muted);
-  font-size: 13px;
+  color: var(--mac-text);
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
   text-decoration: none;
 }
 
@@ -91,25 +93,21 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
   flex: 0 0 16px;
   width: 16px;
   height: 16px;
+  color: var(--mac-text-2);
 }
 
-.section-link:hover,
+.section-link:hover { background: var(--mac-hover); }
+
 .section-link[aria-current='page'] {
-  color: var(--el-text-color-primary);
-  background: var(--mail-shell-hover);
+  color: var(--mac-selected-text);
+  background: var(--mac-selected);
 }
 
-.section-link[aria-current='page']::before {
-  position: absolute;
-  inset: 8px auto 8px 0;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--mail-shell-marker);
-  content: '';
-}
+.section-link[aria-current='page'] svg { color: var(--mac-accent); }
+:global(html.dark) .section-link[aria-current='page'] svg { color: var(--mac-link); }
 
 .section-link:focus-visible {
-  outline: 2px solid var(--mail-shell-muted);
+  outline: 2px solid var(--mac-focus);
   outline-offset: -2px;
 }
 
@@ -117,14 +115,14 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: var(--mail-radius-card);
-  background: var(--el-bg-color);
+  border: 1px solid var(--mac-line);
+  border-radius: var(--mail-radius-surface);
+  background: var(--mac-surface);
 }
 
 .section-heading,
 .section-body {
-  padding: 20px clamp(16px, 2.4vw, 32px);
+  padding: 20px 24px;
 }
 
 .section-body {
@@ -133,19 +131,21 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
 }
 
 .section-heading {
-  border-bottom: 1px solid var(--mail-shell-line);
+  border-bottom: 1px solid var(--mac-line);
+  background: var(--mac-chrome);
 }
 
 .section-heading h2 {
-  font-size: 23px;
-  line-height: 1.25;
-  font-weight: 650;
+  font-size: var(--mac-fs-title);
+  line-height: var(--mac-lh-title);
+  font-weight: 600;
 }
 
 .section-heading p {
-  margin-top: 5px;
-  color: var(--mail-shell-muted);
-  font-size: 13px;
+  margin-top: 4px;
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
 }
 
 @media (max-width: 720px) {

@@ -23,18 +23,20 @@ html, body {
 }
 
 .el-table thead th {
-    font-weight: bold !important;
+    font-weight: 600 !important;
 }
 
 body {
-    font-family: Inter, "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-    line-height: 1.5;
+    font-family: var(--mac-font);
+    line-height: var(--mac-lh-body);
     color: var(--el-text-color-primary);
-    font-size: 14px;
+    font-size: var(--mac-fs-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 html, body {
-    background: var(--el-bg-color);
+    background: var(--mac-app);
 }
 
 ul, ol {
@@ -59,8 +61,8 @@ button, input, select, textarea {
     outline: none;
 }
 
-:where(.layout, #login-box) :where(a, button):focus-visible {
-    outline: 2px solid var(--el-text-color-secondary);
+:where(.layout, #login-box, .el-popper, .el-overlay) :where(a, button, [tabindex]):focus-visible {
+    outline: 2px solid var(--mac-focus);
     outline-offset: 2px;
 }
 
@@ -116,61 +118,131 @@ button, input, select, textarea {
     max-height: 220px !important;
 }
 
-html:root {
-    --el-component-size: 36px;
-    --el-component-size-small: 28px;
+/*
+ * macOS Mail 风格语义色（参考 macOS Sequoia 15「邮件」）。
+ * 只在这里定义原始色值，其余样式一律引用 --mac-* 变量。
+ * 对比度调整记录：
+ *   - 占位文字 #6E727C / #9A9EA7：与列表背景对比度 ≥ 4.5:1（Element Plus 默认 #A8ABB2 只有 2.3:1）。
+ *   - 禁用文字保持低对比，属 WCAG 豁免范围。
+ *   - 深色未读标记用链接蓝 #64A9FF，与 #26272B 对比 6.6:1。
+ */
+html:root, html:root.dark {
+    color-scheme: light;
+    --mac-app: #F4F5F7;
+    --mac-sidebar: #EEF0F3;
+    --mac-surface: #FFFFFF;
+    --mac-chrome: #FAFAFC;
+    --mac-line: #DDE0E5;
+    --mac-text: #1D1D1F;
+    --mac-text-2: #555963;
+    --mac-text-3: #6E727C;
+    --mac-hover: #E8EAF0;
+    --mac-selected: #DCEAFF;
+    --mac-selected-text: #003D86;
+    --mac-link: #005FC4;
+    --mac-focus: #007AFF;
+    --mac-accent: #005FC4;
+    --mac-accent-hover: #0A6CD4;
+    --mac-accent-text: #FFFFFF;
+    --mac-star: #E0A100;
+    --mac-success: #1E7F3C;
+    --mac-danger: #C4291C;
+    --mac-warning: #9A5B00;
+    --mac-badge: #D9DCE2;
+    --mac-badge-text: #3A3D44;
+    --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 6%), 0 8px 24px rgb(0 0 0 / 12%), 0 2px 6px rgb(0 0 0 / 6%);
+    --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 8%), 0 18px 48px rgb(0 0 0 / 18%), 0 4px 12px rgb(0 0 0 / 8%);
+    --mac-sidebar-glass: rgb(238 240 243 / 86%);
+
+    /* 字体与字号（CSS 像素） */
+    --mac-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", "Microsoft YaHei UI",
+        "Microsoft YaHei", "Hiragino Sans GB", system-ui, sans-serif;
+    --mac-fs-caption: 12px; --mac-lh-caption: 16px;
+    --mac-fs-chrome: 13px;  --mac-lh-chrome: 18px;
+    --mac-fs-body: 14px;    --mac-lh-body: 20px;
+    --mac-fs-reading: 15px; --mac-lh-reading: 24px;
+    --mac-fs-title: 20px;   --mac-lh-title: 28px;
+
+    /* 间距、尺寸、圆角 */
+    --mac-space-1: 4px; --mac-space-2: 8px; --mac-space-3: 12px; --mac-space-4: 16px;
+    --mac-space-5: 20px; --mac-space-6: 24px; --mac-space-8: 32px;
+    --mac-toolbar: 56px;
+    --mac-pane-bar: 52px;
+    --mac-hit: 32px;
+    --mac-icon: 17px;
+
+    --el-component-size: 32px;
+    --el-component-size-small: 26px;
     --mail-radius-control: 8px;
     --mail-radius-close: 6px;
     --mail-radius-card: 12px;
-    --mail-radius-menu: 14px;
+    --mail-radius-menu: 12px;
     --mail-radius-dialog: 16px;
-    --mail-radius-surface: 18px;
+    --mail-radius-surface: 14px;
     --el-border-radius-base: var(--mail-radius-control);
-    --mail-primary-text: #fff;
+    --el-border-radius-small: 6px;
+    --el-font-family: var(--mac-font);
+    --el-font-size-base: 14px;
+
+    --mail-primary-text: var(--mac-accent-text);
     --mail-primary-tint: #fff;
-    --el-color-primary: #252525;
-    --el-color-primary-rgb: 37, 37, 37;
-    --el-color-primary-dark-2: #171717;
-    --el-color-primary-light-3: color-mix(in srgb, var(--el-color-primary) 82%, var(--mail-primary-tint));
-    --el-color-primary-light-5: color-mix(in srgb, var(--el-color-primary) 50%, var(--mail-primary-tint));
-    --el-color-primary-light-7: color-mix(in srgb, var(--el-color-primary) 30%, var(--mail-primary-tint));
-    --el-color-primary-light-8: color-mix(in srgb, var(--el-color-primary) 20%, var(--mail-primary-tint));
-    --el-color-primary-light-9: color-mix(in srgb, var(--el-color-primary) 8%, var(--mail-primary-tint));
+    --el-color-primary: var(--mac-accent);
+    --el-color-primary-rgb: 0, 95, 196;
+    --el-color-primary-dark-2: #004EA3;
+    --el-color-primary-light-3: color-mix(in srgb, var(--mac-accent) 75%, var(--mail-primary-tint));
+    --el-color-primary-light-5: color-mix(in srgb, var(--mac-accent) 50%, var(--mail-primary-tint));
+    --el-color-primary-light-7: color-mix(in srgb, var(--mac-accent) 30%, var(--mail-primary-tint));
+    --el-color-primary-light-8: color-mix(in srgb, var(--mac-accent) 18%, var(--mail-primary-tint));
+    --el-color-primary-light-9: color-mix(in srgb, var(--mac-accent) 8%, var(--mail-primary-tint));
+    --el-color-success: var(--mac-success);
+    --el-color-danger: var(--mac-danger);
+    --el-color-error: var(--mac-danger);
+    --el-color-warning: var(--mac-star);
 
-    --el-text-color-primary: #252525;
-    --el-text-color-secondary: #666;
-    --el-border-color: #d8d8d8;
-    --el-border-color-light: #e4e4e4;
-    --el-border-color-lighter: #ededed;
-    --el-fill-color: #f0f0f0;
-    --el-fill-color-light: #f5f5f5;
-    --el-fill-color-lighter: #fafafa;
+    --el-bg-color: var(--mac-surface);
+    --el-bg-color-page: var(--mac-app);
+    --el-bg-color-overlay: var(--mac-chrome);
+    --el-text-color-primary: var(--mac-text);
+    --el-text-color-regular: var(--mac-text);
+    --el-text-color-secondary: var(--mac-text-2);
+    --el-text-color-placeholder: var(--mac-text-3);
+    --el-border-color: var(--mac-line);
+    --el-border-color-light: var(--mac-line);
+    --el-border-color-lighter: color-mix(in srgb, var(--mac-line) 70%, var(--mac-surface));
+    --el-border-color-extra-light: color-mix(in srgb, var(--mac-line) 45%, var(--mac-surface));
+    --el-fill-color: var(--mac-hover);
+    --el-fill-color-light: color-mix(in srgb, var(--mac-hover) 60%, var(--mac-surface));
+    --el-fill-color-lighter: var(--mac-chrome);
+    --el-fill-color-blank: var(--mac-surface);
+    --el-box-shadow-light: var(--mac-shadow-pop);
+    --el-box-shadow: var(--mac-shadow-pop);
+    --el-mask-color: rgb(255 255 255 / 80%);
+    --el-overlay-color-lighter: rgb(0 0 0 / 28%);
 
-    --extra-light-fill: #fafafa;
-    --settings-page-background: #fafafa;
-    --light-ill: #f5f5f5;
-    --light-border: #e4e4e4;
-    --header-actions-border: inset 0 -1px 0 0 var(--el-border-color-lighter);
-    --aside-backgound: #191A23;
-    --aside-menu-active-background: #27282D;
-    --loadding-background: rgba(255, 255, 255, 0.8);
-    --dark-border: #d0d0d0;
-    --base-fill: #f0f0f0;
-    --regular-text-color: #595959;
-    --light-border-color: #e6e6e6;
-    --aside-right-border: 3px 0 5px rgba(0, 21, 41, .35);
-    --choose-account-background: var(--el-color-primary-light-8);
-    --el-text-color-regular: var(--el-text-color-primary);
-    --email-scroll-content-color: #666;
-    --search-hit-background: #dedede;
-    --email-hover-background: #f7f7f7;
-    --email-right-click-background: #ededed;
+    --extra-light-fill: var(--mac-chrome);
+    --settings-page-background: var(--mac-app);
+    --light-ill: var(--mac-hover);
+    --light-border: var(--mac-line);
+    --header-actions-border: inset 0 -1px 0 0 var(--mac-line);
+    --aside-backgound: var(--mac-sidebar);
+    --aside-menu-active-background: var(--mac-selected);
+    --loadding-background: rgb(255 255 255 / 80%);
+    --dark-border: #C5C9D0;
+    --base-fill: var(--mac-hover);
+    --regular-text-color: var(--mac-text-2);
+    --light-border-color: var(--mac-line);
+    --aside-right-border: none;
+    --choose-account-background: var(--mac-selected);
+    --email-scroll-content-color: var(--mac-text-2);
+    --search-hit-background: #FFE8A3;
+    --email-hover-background: var(--mac-hover);
+    --email-right-click-background: var(--mac-hover);
     --login-border: none;
-    --form-desc-color: #71717a;
-    --login-switch-color: #006be6;
+    --form-desc-color: var(--mac-text-2);
+    --login-switch-color: var(--mac-link);
     --scrollbar-track-color: #A8ABB2;
-    --base-border-color: #DCDFE6;
-    --secondary-text-color: #909399;
+    --base-border-color: var(--mac-line);
+    --secondary-text-color: var(--mac-text-2);
     --message-block-color: rgba(0, 0, 0, 0);
     --loading-hide-transition: all 200ms;
     --vt-x: 50%;
@@ -180,44 +252,43 @@ html:root {
 }
 
 html:root.dark {
-    --mail-primary-text: #202020;
-    --mail-primary-tint: #171717;
-    --el-color-primary: #ededed;
-    --el-color-primary-rgb: 237, 237, 237;
-    --el-color-primary-dark-2: #fff;
-    --el-text-color-primary: #ededed;
-    --el-text-color-secondary: #b4b4b4;
-    --el-border-color-light: #353535;
-    --el-border-color-lighter: #2e2e2e;
-    --el-fill-color: #292929;
-    --el-fill-color-light: #242424;
-    --el-fill-color-lighter: #1d1d1d;
-    --extra-light-fill: #191919;
-    --settings-page-background: var(--extra-light-fill);
-    --light-ill: #262727;
-    --light-border: #414243;
-    --aside-backgound: #141414;
-    --aside-menu-active-background: rgba(255, 255, 255, 0.08);
-    --header-actions-border: inset 0 -1px 0 0 var(--el-border-color-lighter);
-    --loadding-background: rgba(0, 0, 0, 0.3);
-    --dark-border: #636466;
-    --base-fill: #303030;
-    --regular-text-color: #bfbdbc;
-    --light-border-color: #414243;
-    --aside-right-border: 3px 0 5px #0A0A0A;
-    --choose-account-background: #39393A;
-    --email-scroll-content-color: #b4b4b4;
-    --search-hit-background: #484848;
-    --email-hover-background: #242424;
-    --email-right-click-background: #303030;
-    --login-border: none;
-    --form-desc-color: #8D9095;
-    --login-switch-color: rgb(102, 177, 255);
-    --scrollbar-track-color: #8D9095;
-    --base-border-color: #4C4D4F;
-    --secondary-text-color: #A3A6AD;
+    color-scheme: dark;
+    --mac-app: #1B1C1F;
+    --mac-sidebar: #232428;
+    --mac-surface: #26272B;
+    --mac-chrome: #2D2E33;
+    --mac-line: #3E4047;
+    --mac-text: #F5F5F7;
+    --mac-text-2: #B2B5BD;
+    --mac-text-3: #9A9EA7;
+    --mac-hover: #34363D;
+    --mac-selected: #203D61;
+    --mac-selected-text: #D4E7FF;
+    --mac-link: #64A9FF;
+    --mac-focus: #64A9FF;
+    --mac-accent: #0A64D9;
+    --mac-accent-hover: #2375E3;
+    --mac-accent-text: #FFFFFF;
+    --mac-star: #F2C14E;
+    --mac-success: #4CC27A;
+    --mac-danger: #FF6B5E;
+    --mac-warning: #F2C14E;
+    --mac-badge: #44464E;
+    --mac-badge-text: #E8E9EC;
+    --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 50%), 0 8px 24px rgb(0 0 0 / 40%), inset 0 0 0 .5px rgb(255 255 255 / 8%);
+    --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 60%), 0 18px 48px rgb(0 0 0 / 50%), inset 0 0 0 .5px rgb(255 255 255 / 10%);
+    --mac-sidebar-glass: rgb(35 36 40 / 88%);
+
+    --mail-primary-tint: var(--mac-surface);
+    --el-color-primary-rgb: 10, 100, 217;
+    --el-color-primary-dark-2: #2B7BE6;
+    --el-mask-color: rgb(0 0 0 / 50%);
+    --el-overlay-color-lighter: rgb(0 0 0 / 50%);
+    --loadding-background: rgb(0 0 0 / 30%);
+    --dark-border: #5A5D66;
+    --search-hit-background: #5C4A12;
     --message-block-color: rgba(30, 30, 30, 0.2);
-    --el-border-color: #414243 !important;
+    --scrollbar-track-color: #8D9095;
 }
 
 .el-button.el-button--primary:not(:where(.is-plain, .is-text, .is-link)) {
@@ -295,16 +366,8 @@ html:root.dark {
 }
 
 .el-dialog.mailbox-form-dialog {
-    aspect-ratio: 1.618;
     display: flex;
     flex-direction: column;
-}
-
-.mailbox-form-dialog .el-dialog__body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
 }
 
 .el-dialog.mailbox-add-dialog {
@@ -396,7 +459,7 @@ html:root.dark {
 
 .page-skeleton {
     align-self: flex-start;
-    padding: var(--mail-shell-gutter);
+    padding: 12px 0 var(--mail-shell-gutter);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -563,26 +626,25 @@ html:root.dark {
     flex-wrap: wrap;
     gap: 6px;
     min-height: var(--mail-shell-toolbar);
-    padding: 5px var(--mail-shell-gutter);
-    border-bottom: 1px solid var(--mail-shell-line);
-    background: var(--el-bg-color);
+    padding: 6px var(--mail-shell-gutter);
+    border-bottom: 1px solid var(--mac-line);
+    background: var(--mac-chrome);
 }
 
 .mail-admin-page {
-    --mail-panel-outset: min(8px, calc(var(--mail-shell-gutter) / 2));
+    --mail-panel-outset: 0px;
     display: flex;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    margin-inline: calc(-1 * var(--mail-panel-outset));
     padding-block: 12px var(--mail-shell-gutter);
 }
 
 .mail-table-panel,
 .el-table.mail-inset-table {
-    border: 1px solid var(--el-border-color-light);
-    border-radius: var(--mail-radius-card);
-    background: var(--el-bg-color);
+    border: 1px solid var(--mac-line);
+    border-radius: var(--mail-radius-surface);
+    background: var(--mac-surface);
 }
 
 .mail-table-panel {
@@ -595,12 +657,9 @@ html:root.dark {
 .mail-table-panel > .mail-toolbar {
     flex-shrink: 0;
     gap: 8px;
-    padding: 9px max(12px, var(--mail-panel-outset));
-    padding-inline-start: calc(var(--mail-panel-outset) - 1px);
-}
-
-.mail-table-panel > .mail-toolbar > .el-button:first-child {
-    padding-inline-start: calc(var(--mail-shell-control) / 2 - 9px);
+    min-height: var(--mac-pane-bar);
+    padding: 10px 16px;
+    background: var(--mac-chrome);
 }
 
 .mail-table-panel-body {
@@ -636,14 +695,12 @@ html:root.dark {
 .toolbar-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
 }
 
 .toolbar-group + .toolbar-group {
-    margin-inline-start: 4px;
-    padding-inline-start: 10px;
-    border-inline-start: 1px solid var(--mail-shell-line);
+    margin-inline-start: 8px;
 }
 
 .toolbar-button {
@@ -655,24 +712,34 @@ html:root.dark {
     border: 0;
     border-radius: var(--mail-radius-control);
     background: transparent;
-    color: var(--mail-shell-muted, var(--el-text-color-secondary));
+    color: var(--mac-text-2);
     cursor: pointer;
     transition: background-color 140ms ease, color 140ms ease;
 }
 
+.toolbar-button > svg {
+    width: var(--mac-icon);
+    height: var(--mac-icon);
+}
+
 .toolbar-button:hover:not(:disabled) {
-    background: var(--mail-shell-hover, var(--el-fill-color));
-    color: var(--el-text-color-primary);
+    background: var(--mac-hover);
+    color: var(--mac-text);
+}
+
+.toolbar-button:active:not(:disabled) {
+    background: color-mix(in srgb, var(--mac-hover) 70%, var(--mac-line));
 }
 
 .toolbar-button:focus-visible {
-    outline: 2px solid var(--el-text-color-secondary);
+    outline: 2px solid var(--mac-focus);
     outline-offset: -2px;
 }
 
 .toolbar-button:disabled {
     color: var(--el-text-color-disabled);
-    cursor: not-allowed;
+    opacity: .55;
+    cursor: default;
 }
 
 .el-select .el-select__caret:not(.el-select__clear),
@@ -796,4 +863,175 @@ html[data-theme-to="light"]::view-transition-old(root) {
 @keyframes vt-radial-out {
     from { clip-path: circle(var(--vt-end-radius, 0px) at var(--vt-x) var(--vt-y)); }
     to   { clip-path: circle(0px at var(--vt-x) var(--vt-y)); }
+}
+
+
+/* ===== macOS 控件统一（Element Plus） ===== */
+.el-checkbox.el-checkbox {
+    --el-checkbox-border-radius: 4px;
+    --el-checkbox-input-height: 16px;
+    --el-checkbox-input-width: 16px;
+    --el-checkbox-input-border: 1px solid #A9AEB8;
+    --el-checkbox-bg-color: var(--mac-surface);
+    --el-checkbox-checked-bg-color: var(--mac-accent);
+    --el-checkbox-checked-input-border-color: var(--mac-accent);
+    --el-checkbox-font-size: var(--mac-fs-chrome);
+}
+html.dark .el-checkbox { --el-checkbox-input-border: 1px solid #6B6F78; }
+.el-checkbox__inner::after { left: 5px; top: 2px; }
+.el-checkbox__input.is-focus .el-checkbox__inner,
+.el-checkbox__original:focus-visible + .el-checkbox__inner { outline: 2px solid var(--mac-focus); outline-offset: 1px; }
+
+.el-button.el-button {
+    --el-button-font-weight: 500;
+    font-size: var(--mac-fs-chrome);
+}
+.el-button:not(.is-text, .is-link, .is-circle) { padding-inline: 12px; }
+.el-button:not(.el-button--primary, .el-button--danger, .el-button--success, .el-button--warning, .is-text, .is-link) {
+    --el-button-bg-color: var(--mac-surface);
+    --el-button-border-color: var(--mac-line);
+    --el-button-hover-bg-color: var(--mac-hover);
+    --el-button-hover-border-color: var(--mac-line);
+    --el-button-hover-text-color: var(--mac-text);
+    --el-button-active-bg-color: var(--mac-hover);
+    --el-button-active-border-color: color-mix(in srgb, var(--mac-line) 60%, var(--mac-text-2));
+    --el-button-text-color: var(--mac-text);
+    box-shadow: 0 .5px 1px rgb(0 0 0 / 6%);
+}
+.el-button--primary:not(.is-plain, .is-text, .is-link) {
+    --el-button-bg-color: var(--mac-accent);
+    --el-button-border-color: var(--mac-accent);
+    --el-button-hover-bg-color: var(--mac-accent-hover);
+    --el-button-hover-border-color: var(--mac-accent-hover);
+    --el-button-active-bg-color: var(--el-color-primary-dark-2);
+    --el-button-active-border-color: var(--el-color-primary-dark-2);
+}
+.el-button:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: 2px; }
+
+:is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number):is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number) {
+    --el-input-bg-color: var(--mac-surface);
+    --el-input-border-color: var(--mac-line);
+    --el-input-hover-border-color: color-mix(in srgb, var(--mac-line) 55%, var(--mac-text-2));
+    --el-input-focus-border-color: var(--mac-focus);
+    --el-select-input-focus-border-color: var(--mac-focus);
+    --el-input-placeholder-color: var(--mac-text-3);
+    --el-input-border-radius: var(--mail-radius-control);
+    font-size: var(--mac-fs-body);
+}
+.el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-textarea__inner:focus {
+    box-shadow: 0 0 0 1px var(--mac-focus) inset, 0 0 0 3px color-mix(in srgb, var(--mac-focus) 20%, transparent) !important;
+}
+.el-switch.el-switch { --el-switch-on-color: var(--mac-accent); --el-switch-off-color: #C9CDD4; }
+html.dark .el-switch { --el-switch-off-color: #4A4D55; }
+.el-radio { --el-radio-input-border-color-hover: var(--mac-accent); }
+.el-tag.el-tag { --el-tag-border-radius: 6px; }
+.el-segmented.el-segmented {
+    --el-segmented-bg-color: var(--mac-hover);
+    --el-segmented-item-selected-bg-color: var(--mac-surface);
+    --el-segmented-item-selected-color: var(--mac-text);
+    --el-segmented-item-hover-bg-color: color-mix(in srgb, var(--mac-hover) 60%, var(--mac-surface));
+    --el-segmented-color: var(--mac-text-2);
+    --el-border-radius-base: 8px;
+    padding: 2px;
+}
+.el-segmented__item-selected { box-shadow: 0 0 0 .5px var(--mac-line), 0 1px 2px rgb(0 0 0 / 10%); }
+.el-tabs { --el-tabs-header-height: 36px; }
+
+/* 链接色 */
+.layout a:not([class]), .el-link.el-link--primary { color: var(--mac-link); }
+
+/* 弹窗：居中、16px 圆角、内容过高时只滚动正文 */
+.el-overlay { background-color: var(--el-overlay-color-lighter); }
+.el-dialog.el-dialog, .el-message-box.el-message-box {
+    --el-dialog-bg-color: var(--mac-chrome);
+    --el-messagebox-border-radius: var(--mail-radius-dialog);
+    --el-dialog-padding-primary: 20px;
+    --el-dialog-title-font-size: 15px;
+    background: var(--mac-chrome);
+    border: 1px solid var(--mac-line);
+    box-shadow: var(--mac-shadow-window);
+}
+.el-overlay-dialog > .el-dialog:not(.is-fullscreen) {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 32px);
+}
+.el-dialog:not(.is-fullscreen) > .el-dialog__header,
+.el-dialog:not(.is-fullscreen) > .el-dialog__footer { flex: none; }
+.el-dialog:not(.is-fullscreen) > .el-dialog__body {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+.el-dialog__header { padding-bottom: 12px; padding-inline-end: 48px; }
+.el-dialog__title, .el-message-box__title { color: var(--mac-text); font-weight: 600; line-height: 22px; }
+.el-dialog__footer { padding-top: 16px; }
+.el-message-box { padding: 20px; }
+.el-message-box__message { color: var(--mac-text-2); }
+:is(.el-dialog .el-dialog__headerbtn, .el-message-box .el-message-box__headerbtn) { top: 12px; right: 12px; width: 28px; height: 28px; }
+
+/* 浮层：贴着触发器，统一边框、圆角、阴影 */
+.el-popper.is-light, .el-dropdown__popper.el-popper, .el-select__popper.el-popper, .el-picker__popper.el-popper,
+.el-popover.el-popper {
+    --el-popover-bg-color: var(--mac-chrome);
+    --el-bg-color-overlay: var(--mac-chrome);
+    border: 1px solid var(--mac-line) !important;
+    border-radius: var(--mail-radius-menu);
+    background: var(--mac-chrome);
+    box-shadow: var(--mac-shadow-pop) !important;
+}
+.el-popper.is-dark { border-radius: 6px; font-size: var(--mac-fs-caption); line-height: var(--mac-lh-caption); padding: 4px 8px; }
+.el-dropdown-menu, .el-select-dropdown { background: var(--mac-chrome); }
+.el-dropdown__popper .el-dropdown-menu__item:not(.is-disabled):is(:hover, :focus),
+.el-select__popper .el-select-dropdown__item.is-hovering:not(.is-disabled) {
+    background: var(--mac-accent);
+    color: var(--mac-accent-text);
+}
+.el-dropdown__popper .el-dropdown-menu__item:not(.is-disabled):is(:hover, :focus) svg { color: inherit; }
+.el-dropdown-menu__item--divided { border-top-color: var(--mac-line); }
+.el-message.el-message {
+    --el-message-bg-color: var(--mac-chrome);
+    --el-message-border-color: var(--mac-line);
+    border-radius: 10px;
+    box-shadow: var(--mac-shadow-pop);
+}
+
+/* 表格与分页：同一套边界与留白 */
+.el-table.el-table {
+    --el-table-border-color: var(--mac-line);
+    --el-table-header-bg-color: var(--mac-chrome);
+    --el-table-header-text-color: var(--mac-text-2);
+    --el-table-row-hover-bg-color: var(--mac-hover);
+    --el-table-text-color: var(--mac-text);
+    --el-table-bg-color: var(--mac-surface);
+    --el-table-tr-bg-color: var(--mac-surface);
+    font-size: var(--mac-fs-chrome);
+}
+.el-table th.el-table__cell { font-size: var(--mac-fs-caption); }
+.el-pagination.el-pagination {
+    --el-pagination-bg-color: transparent;
+    --el-pagination-button-bg-color: transparent;
+    --el-pagination-hover-color: var(--mac-accent);
+    --el-pagination-font-size: var(--mac-fs-chrome);
+}
+.el-pagination.is-background .el-pager li.is-active:not(.is-disabled) { background: var(--mac-accent); }
+.el-pager li, .el-pagination button { font-variant-numeric: tabular-nums; }
+.el-card.el-card {
+    --el-card-bg-color: var(--mac-surface);
+    --el-card-border-color: var(--mac-line);
+    --el-card-padding: 20px;
+}
+.el-skeleton.el-skeleton { --el-skeleton-color: var(--mac-hover); --el-skeleton-to-color: color-mix(in srgb, var(--mac-hover) 50%, var(--mac-surface)); }
+
+/* 滚动条：细、圆、悬停加深 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: rgb(0 0 0 / 22%) padding-box; }
+html.dark ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 24%) padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+.el-scrollbar__thumb { background: rgb(0 0 0 / 35%); opacity: .6; }
+html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; }
 }

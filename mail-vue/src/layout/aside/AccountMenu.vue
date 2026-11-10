@@ -132,22 +132,29 @@ function clickLogout() {
   margin: 8px 12px 12px;
 }
 
+
 .account-menu :deep(.mail-profile-popper) {
   max-width: calc(100vw - 24px);
   padding: 0;
-  border-color: var(--mail-shell-line);
+  border-color: var(--mac-line);
   border-radius: var(--mail-radius-card) var(--mail-radius-card) 0 0;
-  background: var(--mail-shell-sidebar);
-  box-shadow: 0 -5px 15px rgb(0 0 0 / 8%);
+  background: var(--mac-surface);
+  box-shadow: 0 -6px 16px rgb(0 0 0 / 8%);
 }
 
-.account-menu.is-compact { margin-inline: 8px; }
-.is-compact :deep(.mail-profile-popper) { border-radius: var(--mail-radius-card); }
+.account-menu.is-compact { margin-inline: 12px; }
+.is-compact :deep(.mail-profile-popper) { border-radius: var(--mail-radius-menu); background: var(--mac-chrome); box-shadow: var(--mac-shadow-pop); }
 .is-compact .profile-trigger {
   grid-template-columns: 1fr;
   justify-items: center;
-  padding: 5px 0;
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
 }
+.is-compact .profile-trigger:hover { background: var(--mac-hover); }
+.is-compact .profile-avatar { width: 30px; height: 30px; }
 .is-compact :is(.profile-identity, .profile-chevron) { display: none; }
 
 .profile-trigger {
@@ -156,13 +163,13 @@ function clickLogout() {
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 50px;
-  padding: 7px 8px;
-  padding-inline-end: calc(var(--rail-trailing-inset) - 1px);
-  border: 1px solid transparent;
+  min-height: 48px;
+  padding: 6px 8px 6px 6px;
+  padding-inline-end: var(--rail-trailing-inset);
+  border: 1px solid var(--mac-line);
   border-radius: var(--mail-radius-card);
-  background: var(--mail-shell-hover);
-  color: var(--el-text-color-primary);
+  background: var(--mac-surface);
+  color: var(--mac-text);
   cursor: pointer;
   text-align: left;
   transition: background-color 140ms ease;
@@ -170,12 +177,7 @@ function clickLogout() {
 
 .profile-trigger:hover,
 .profile-trigger[aria-expanded='true'] {
-  background: var(--mail-shell-active);
-}
-
-.profile-trigger[aria-expanded='true'] {
-  border-color: var(--mail-shell-line);
-  background: var(--mail-shell-hover);
+  background: var(--mac-hover);
 }
 
 .account-menu:not(.is-compact) .profile-trigger[aria-expanded='true'] {
@@ -184,19 +186,20 @@ function clickLogout() {
 
 .profile-avatar {
   display: grid;
-  width: 33px;
-  height: 33px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: var(--mail-radius-control);
-  background: var(--el-bg-color);
+  border: 1px solid var(--mac-line);
+  border-radius: 8px;
+  background: var(--mac-chrome);
+  color: var(--mac-text-2);
 }
 
 .profile-identity {
   display: grid;
-  gap: 1px;
-  font-size: 12px;
-  line-height: 1.35;
+  min-width: 0;
+  font-size: var(--mac-fs-caption);
+  line-height: var(--mac-lh-caption);
 }
 
 .profile-identity strong,
@@ -208,17 +211,20 @@ function clickLogout() {
 }
 
 .profile-identity strong {
-  font-size: 13px;
-  font-weight: 650;
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
+  font-weight: 600;
 }
 
 .profile-identity span {
-  color: var(--mail-shell-muted);
-  font-size: 11.5px;
+  color: var(--mac-text-2);
 }
 
 .profile-chevron {
   justify-self: center;
+  width: 14px;
+  height: 14px;
+  color: var(--mac-text-2);
   transition: transform 150ms ease;
 }
 
@@ -263,7 +269,7 @@ function clickLogout() {
 }
 
 .profile-action:hover:not(:disabled) {
-  background: var(--mail-shell-active);
+  background: var(--mac-hover);
 }
 
 .profile-action:disabled {
@@ -273,7 +279,7 @@ function clickLogout() {
 
 .profile-trigger:focus-visible,
 .profile-panel :is(button, a):focus-visible {
-  outline: 2px solid var(--el-text-color-secondary);
+  outline: 2px solid var(--mac-focus);
   outline-offset: -2px;
 }
 

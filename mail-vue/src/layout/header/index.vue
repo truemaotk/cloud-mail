@@ -9,43 +9,30 @@
         aria-controls="mail-sidebar"
         @click="changeAside"
       />
-      <h1 class="breadcrumb-item" :class="{ 'workspace-title': folder }">{{ $t(route.meta.title) }}</h1>
+      <h1 class="breadcrumb-item">{{ $t(currentFolder ? currentFolder.label : route.meta.title) }}</h1>
     </div>
     <div v-perm="'email:send'" class="writer-box">
       <ToolbarButton icon="compose" :label="$t('compose')" @click="openSend" />
     </div>
-    <email-search
-      v-if="folder"
-      :store="searchStore"
-      :search-options="searchOptions"
-      :hide-dates="folder === 'all-mail'"
-      shortcut
-      @search="returnToList"
-      @reset="returnToList"
-    />
     <div v-if="currentFolder" class="workspace-tools">
-      <span class="workspace-folder">
-        <NavigationIcon :name="currentFolder.icon" :size="16" />
-        {{ $t(currentFolder.label) }}
-      </span>
-      <el-dropdown trigger="click" placement="bottom-end" :show-arrow="false" @command="setReadingLayout">
-        <button type="button" class="workspace-layout-button" :aria-label="$t('mailReadingLayout')">
-          <NavigationIcon :name="uiStore.wideReading ? 'mail' : 'panel-left'" :size="17" />
-          <span>{{ $t(uiStore.wideReading ? 'mailWideReading' : 'mailSplitReading') }}</span>
+      <div class="layout-switch" role="radiogroup" :aria-label="$t('mailReadingLayout')">
+        <button type="button" role="radio" class="layout-option" :aria-checked="!uiStore.wideReading"
+                :aria-label="$t('mailSplitReading')" :title="$t('mailSplitReading')" @click="setReadingLayout('split')">
+          <NavigationIcon name="columns" :size="16" />
         </button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="split">
-              <NavigationIcon :name="uiStore.wideReading ? 'panel-left' : 'mail-delivered'" :size="16" />
-              {{ $t('mailSplitReading') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="wide">
-              <NavigationIcon :name="uiStore.wideReading ? 'mail-delivered' : 'mail'" :size="16" />
-              {{ $t('mailWideReading') }}
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+        <button type="button" role="radio" class="layout-option" :aria-checked="uiStore.wideReading"
+                :aria-label="$t('mailWideReading')" :title="$t('mailWideReading')" @click="setReadingLayout('wide')">
+          <NavigationIcon name="rows" :size="16" />
+        </button>
+      </div>
+      <email-search
+        :store="searchStore"
+        :search-options="searchOptions"
+        :hide-dates="folder === 'all-mail'"
+        shortcut
+        @search="returnToList"
+        @reset="returnToList"
+      />
     </div>
   </div>
 </template>
@@ -116,11 +103,10 @@ function changeAside() {
 
 <style scoped>
 .header {
-  --header-gap: 12px;
   display: flex;
   align-items: center;
   height: 100%;
-  gap: var(--header-gap);
+  gap: 12px;
   padding-inline: var(--mail-shell-gutter);
   position: relative;
 }
@@ -128,14 +114,20 @@ function changeAside() {
 .header-btn {
   display: flex;
   align-items: center;
-  gap: var(--header-gap);
+  gap: 8px;
   min-width: 0;
+}
+
+.sidebar-toggle {
+  margin-inline-start: -6px;
 }
 
 .breadcrumb-item {
   color: var(--el-text-color-primary);
-  font-size: 16px;
-  font-weight: 650;
+  font-size: var(--mac-fs-title);
+  line-height: var(--mac-lh-title);
+  font-weight: 600;
+  letter-spacing: -.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -145,55 +137,55 @@ function changeAside() {
   display: none;
 }
 
-.workspace-header .workspace-title {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  clip-path: inset(50%);
-  overflow: hidden;
-  white-space: nowrap;
-}
 .workspace-tools {
   display: flex;
-  gap: 10px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  gap: 16px;
   align-items: center;
-  margin-inline-start: auto;
-  white-space: nowrap;
+  min-width: 0;
 }
-.workspace-folder,
-.workspace-layout-button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 9px;
-  color: var(--mail-shell-muted);
-  font-size: 13px;
-}
-.workspace-layout-button {
-  min-height: 36px;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: var(--mail-radius-control);
-  color: var(--el-text-color-primary);
-  cursor: pointer;
-}
-.workspace-layout-button:hover { background: var(--mail-shell-hover); }
 
-@media (max-width: 1024px) { .workspace-tools { display: none; } }
+.layout-switch {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--mac-line);
+  border-radius: var(--mail-radius-control);
+  background: var(--mac-chrome);
+}
+
+.layout-option {
+  display: grid;
+  width: 32px;
+  height: 26px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--mac-text-2);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.layout-option:hover { background: var(--mac-hover); color: var(--mac-text); }
+.layout-option[aria-checked='true'] {
+  background: var(--mac-surface);
+  color: var(--mac-accent);
+  box-shadow: 0 0 0 .5px var(--mac-line), 0 1px 2px rgb(0 0 0 / 8%);
+}
+.layout-option:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: 1px; }
+
+@media (max-width: 1024px) { .layout-switch { display: none; } }
 
 @media (max-width: 767px) {
-  .header {
-    --header-gap: 8px;
-  }
-
-  .header-btn {
-    flex: 1;
-  }
-
-  .writer-box {
-    display: flex;
-    flex-shrink: 0;
-  }
+  .header { gap: 8px; }
+  .header-btn { flex: 1; }
+  .writer-box { display: flex; flex-shrink: 0; }
   .workspace-header .header-btn { flex: none; }
+  .workspace-header .breadcrumb-item { display: none; }
+}
 
+@media (prefers-reduced-motion: reduce) {
+  .layout-option { transition: none; }
 }
 </style>

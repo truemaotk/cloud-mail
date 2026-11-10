@@ -187,8 +187,8 @@ watchEffect(() => {
 
   const dark = uiStore.dark
   const palette = dark
-    ? { ink: '#e7e7e7', muted: '#b2b2b2', line: '#3a3a3a', received: '#b2c3e0', sent: '#77b7a8', background: '#242424' }
-    : { ink: '#262626', muted: '#626262', line: '#ededed', received: '#354865', sent: '#548f81', background: '#fff' }
+    ? { ink: '#F5F5F7', muted: '#B2B5BD', line: '#3E4047', received: '#64A9FF', sent: '#8E96A3', background: '#26272B' }
+    : { ink: '#1D1D1F', muted: '#555963', line: '#DDE0E5', received: '#005FC4', sent: '#9AA1AD', background: '#FFFFFF' }
   const dateFormatter = new Intl.DateTimeFormat(locale.value, { month: 'short', day: 'numeric', timeZone: 'UTC' })
   const dates = rows => rows.map(({ date }) => dateFormatter.format(new Date(date + 'T00:00:00Z')))
   const chartOptions = (rows, top) => ({
@@ -264,7 +264,7 @@ onBeforeUnmount(() => {
   height: 100%;
   min-width: 0;
   margin-inline-end: calc(-1 * var(--mail-shell-gutter));
-  background: var(--el-bg-color);
+  background: transparent;
 }
 
 .analysis-scroll :deep(.el-scrollbar__wrap) {
@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
   container-type: inline-size;
   display: grid;
   gap: 16px;
-  padding-block: var(--mail-shell-gutter);
+  padding-block: 12px var(--mail-shell-gutter);
 }
 
 .analysis-placeholder { height: 112px; border-radius: var(--mail-radius-card); }
@@ -301,9 +301,10 @@ onBeforeUnmount(() => {
 }
 
 .analysis-heading h2 {
-  font-size: 24px;
-  font-weight: 680;
-  letter-spacing: -.02em;
+  font-size: var(--mac-fs-title);
+  line-height: var(--mac-lh-title);
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
 
 .analysis-heading p,
@@ -333,9 +334,9 @@ onBeforeUnmount(() => {
 .analysis-card,
 .analysis-state {
   min-width: 0;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: var(--mail-radius-card);
-  background: var(--el-bg-color);
+  border: 1px solid var(--mac-line);
+  border-radius: var(--mail-radius-surface);
+  background: var(--mac-surface);
 }
 
 .analysis-metric {

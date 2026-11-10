@@ -1,12 +1,11 @@
 <template>
   <section ref="workspace" class="mail-workspace"
-           :class="{ 'has-message': messageId, 'wide-reading': uiStore.wideReading }"
-           :style="{ '--list-width': listWidth ? listWidth + '%' : undefined }">
+           :class="{ 'has-message': messageId, 'wide-reading': uiStore.wideReading, 'split-reading': !uiStore.wideReading }"
+           :style="{ '--list-width': listWidth ? listWidth + 'px' : undefined }">
     <section class="message-list-pane" :aria-label="$t('mailReadingList')">
       <div class="message-list-toolbar">
         <el-checkbox v-model="allSelected" :indeterminate="!!selected.length && !allSelected"
                      :disabled="!rows.length" :aria-label="$t('selectAllMail')" />
-        <h2 v-if="messageId && !selected.length" class="list-folder">{{ $t(currentFolder.label) }}</h2>
         <span v-if="selected.length" class="list-range">{{ $t('mailSelected', { count: selected.length }) }}</span>
         <span v-else class="list-range" aria-live="polite">{{ range }}</span>
         <ToolbarButton v-if="selected.length && isDraft" icon="delete" :label="$t('mailDiscardDraft')"
@@ -17,10 +16,13 @@
                         :can-file="selectionCanFile"
                         @change="handleAction" />
         <template v-else-if="!selected.length">
+          <span class="toolbar-group">
           <ToolbarButton icon="chevron" class="page-back" :label="$t('mailPreviousPage')"
                          :disabled="offset === 0" @click="changePage(-1)" />
           <ToolbarButton icon="chevron" :label="$t('mailNextPage')"
                          :disabled="offset + pageSize >= total" @click="changePage(1)" />
+          </span>
+          <span class="toolbar-group">
           <el-dropdown v-if="isAdmin" trigger="click" placement="bottom-end" :show-arrow="false"
                        @command="handleAdminFilter">
             <ToolbarButton icon="filter" :label="$t('mailFilter')" />
@@ -50,13 +52,15 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <ToolbarButton icon="refresh" :label="$t('refreshMail')" :busy="refreshing" @click="refresh" />
+          </span>
         </template>
-        <ToolbarButton icon="refresh" :label="$t('refreshMail')" :busy="refreshing" @click="refresh" />
+        <ToolbarButton v-else icon="refresh" :label="$t('refreshMail')" :busy="refreshing" @click="refresh" />
       </div>
       <div class="message-resize" role="separator" tabindex="0" aria-orientation="vertical"
-           :aria-label="$t('mailResizeList')" :aria-valuenow="Math.round(listWidth || defaultWidth())" aria-valuemin="18" aria-valuemax="60"
+           :aria-label="$t('mailResizeList')" :aria-valuenow="Math.round(listWidth || defaultWidth())" :aria-valuemin="minListWidth" :aria-valuemax="maxListWidth"
            @pointerdown="beginResize" @pointermove="resizeList" @pointerup="finishResize" @pointercancel="finishResize"
-           @keydown.left.prevent="adjustWidth(-2)" @keydown.right.prevent="adjustWidth(2)" />
+           @keydown.left.prevent="adjustWidth(-16)" @keydown.right.prevent="adjustWidth(16)" @dblclick="resetWidth" />
       <el-scrollbar ref="listBody" class="message-list-body" :aria-busy="loading">
         <el-skeleton v-if="loading && !rows.length" animated aria-hidden="true">
           <template #template>
@@ -64,6 +68,7 @@
               <el-skeleton-item variant="text" class="placeholder-icon" />
               <el-skeleton-item variant="text" class="placeholder-sender" />
               <el-skeleton-item variant="text" class="placeholder-subject" />
+              <el-skeleton-item variant="text" class="placeholder-snippet" />
             </div>
           </template>
         </el-skeleton>
@@ -77,23 +82,26 @@
         </div>
         <div v-for="row in rows" :key="rowId(row)" class="message-row"
              :class="{ 'message-current': messageId === rowId(row), 'message-selected': selected.includes(rowId(row)), unread: isUnread(row), 'draft-row': isDraft }">
-          <el-checkbox :model-value="selected.includes(rowId(row))"
+          <el-checkbox class="row-check" :model-value="selected.includes(rowId(row))"
                        :aria-label="$t('selectMail', { subject: row.subject || $t('noSubject') })"
                        @change="toggleSelected(rowId(row), $event)" />
-          <ToolbarButton v-if="!isAdmin && !isDraft && folder !== 'trash'" class="row-star" :icon="row.isStar ? 'star-fill' : 'star'"
-                         :label="$t('star')" :aria-pressed="!!row.isStar"
-                         :disabled="starring.has(row.emailId)" @click="toggleStar(row)" />
-          <span v-else class="row-kind"><NavigationIcon :name="isAdmin ? 'mail' : currentFolder.icon" :size="16" /></span>
+          <span class="row-status">
+            <span class="unread-dot" :class="{ 'is-unread': isUnread(row) }" role="img"
+                  :aria-label="isUnread(row) ? $t('mailUnreadOnly') : undefined" :aria-hidden="isUnread(row) ? undefined : 'true'" />
+            <ToolbarButton v-if="!isAdmin && !isDraft && folder !== 'trash'" class="row-star" :icon="row.isStar ? 'star-fill' : 'star'"
+                           :label="$t('star')" :aria-pressed="!!row.isStar"
+                           :disabled="starring.has(row.emailId)" @click="toggleStar(row)" />
+            <span v-else class="row-kind"><NavigationIcon :name="isAdmin ? 'mail' : currentFolder.icon" :size="14" /></span>
+          </span>
           <button type="button" class="message-summary" :aria-current="messageId === rowId(row) ? 'true' : undefined"
                   @click="open(row)">
-            <span class="message-sender" :title="isDraft ? row.receiveEmail?.join(', ') : undefined">{{ sender(row) }}</span>
+            <span class="message-sender" :title="isDraft ? row.receiveEmail?.join(', ') : sender(row)">{{ sender(row) }}</span>
             <span class="message-copy">
-              <span class="message-subject">{{ row.subject || $t('noSubject') }}</span>
+              <span class="message-subject" :title="row.subject">{{ row.subject || $t('noSubject') }}</span>
               <span v-if="row.listText || row.text" class="message-snippet">{{ row.listText || row.text }}</span>
             </span>
             <time>{{ rowTime(row) }}</time>
           </button>
-          <span v-if="isUnread(row)" class="unread-dot" :aria-label="$t('mailUnreadOnly')" />
         </div>
       </el-scrollbar>
     </section>
@@ -101,7 +109,7 @@
     <section class="message-reading-pane" :aria-label="$t('mailReadingPane')" :aria-busy="!!messageId && !activeMessage">
       <MailReader v-if="activeMessage" :key="activeMessage.emailId" class="message-loaded" embedded @toggle-star="toggleStar(activeMessage)">
         <template #toolbar>
-          <ToolbarButton icon="back" :label="$t('goBack')" @click="closeReader" />
+          <ToolbarButton icon="back" class="reader-back" :label="$t('goBack')" @click="closeReader" />
           <MessageActions v-if="actionFolder" :folder="actionFolder" :ids="[activeMessage.emailId]"
                           :can-reply="canReply" :can-file="activeMessage.type === 0" reader
                           @change="handleAction" @reply="uiStore.writerRef.openReply(activeMessage)"
@@ -138,7 +146,7 @@
       </MailReader>
       <template v-else-if="messageId">
         <div class="reader-placeholder-toolbar">
-          <ToolbarButton icon="back" :label="$t('goBack')" @click="closeReader" />
+          <ToolbarButton icon="back" class="reader-back" :label="$t('goBack')" @click="closeReader" />
         </div>
         <el-skeleton class="reader-placeholder" animated aria-hidden="true">
           <template #template>
@@ -240,8 +248,10 @@ const total = ref(0)
 const offset = ref(0)
 const listBody = ref(null)
 const workspace = ref(null)
-const savedWidth = Number(localStorage.getItem('mail-list-width'))
-const listWidth = ref(savedWidth >= 18 && savedWidth <= 60 ? savedWidth : 0)
+const minListWidth = 280
+const maxListWidth = 560
+const savedWidth = Number(localStorage.getItem('mail-list-px'))
+const listWidth = ref(savedWidth >= minListWidth && savedWidth <= maxListWidth ? savedWidth : 0)
 let resizePointer
 const pageSize = 25
 let listVersion = 0
@@ -249,7 +259,7 @@ let readerVersion = 0
 let timer
 let wakeTimer
 
-const range = computed(() => t(messageId.value ? 'mailListShortRange' : 'mailListRange', {
+const range = computed(() => t(messageId.value || !uiStore.wideReading ? 'mailListShortRange' : 'mailListRange', {
   first: total.value ? offset.value + 1 : 0, last: Math.min(total.value, offset.value + pageSize), total: total.value,
 }))
 const allSelected = computed({
@@ -394,12 +404,22 @@ function setUnreadOnly(value) {
 }
 
 function defaultWidth() {
-  return workspace.value ? Math.min(60, Math.max(18, 36000 / workspace.value.clientWidth)) : 22
+  return 352
+}
+
+function clampWidth(value) {
+  const available = workspace.value ? workspace.value.clientWidth - 360 : maxListWidth
+  return Math.round(Math.min(maxListWidth, Math.max(minListWidth, Math.min(available, value))))
 }
 
 function adjustWidth(delta) {
-  listWidth.value = Math.min(60, Math.max(18, (listWidth.value || defaultWidth()) + delta))
-  localStorage.setItem('mail-list-width', String(listWidth.value))
+  listWidth.value = clampWidth((listWidth.value || defaultWidth()) + delta)
+  localStorage.setItem('mail-list-px', String(listWidth.value))
+}
+
+function resetWidth() {
+  listWidth.value = 0
+  localStorage.removeItem('mail-list-px')
 }
 
 function beginResize(event) {
@@ -412,13 +432,13 @@ function beginResize(event) {
 function resizeList(event) {
   if (event.pointerId !== resizePointer) return
   const rect = workspace.value.getBoundingClientRect()
-  listWidth.value = Math.min(60, Math.max(18, (event.clientX - rect.left) * 100 / rect.width))
+  listWidth.value = clampWidth(event.clientX - rect.left)
 }
 
 function finishResize(event) {
   if (event.pointerId !== resizePointer) return
   resizePointer = undefined
-  localStorage.setItem('mail-list-width', String(listWidth.value))
+  if (listWidth.value) localStorage.setItem('mail-list-px', String(listWidth.value))
 }
 
 watch([() => props.folder, () => isAdmin.value ? null : accountStore.currentAccountId,
@@ -597,193 +617,251 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/*
+ * 三栏：侧栏 232px（布局层）/ 列表 352px / 阅读区。
+ * 行内对齐线（列表左缘起）：复选框 12px，状态列 36px，文本 62px，日期右对齐 16px。
+ */
 .mail-workspace {
+  --row-pad-start: 12px;
+  --row-pad-end: 16px;
+  --row-check: 16px;
+  --row-status: 18px;
+  --row-gap: 8px;
+  --row-text-start: calc(var(--row-pad-start) + var(--row-check) + var(--row-status) + var(--row-gap) * 2);
   display: grid;
-  grid-template-columns: max(300px, var(--list-width, 360px)) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   margin-block-start: 12px;
   overflow: hidden;
   border-radius: var(--mail-radius-surface) var(--mail-radius-surface) 0 0;
-  background: var(--el-bg-color);
-  box-shadow: 0 0 0 1px var(--mail-shell-line);
+  background: var(--mac-surface);
+  box-shadow: 0 0 0 1px var(--mac-line);
 }
+.mail-workspace.split-reading { grid-template-columns: var(--list-width, var(--mail-list-width, 352px)) minmax(0, 1fr); }
 .message-list-pane, .message-reading-pane {
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  background: var(--mac-surface);
 }
-.message-list-pane { position: relative; border-inline-end: 1px solid var(--mail-shell-line); }
-.mail-workspace:not(.has-message), .mail-workspace.wide-reading { grid-template-columns: minmax(0, 1fr); }
-.mail-workspace:not(.has-message) .message-list-pane { border-inline-end: 0; }
-.mail-workspace:not(.has-message) .message-reading-pane,
-.mail-workspace:not(.has-message) .message-resize,
-.mail-workspace.has-message.wide-reading .message-list-pane { display: none; }
+.message-list-pane { position: relative; }
+.split-reading .message-list-pane { border-inline-end: 1px solid var(--mac-line); }
+.wide-reading:not(.has-message) .message-reading-pane,
+.wide-reading .message-resize,
+.wide-reading.has-message .message-list-pane { display: none; }
+.split-reading .reader-back { display: none; }
 .message-resize {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   inset: 0 -4px 0 auto;
   width: 8px;
   cursor: col-resize;
   touch-action: none;
 }
-.message-resize:hover, .message-resize:focus-visible { background: var(--mail-shell-hover); }
+.message-resize::after {
+  position: absolute;
+  inset: 0 3px;
+  background: transparent;
+  content: '';
+  transition: background-color 140ms ease;
+}
+.message-resize:hover::after, .message-resize:focus-visible::after { background: var(--mac-focus); }
+.message-resize:focus-visible { outline: none; }
+
+/* 窗格工具栏：两栏同高，底边连成一条线 */
 .message-list-toolbar {
   display: flex;
-  flex-wrap: wrap;
   flex: 0 0 auto;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-height: var(--workspace-toolbar);
-  padding: 6px 16px;
-  border-bottom: 1px solid var(--mail-shell-line);
+  padding: 0 var(--row-pad-end) 0 var(--row-pad-start);
+  border-bottom: 1px solid var(--mac-line);
+  background: var(--mac-chrome);
 }
-.message-list-toolbar > .el-checkbox { margin-inline-end: 0; }
-.has-message .message-list-toolbar { gap: 4px; padding-inline: 12px; }
-.has-message .message-list-toolbar :deep(.toolbar-button) { width: 30px; }
-.list-folder {
-  margin-inline: 4px auto;
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-}
+.message-list-toolbar > .el-checkbox { margin-inline-end: calc(var(--row-status) + var(--row-gap)); height: 32px; }
 .list-range {
   flex: 1 1 auto;
-  color: var(--mail-shell-muted);
-  text-align: end;
-  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
   font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .list-bulk-actions { justify-content: flex-end; }
-.admin-reader-actions, .reader-page-actions { display: flex; align-items: center; gap: 6px; }
+.admin-reader-actions, .reader-page-actions { display: flex; align-items: center; gap: 4px; }
 .reader-page-actions { margin-inline-start: auto; }
 .page-back :deep(svg) { rotate: 180deg; }
 .message-list-body { flex: 1; min-height: 0; }
-.message-list-body :deep(.el-scrollbar__view) { display: flex; flex-direction: column; min-height: 100%; }
+.message-list-body :deep(.el-scrollbar__view) { display: flex; flex-direction: column; min-height: 100%; width: 100%; }
+
+/* 骨架屏与真实行同尺寸 */
 .list-placeholder {
   display: grid;
-  grid-template-columns: 18px minmax(64px, 132px) minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
-  min-height: 48px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--mail-shell-line);
+  grid-template-columns: var(--row-check) minmax(0, 1fr) 56px;
+  grid-template-areas: 'icon sender date' 'icon subject subject' 'icon snippet snippet';
+  align-content: center;
+  gap: 4px calc(var(--row-status) + var(--row-gap) * 2);
+  height: 72px;
+  padding: 0 var(--row-pad-end) 0 var(--row-pad-start);
+  border-bottom: 1px solid var(--mac-line);
 }
-.list-placeholder .placeholder-icon { width: 14px; height: 14px; }
-.list-placeholder .placeholder-subject { width: 68%; }
-.has-message .list-placeholder {
-  min-height: 94px;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 5px 14px;
+.list-placeholder .placeholder-icon { grid-area: icon; width: 14px; height: 14px; align-self: start; margin-top: 3px; }
+.list-placeholder .placeholder-sender { grid-area: sender; width: 42%; height: 14px; }
+.list-placeholder .placeholder-subject { grid-area: subject; width: 78%; height: 13px; }
+.list-placeholder .placeholder-snippet { grid-area: snippet; width: 60%; height: 12px; }
+.wide-reading .list-placeholder {
+  height: 48px;
+  grid-template-columns: var(--row-check) minmax(96px, 200px) minmax(0, 1fr);
+  grid-template-areas: 'icon sender subject';
 }
-.has-message .list-placeholder .placeholder-sender { width: 40%; }
-.has-message .list-placeholder .placeholder-subject { grid-column: 2; }
+.wide-reading .list-placeholder .placeholder-sender { width: 70%; }
+.wide-reading .list-placeholder .placeholder-snippet { display: none; }
 .reader-placeholder-toolbar {
   display: flex;
   align-items: center;
   min-height: var(--workspace-toolbar);
   padding-inline: 16px;
-  border-bottom: 1px solid var(--mail-shell-line);
+  border-bottom: 1px solid var(--mac-line);
+  background: var(--mac-chrome);
 }
 .reader-placeholder {
   display: grid;
   align-content: start;
   gap: 14px;
-  padding: 18px 22px;
+  padding: 24px 32px;
 }
-.placeholder-heading { width: min(45%, 330px); height: 22px; }
+.placeholder-heading { width: min(45%, 330px); height: 24px; }
 .placeholder-envelope { display: flex; align-items: center; gap: 12px; }
-.placeholder-avatar { width: 44px; height: 44px; }
+.placeholder-avatar { width: 40px; height: 40px; }
 .placeholder-envelope .placeholder-sender { width: min(50%, 230px); }
-.placeholder-paragraph { width: min(66%, 550px); margin-inline-start: 56px; }
+.placeholder-paragraph { width: min(66%, 550px); margin-inline-start: 52px; }
 .placeholder-paragraph:last-child { width: min(50%, 400px); }
 @media (prefers-reduced-motion: no-preference) {
-  .message-loaded, .message-row { animation: mail-content-in 180ms ease-out; }
+  .message-loaded { animation: mail-content-in 150ms ease-out; }
 }
+
+/* 邮件行：三栏 72px，三行文本 */
 .message-row {
   position: relative;
   display: grid;
-  grid-template-columns: 20px 30px minmax(0, 1fr);
+  grid-template-columns: var(--row-check) var(--row-status) minmax(0, 1fr);
   align-items: start;
-  gap: 7px;
-  min-height: 94px;
-  padding: 12px 16px 11px;
-  border-bottom: 1px solid var(--mail-shell-line);
+  column-gap: var(--row-gap);
+  min-height: 72px;
+  padding: 10px var(--row-pad-end) 10px var(--row-pad-start);
+  color: var(--mac-text);
+  transition: background-color 120ms ease;
 }
-.message-row:hover, .message-row:focus-within { background: var(--mail-shell-rail); }
-.message-row.message-current, .message-row.message-selected { background: var(--mail-shell-active); }
-.message-current::before {
+.message-row::after {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--mail-shell-marker);
+  inset: auto 0 0 var(--row-text-start);
+  height: 1px;
+  background: var(--mac-line);
   content: '';
 }
-.message-row > .el-checkbox, .message-row > .toolbar-button, .row-kind { height: 25px; }
-.message-row > .el-checkbox { margin: 0; }
-.row-kind { display: grid; place-items: center; color: var(--mail-shell-muted); }
-.row-star { width: 28px; }
-.row-star[aria-pressed='true'] { color: var(--el-color-warning); }
+.message-row:hover { background: var(--mac-hover); }
+.message-row.message-current, .message-row.message-selected { background: var(--mac-selected); }
+.message-row:is(.message-current, .message-selected)::after,
+.message-row:has(+ :is(.message-current, .message-selected))::after { background: transparent; }
+.message-row > .el-checkbox { height: 18px; margin: 0; }
+.row-status {
+  display: grid;
+  grid-template-rows: 18px 18px;
+  justify-items: center;
+  align-items: center;
+  row-gap: 0;
+}
+.row-kind { display: grid; place-items: center; color: var(--mac-text-2); }
+.unread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: transparent;
+}
+.unread-dot.is-unread { background: var(--mac-accent); }
+.toolbar-button.row-star {
+  flex-basis: 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--mac-text-3);
+  opacity: 0;
+}
+.message-row:is(:hover, :focus-within) .row-star, .row-star[aria-pressed='true'] { opacity: 1; }
+.row-star[aria-pressed='true'] { color: var(--mac-star); }
+.row-star :deep(svg) { width: 14px; height: 14px; }
 .message-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: 'sender date' 'copy copy';
   width: 100%;
-  gap: 4px 12px;
+  column-gap: 12px;
   min-width: 0;
+  padding: 0;
   text-align: start;
-  color: var(--el-text-color-primary);
+  color: inherit;
   cursor: pointer;
 }
-.message-summary:focus-visible { border-radius: 4px; }
-.message-copy { grid-area: copy; display: grid; min-width: 0; gap: 3px; }
+.message-summary::before { position: absolute; inset: 0; content: ''; }
+.message-row > .el-checkbox, .row-status > * { position: relative; z-index: 1; }
+.message-summary:focus-visible { outline: none; }
+.message-row:has(.message-summary:focus-visible) { box-shadow: inset 0 0 0 2px var(--mac-focus); }
+.message-copy { grid-area: copy; display: grid; min-width: 0; }
 .message-sender, .message-subject, .message-snippet {
   display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.message-sender { grid-area: sender; font-size: 14px; }
-.message-subject { font-size: 14px; }
-.unread :is(.message-sender, .message-subject) { font-weight: 650; }
-.message-summary time, .message-snippet { color: var(--mail-shell-muted); font-size: 12px; }
-.message-summary time { grid-area: date; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.unread-dot {
-  position: absolute;
-  inset-inline-end: 15px;
-  inset-block-start: 43px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--mail-shell-marker);
-  pointer-events: none;
+.message-sender { grid-area: sender; font-size: var(--mac-fs-body); line-height: 18px; font-weight: 600; }
+.message-subject { font-size: var(--mac-fs-chrome); line-height: 18px; }
+.message-snippet { color: var(--mac-text-2); font-size: var(--mac-fs-caption); line-height: 16px; }
+.unread .message-subject { font-weight: 600; }
+.message-summary time {
+  grid-area: date;
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-caption);
+  line-height: 18px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
-.has-message .unread .message-copy { padding-inline-end: 12px; }
-.mail-workspace:not(.has-message) .message-row {
+.message-row:is(.message-current, .message-selected) { color: var(--mac-selected-text); }
+.message-row:is(.message-current, .message-selected) :is(.message-snippet, time) {
+  color: color-mix(in srgb, var(--mac-selected-text) 82%, var(--mac-selected));
+}
+.message-row:is(.message-current, .message-selected) .unread-dot.is-unread { background: var(--mac-selected-text); }
+
+/* 全宽列表：单行 48px */
+.wide-reading .message-row {
   align-items: center;
   min-height: 48px;
-  padding-block: 6px;
+  padding-block: 0;
 }
-.mail-workspace:not(.has-message) .message-summary {
-  grid-template-columns: clamp(96px, 12vw, 170px) minmax(0, 1fr) auto;
+.wide-reading .row-status { grid-template-rows: none; grid-template-columns: 9px 22px; column-gap: 0; width: var(--row-status); justify-content: center; }
+.wide-reading { --row-status: 36px; }
+.wide-reading .toolbar-button.row-star { justify-self: center; }
+.wide-reading .message-summary {
+  grid-template-columns: clamp(120px, 14vw, 200px) minmax(0, 1fr) auto;
   grid-template-areas: 'sender copy date';
   align-items: baseline;
-  gap: 12px;
+  column-gap: 16px;
+  min-height: 48px;
+  align-content: center;
 }
-.mail-workspace:not(.has-message) .message-copy {
-  display: flex;
-  align-items: baseline;
-  gap: 0;
-}
-.mail-workspace:not(.has-message) .message-subject { flex: 0 1 auto; max-width: 85%; }
-.mail-workspace:not(.has-message) .message-snippet { flex: 1 1 0; min-width: 0; }
-.mail-workspace:not(.has-message) .message-snippet::before { content: ' · '; white-space: pre; }
-.mail-workspace:not(.has-message) .unread time { padding-inline-end: 12px; }
-.mail-workspace:not(.has-message) .unread-dot { inset-block-start: calc(50% - 3px); }
-.draft-row .message-sender { color: var(--el-color-danger); }
+.wide-reading .message-copy { display: flex; align-items: baseline; gap: 0; }
+.wide-reading .message-subject { flex: 0 1 auto; max-width: 70%; font-size: var(--mac-fs-body); line-height: 20px; }
+.wide-reading .message-sender { line-height: 20px; font-weight: 400; }
+.wide-reading .unread .message-sender { font-weight: 600; }
+.wide-reading .message-snippet { flex: 1 1 0; min-width: 0; font-size: var(--mac-fs-chrome); line-height: 20px; }
+.wide-reading .message-snippet::before { content: '  —  '; white-space: pre; }
+.draft-row .message-sender { color: var(--mac-danger); }
+
 .workspace-empty {
   display: flex;
   flex: 1;
@@ -791,39 +869,37 @@ onBeforeUnmount(() => {
   min-height: 170px;
   align-items: center;
   justify-content: center;
-  padding: 22px;
-  gap: 9px;
+  padding: 24px;
+  gap: 8px;
   text-align: center;
-  color: var(--mail-shell-muted);
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
 }
-.workspace-empty h2 { color: var(--el-text-color-primary); font-size: 17px; font-weight: 600; }
+.workspace-empty h2 { color: var(--mac-text); font-size: 17px; line-height: 24px; font-weight: 600; }
 .workspace-empty p { margin: 0; }
 .reading-empty-icon {
   display: grid;
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   place-items: center;
   margin-bottom: 4px;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: 15px;
-  background: var(--mail-shell-rail);
+  border-radius: 14px;
+  background: var(--mac-chrome);
+  box-shadow: 0 0 0 1px var(--mac-line);
+  color: var(--mac-text-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .message-row, .message-resize::after { transition: none; }
 }
 @media (max-width: 1024px) {
-  .mail-workspace { grid-template-columns: minmax(0, 1fr); }
-  .message-list-pane { border-inline-end: 0; }
+  .mail-workspace.split-reading { grid-template-columns: minmax(0, 1fr); }
+  .split-reading .message-list-pane { border-inline-end: 0; }
   .message-resize { display: none; }
   .mail-workspace:not(.has-message) .message-reading-pane, .has-message .message-list-pane { display: none; }
+  .split-reading .reader-back { display: grid; }
 }
-
 @media (max-width: 767px) {
   .mail-workspace { margin-block-start: 8px; }
-}
-@media (max-width: 560px) {
-  .mail-workspace:not(.has-message) .message-summary {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'sender date' 'copy copy';
-    gap: 3px 8px;
-  }
-  .mail-workspace:not(.has-message) .message-row { min-height: 64px; }
 }
 </style>

@@ -639,20 +639,20 @@ function submitRegister() {
 
 <style scoped>
 #login-box {
-  --login-stage: #f3f3f3;
-  --login-surface: #fff;
-  --login-field: #fafafa;
-  --login-line: #dedede;
-  --login-ink: #242424;
-  --login-muted: #666;
-  --login-focus: #696969;
-  --login-action: #252525;
-  --login-action-hover: #414141;
-  --login-action-ink: #fff;
+  --login-stage: var(--mac-app);
+  --login-surface: var(--mac-surface);
+  --login-field: var(--mac-surface);
+  --login-line: var(--mac-line);
+  --login-ink: var(--mac-text);
+  --login-muted: var(--mac-text-2);
+  --login-focus: var(--mac-focus);
+  --login-action: var(--mac-accent);
+  --login-action-hover: var(--mac-accent-hover);
+  --login-action-ink: var(--mac-accent-text);
   --el-color-primary: var(--login-action);
   --el-input-focus-border-color: var(--login-focus);
-  --login-edge: clamp(16px, 4vw, 48px);
-  --login-control-height: 42px;
+  --login-edge: clamp(16px, min(4vw, 4vh), 48px);
+  --login-control-height: 36px;
   color-scheme: light;
 
   position: relative;
@@ -666,16 +666,6 @@ function submitRegister() {
 
 #login-box.is-dark {
   color-scheme: dark;
-  --login-stage: #141414;
-  --login-surface: #191919;
-  --login-field: #202020;
-  --login-line: #393939;
-  --login-ink: #f2f2f2;
-  --login-muted: #aeaeae;
-  --login-focus: #b5b5b5;
-  --login-action: #efefef;
-  --login-action-hover: #d3d3d3;
-  --login-action-ink: #191919;
 }
 
 .login-background {
@@ -689,12 +679,12 @@ function submitRegister() {
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   width: min(100%, 980px);
-  height: min(620px, calc(100dvh - 2 * var(--login-edge)));
+  height: max(560px, min(620px, calc(100dvh - 2 * var(--login-edge))));
   overflow: hidden;
   border: 1px solid var(--login-line);
-  border-radius: 20px;
+  border-radius: var(--mail-radius-dialog);
   background: var(--login-surface);
-  box-shadow: 0 16px 48px rgb(0 0 0 / 6%);
+  box-shadow: var(--mac-shadow-window);
 }
 
 .has-custom-background .login-shell {

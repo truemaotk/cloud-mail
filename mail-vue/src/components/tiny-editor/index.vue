@@ -99,9 +99,21 @@ function initEditor() {
     skin: `${uiStore.dark ? 'oxide-dark' : 'oxide'}`,
     content_css: `/tinymce/css/index.css,${uiStore.dark ? 'dark' : 'default'}`,
     content_style: `:root {
-         --scrollbar-track-color: ${uiStore.dark ? '#141414' : '#FFFFFF'};
-         --scrollbar-thumb-color: ${uiStore.dark ? '#8D9095' : '#A8ABB2'};
+         --scrollbar-track-color: ${uiStore.dark ? '#26272B' : '#FFFFFF'};
+         --scrollbar-thumb-color: ${uiStore.dark ? '#6B6F78' : '#A8ABB2'};
     }
+    html, body.mce-content-body {
+         background: ${uiStore.dark ? '#26272B' : '#FFFFFF'};
+         color: ${uiStore.dark ? '#F5F5F7' : '#1D1D1F'};
+    }
+    body.mce-content-body {
+         font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+         font-size: 14px;
+         line-height: 22px;
+         margin-top: 12px !important;
+    }
+    body.mce-content-body a { color: ${uiStore.dark ? '#64A9FF' : '#005FC4'}; }
+    body.mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before { color: ${uiStore.dark ? '#9A9EA7' : '#6E727C'}; }
     ${props.contentGutter ? `body.mce-content-body { margin-inline: ${props.contentGutter} !important; }` : ''}`,
     plugins: 'link image advlist lists  emoticons fullscreen  table preview code',
     toolbar: 'bold emoticons forecolor backcolor italic fontsize | alignleft aligncenter alignright alignjustify | outdent indent |  bullist numlist | link image  | table code preview fullscreen',
@@ -229,5 +241,29 @@ function destroyEditor() {
 :deep(.tox .tox-edit-area::before) {
   display: none;
 }
+
+/* 编辑器外壳与 macOS 工具栏一致 */
+:deep(.tox) {
+  --tox-private-color-tint: var(--mac-accent);
+  font-family: var(--mac-font);
+}
+:deep(.tox :is(.tox-toolbar, .tox-toolbar__primary, .tox-toolbar__overflow, .tox-editor-header, .tox-toolbar-overlord)) {
+  background: var(--mac-surface) !important;
+  border-color: var(--mac-line) !important;
+}
+:deep(.tox .tox-edit-area__iframe) { background: var(--mac-surface) !important; }
+:deep(.tox .tox-tbtn) {
+  height: 30px;
+  border-radius: 6px;
+  color: var(--mac-text-2);
+}
+:deep(.tox .tox-tbtn svg) { fill: var(--mac-text-2) !important; }
+:deep(.tox .tox-tbtn:hover), :deep(.tox .tox-tbtn--enabled), :deep(.tox .tox-tbtn--enabled:hover) {
+  background: var(--mac-hover) !important;
+  color: var(--mac-text);
+}
+:deep(.tox .tox-tbtn--enabled svg), :deep(.tox .tox-tbtn:hover svg) { fill: var(--mac-text) !important; }
+:deep(.tox .tox-tbtn__select-label) { color: var(--mac-text-2); font-size: 13px; }
+:deep(.tox .tox-split-button:hover) { box-shadow: 0 0 0 1px var(--mac-line) inset; border-radius: 6px; }
 
 </style>

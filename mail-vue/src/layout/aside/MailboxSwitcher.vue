@@ -83,10 +83,10 @@ function closeFromKeyboard() {
 .mailbox-switcher {
   position: relative;
   z-index: 2;
-  flex: 0 0 var(--mail-shell-header);
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  margin-inline: 12px;
+  margin: 8px 12px 12px;
 }
 
 .mailbox-switch-trigger {
@@ -96,20 +96,23 @@ function closeFromKeyboard() {
   gap: 8px;
   width: 100%;
   min-height: 48px;
-  padding: 5px 8px;
-  padding-inline-end: calc(var(--rail-trailing-inset) - 1px);
-  border: 1px solid transparent;
+  padding: 6px 8px 6px 6px;
+  padding-inline-end: var(--rail-trailing-inset);
+  border: 1px solid var(--mac-line);
   border-radius: var(--mail-radius-card);
-  background: var(--mail-shell-hover);
-  color: var(--el-text-color-primary);
+  background: var(--mac-surface);
+  color: var(--mac-text);
   text-align: start;
   cursor: pointer;
+  transition: background-color 140ms ease;
 }
 
 .mailbox-switch-trigger:hover,
 .mailbox-switch-trigger[aria-expanded='true'] {
-  background: var(--mail-shell-active);
+  background: var(--mac-hover);
 }
+
+.mailbox-switch-trigger:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: -2px; }
 
 .mailbox-switch-icon {
   display: grid;
@@ -117,36 +120,44 @@ function closeFromKeyboard() {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--mail-shell-line);
+  background: var(--mac-chrome);
+  border: 1px solid var(--mac-line);
+  color: var(--mac-text-2);
 }
 
-.mailbox-switch-label { display: grid; min-width: 0; line-height: 17px; }
-.mailbox-switch-label strong { font-size: 13px; font-weight: 600; }
+.mailbox-switch-label { display: grid; min-width: 0; }
+.mailbox-switch-label strong { font-size: var(--mac-fs-chrome); line-height: var(--mac-lh-chrome); font-weight: 600; }
 .mailbox-switch-label span {
   overflow: hidden;
-  color: var(--mail-shell-muted);
-  font-size: 11px;
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-caption);
+  line-height: var(--mac-lh-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.mailbox-switch-trigger .disclosure-chevron { justify-self: center; }
+.mailbox-switch-trigger .disclosure-chevron { justify-self: center; width: 14px; height: 14px; color: var(--mac-text-2); }
 
 .mailbox-switcher :deep(.mailbox-switch-popover) {
   width: min(calc(var(--mail-sidebar-width) - 25px), calc(100vw - 49px));
   padding: 6px;
-  border-color: var(--mail-shell-line);
-  border-radius: var(--mail-radius-card);
-  background: var(--mail-shell-sidebar);
-  box-shadow: var(--el-box-shadow-light);
+  border-color: var(--mac-line);
+  border-radius: var(--mail-radius-menu);
+  background: var(--mac-chrome);
+  box-shadow: var(--mac-shadow-pop);
 }
 
-.mailbox-switcher.is-compact { margin-inline: 8px; }
+.mailbox-switcher.is-compact { margin-inline: 12px; }
 .is-compact .mailbox-switch-trigger {
   grid-template-columns: 1fr;
   justify-items: center;
-  padding-inline: 0;
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
 }
+.is-compact .mailbox-switch-trigger:hover { background: var(--mac-hover); }
+.is-compact .mailbox-switch-icon { width: 30px; height: 30px; }
 .is-compact :is(.mailbox-switch-label, .disclosure-chevron) { display: none; }
 </style>

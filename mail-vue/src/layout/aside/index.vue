@@ -222,7 +222,7 @@ function followLink(event, navigate) {
 <style scoped>
 .sidebar {
   --rail-trailing-width: 30px;
-  --rail-trailing-inset: 3px;
+  --rail-trailing-inset: 2px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -235,7 +235,7 @@ function followLink(event, navigate) {
   display: flex;
   align-items: center;
   flex: 0 0 var(--mail-shell-header);
-  gap: 9px;
+  gap: 8px;
   padding: 0 16px;
   font-size: 17px;
   font-weight: 700;
@@ -250,32 +250,33 @@ function followLink(event, navigate) {
 
 .brand-mark {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
 }
 
 .compose-bar svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .compose-bar {
   display: flex;
-  align-self: flex-start;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   gap: 8px;
-  min-height: 39px;
-  margin: 4px 12px 16px;
-  padding: 7px 16px;
-  max-width: calc(100% - 24px);
+  height: 34px;
+  margin: 0 12px 12px;
+  padding: 0 12px;
   overflow: hidden;
   white-space: nowrap;
   border-radius: var(--mail-radius-control);
   background: var(--mail-shell-action);
   color: var(--mail-shell-action-text);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 8%), inset 0 .5px 0 rgb(255 255 255 / 18%);
   cursor: pointer;
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
   font-weight: 600;
 }
 
@@ -300,8 +301,8 @@ function followLink(event, navigate) {
 }
 
 .utility-navigation-group {
-  margin-block-start: 10px;
-  padding-block-start: 10px;
+  margin-block-start: 12px;
+  padding-block-start: 12px;
   border-block-start: 1px solid var(--mail-shell-line);
 }
 
@@ -312,14 +313,14 @@ function followLink(event, navigate) {
   display: grid;
   align-items: center;
   grid-template-columns: 18px minmax(0, 1fr) 11px;
-  gap: 9px;
+  gap: 8px;
   width: 100%;
-  min-height: 36px;
-  padding: 5px 10px;
+  min-height: 32px;
+  padding: 4px 8px;
   border-radius: var(--mail-radius-control);
-  color: var(--mail-shell-muted);
-  font-size: 14px;
-  line-height: 20px;
+  color: var(--mac-text);
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -333,9 +334,12 @@ function followLink(event, navigate) {
 }
 
 .nav-main > svg,
-.nav-group-toggle svg {
-  width: 18px;
-  height: 18px;
+.nav-group-toggle > svg:first-child,
+.nav-child > svg {
+  width: 17px;
+  height: 17px;
+  justify-self: center;
+  color: var(--mac-text-2);
 }
 
 .nav-group-toggle .nav-chevron,
@@ -345,9 +349,10 @@ function followLink(event, navigate) {
 }
 
 .nav-group-toggle .nav-chevron {
-  width: 15px;
-  height: 15px;
-  transition: transform 150ms ease;
+  width: 14px;
+  height: 14px;
+  color: var(--mac-text-2);
+  transition: transform 180ms ease;
 }
 
 .nav-group-toggle[aria-expanded='true'] .nav-chevron {
@@ -357,31 +362,27 @@ function followLink(event, navigate) {
 .nav-main:hover,
 .nav-group-toggle:hover,
 .nav-child:hover {
-  color: var(--el-text-color-primary);
   background: var(--mail-shell-hover);
 }
 
-.nav-main[aria-current='page'],
-.nav-group-toggle.has-current,
-.nav-child[aria-current='page'] {
-  color: var(--el-text-color-primary);
-}
-
+/* 选中：底色 + 图标着色，字重与文字位置不变 */
 .nav-main[aria-current='page'],
 .nav-child[aria-current='page'],
 .nav-group-toggle.has-current[aria-expanded='false'] {
   background: var(--mail-shell-active);
+  color: var(--mac-selected-text);
 }
 
-.nav-main[aria-current='page']::before,
-.nav-child[aria-current='page']::before,
-.nav-group-toggle.has-current[aria-expanded='false']::before {
-  position: absolute;
-  inset: 8px auto 8px 0;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--mail-shell-marker);
-  content: '';
+.nav-main[aria-current='page'] > svg,
+.nav-child[aria-current='page'] > svg,
+.nav-group-toggle.has-current > svg:first-child {
+  color: var(--mac-accent);
+}
+
+:global(html.dark) .nav-main[aria-current='page'] > svg,
+:global(html.dark) .nav-child[aria-current='page'] > svg,
+:global(html.dark) .nav-group-toggle.has-current > svg:first-child {
+  color: var(--mac-link);
 }
 
 .nav-disclosure {
@@ -404,18 +405,18 @@ function followLink(event, navigate) {
 .nav-children {
   display: grid;
   gap: 2px;
-  margin: 3px 0 2px 17px;
-  padding-left: 7px;
-  border-left: 1px solid var(--mail-shell-line);
+  margin: 2px 0 2px;
+  padding-left: 0;
   list-style: none;
 }
 
 .nav-child {
-  grid-template-columns: 16px minmax(0, 1fr) auto;
-  min-height: 33px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  min-height: 32px;
+  padding-inline-start: 33px;
 }
 
-.nav-child svg {
+.nav-child > svg {
   width: 16px;
   height: 16px;
 }
@@ -445,17 +446,19 @@ function followLink(event, navigate) {
 .is-compact .nav-label { display: none; }
 .is-compact .compose-bar {
   align-self: center;
-  width: 42px;
-  min-height: 40px;
-  max-width: none;
+  width: 36px;
+  height: 36px;
   margin-inline: 0;
   padding: 0;
 }
-.is-compact .side-navigation { padding-inline: 8px; }
+.is-compact .side-navigation { padding-inline: 12px; }
+.is-compact .utility-navigation-group { margin-inline: 0; }
 .is-compact .nav-children { margin: 2px 0; padding: 0; border: 0; }
 .is-compact :is(.nav-main, .nav-group-toggle, .nav-child) {
   grid-template-columns: 1fr;
   justify-items: center;
+  width: 36px;
+  min-height: 36px;
   padding-inline: 0;
 }
 .is-compact .nav-group-toggle[aria-expanded='true'] {
@@ -478,15 +481,15 @@ function followLink(event, navigate) {
   transform: translateY(-50%);
   width: max-content;
   max-width: calc(100vw - 88px);
-  padding: 6px 10px;
-  border: 1px solid var(--mail-shell-line);
+  padding: 5px 10px;
+  border: 1px solid var(--mac-line);
   border-radius: var(--mail-radius-control);
-  background: var(--el-bg-color);
-  color: var(--el-text-color-primary);
-  box-shadow: var(--el-box-shadow-light);
-  font-size: 13px;
+  background: var(--mac-chrome);
+  color: var(--mac-text);
+  box-shadow: var(--mac-shadow-pop);
+  font-size: var(--mac-fs-chrome);
   font-weight: 500;
-  line-height: 18px;
+  line-height: var(--mac-lh-chrome);
   overflow-wrap: anywhere;
   pointer-events: none;
 }
@@ -508,7 +511,7 @@ function followLink(event, navigate) {
 .nav-main:focus-visible,
 .nav-group-toggle:focus-visible,
 .nav-child:focus-visible {
-  outline: 2px solid var(--mail-shell-muted);
+  outline: 2px solid var(--mac-focus);
   outline-offset: -2px;
 }
 

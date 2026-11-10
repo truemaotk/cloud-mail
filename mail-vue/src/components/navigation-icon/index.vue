@@ -12,7 +12,7 @@ import {
   PanelLeft, ChevronRight, MailX, MailCheck, CircleCheck, CircleX, CircleAlert, Clock, Clipboard,
   Ban, Mailbox, Image, GitBranch, Coffee, BookOpen, Eye, Download, LoaderCircle, FileArchive,
   FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, File, ArrowUpRight,
-  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus, Headset
+  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus, Headset, Columns3, Rows3
 } from '@lucide/vue'
 
 defineProps({
@@ -94,5 +94,7 @@ const icons = {
   maximize: Maximize2,
   minimize: Minimize2,
   minus: Minus,
+  columns: Columns3,
+  rows: Rows3,
 }
 </script>

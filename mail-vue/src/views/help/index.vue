@@ -247,19 +247,18 @@ onMounted(loadInfo)
 .project-help {
   min-height: 0;
   overflow: auto;
-  background: var(--el-bg-color);
+  background: transparent;
   color: var(--el-text-color-primary);
 }
 .help-inner {
-  width: min(100%, 880px);
-  margin: auto;
-  padding: clamp(24px, 5vw, 58px) 16px 32px;
+  width: min(100%, 960px);
+  padding: 12px 0 32px;
 }
-.help-intro { margin-bottom: 26px; }
-.help-intro h1 { margin: 0 0 7px; font-size: 27px; font-weight: 700; }
+.help-intro { margin-bottom: 16px; }
+.help-intro h1 { margin: 0 0 4px; font-size: var(--mac-fs-title); line-height: var(--mac-lh-title); font-weight: 600; }
 .help-intro p { margin: 0; color: var(--el-text-color-secondary); }
-.help-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-.help-section { min-width: 0; border: 1px solid var(--el-border-color-light); border-radius: var(--mail-radius-card); }
+.help-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.help-section { min-width: 0; overflow: hidden; border: 1px solid var(--mac-line); border-radius: var(--mail-radius-surface); background: var(--mac-surface); }
 .help-section-header { min-height: 58px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .help-section-header h2 { margin: 0; font-size: 15px; font-weight: 650; }
 .contact-list { list-style: none; margin: 0; padding: 0; }

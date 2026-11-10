@@ -1,8 +1,11 @@
 <template>
   <div class="message-actions">
     <template v-if="!trashFolder">
-      <ToolbarButton v-if="reader && canReply" icon="reply" :label="$t('reply')" @click="$emit('reply')" />
-      <ToolbarButton v-if="reader && canReply" icon="forward" :label="$t('forward')" @click="$emit('forward')" />
+      <span v-if="reader && canReply" class="toolbar-group">
+      <ToolbarButton icon="reply" :label="$t('reply')" @click="$emit('reply')" />
+      <ToolbarButton icon="forward" :label="$t('forward')" @click="$emit('forward')" />
+      </span>
+      <span class="toolbar-group">
       <ToolbarButton v-if="folder === 'archived' || folder === 'snoozed' || folder === 'spam'"
                      icon="restore" :label="$t(folder === 'spam' ? 'mailNotSpam' : 'mailInboxAction')"
                      :disabled="working" @click="move('inbox')" />
@@ -11,6 +14,8 @@
                      :disabled="working" @click="move('spam')" />
       <ToolbarButton v-if="canDelete" icon="delete" :label="$t('mailTrashAction')"
                      :disabled="working" @click="move('trash')" />
+      </span>
+      <span class="toolbar-group">
       <ToolbarButton :icon="reader ? 'mail' : 'mark-read'"
                      :label="$t(reader ? 'mailMarkedUnread' : 'markAsRead')" :disabled="working"
                      @click="mark(reader)" />
@@ -31,6 +36,7 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
+      </span>
     </template>
     <template v-else-if="canDelete">
       <ToolbarButton icon="restore" :label="$t('mailRestoreAction')" :disabled="working" @click="move('restore')" />
@@ -131,7 +137,8 @@ async function mark(unread) {
 </script>
 
 <style scoped>
-.message-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.message-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.message-actions > .toolbar-group + .toolbar-group { margin-inline-start: 0; }
 .snooze-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .snooze-options .el-button + .el-button { margin: 0; }
 .snooze-label { display: block; margin-bottom: 6px; }

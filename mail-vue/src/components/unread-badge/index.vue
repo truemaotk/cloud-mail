@@ -14,14 +14,18 @@ defineProps({ count: { type: Number, default: 0 }, label: String })
   display: inline-grid;
   place-items: center;
   min-width: 22px;
-  height: 19px;
-  padding-inline: 5px;
-  border-radius: 6px;
+  height: 18px;
+  padding-inline: 6px;
+  border-radius: 9px;
   background: var(--mail-shell-badge);
   color: var(--mail-shell-badge-text);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+[aria-current='page'] > .unread-badge {
+  background: color-mix(in srgb, var(--mac-accent) 18%, var(--mac-surface));
+  color: var(--mac-selected-text);
 }
 </style>

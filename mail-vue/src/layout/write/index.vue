@@ -113,7 +113,7 @@ defineExpose({
 })
 
 const { t, locale } = useI18n()
-const composeGutter = '14px'
+const composeGutter = '16px'
 const fieldLabel = key => t(key) + (locale.value === 'zh' ? '：' : ':')
 const draftStore = userDraftStore()
 const settingStore = useSettingStore()
@@ -604,13 +604,13 @@ async function close() {
   --compose-gutter: v-bind(composeGutter);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  width: min(600px, 100%);
-  height: min(520px, max(355px, 49.6dvh));
+  width: min(640px, 100%);
+  height: min(560px, max(380px, 56dvh));
   overflow: hidden;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: var(--mail-radius-card);
-  background: var(--el-bg-color);
-  box-shadow: 0 8px 34px rgb(0 0 0 / 21%);
+  border: 1px solid var(--mac-line);
+  border-radius: var(--mail-radius-surface);
+  background: var(--mac-surface);
+  box-shadow: var(--mac-shadow-window);
   pointer-events: auto;
 }
 
@@ -625,23 +625,21 @@ async function close() {
 }
 
 .title {
-  min-height: 40px;
+  min-height: 44px;
   justify-content: space-between;
-  padding: 0 9px 0 var(--compose-gutter);
-  color: #fff;
-  background: #242424;
-  font-size: 14px;
+  padding: 0 8px 0 var(--compose-gutter);
+  border-bottom: 1px solid var(--mac-line);
+  color: var(--mac-text);
+  background: var(--mac-chrome);
+  font-size: var(--mac-fs-chrome);
+  line-height: var(--mac-lh-chrome);
   font-weight: 600;
 }
 
 .window-actions {
-  --mail-shell-muted: #fff;
-  --mail-shell-hover: #414141;
-  --mail-close-color: #fff;
-  --mail-close-hover-color: #fff;
-  gap: 2px;
+  gap: 4px;
 }
-.window-actions .toolbar-button:hover { color: #fff; }
+.window-actions .toolbar-button { width: 28px; height: 28px; flex-basis: 28px; border-radius: var(--mail-radius-close); }
 
 .container {
   min-height: 0;
@@ -651,41 +649,45 @@ async function close() {
 
 .compose-field {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 72px minmax(0, 1fr);
   align-items: center;
-  min-height: 37px;
+  min-height: 40px;
   padding-inline: var(--compose-gutter) 8px;
-  border-bottom: 1px solid var(--mail-shell-line);
-  font-size: 13px;
+  border-bottom: 1px solid var(--mac-line);
+  font-size: var(--mac-fs-body);
+  line-height: var(--mac-lh-body);
 }
 
 .compose-fields { max-height: 36vh; overflow: auto; }
 
 .compose-from :deep(.el-select) { width: min(260px, 100%); min-width: 0; }
 .compose-from :deep(.el-select__wrapper) { padding: 0 8px 0 0; box-shadow: none; }
-.compose-label { color: var(--el-text-color-primary); font-weight: 600; }
+.compose-label { color: var(--mac-text); font-weight: 600; text-align: start; white-space: nowrap; }
+.compose-address { color: var(--mac-text); }
 .compose-field :deep(.el-input__wrapper),
 .compose-field :deep(.el-input-tag) { box-shadow: none; padding-inline: 0; min-width: 0; }
-.compose-field:focus-within { box-shadow: inset 0 -1px var(--mail-shell-muted); }
+.compose-field:focus-within { box-shadow: inset 0 -2px var(--mac-focus); }
 
 .recipient-tools { gap: 3px; }
 .recipient-tools button {
   flex-shrink: 0;
-  padding: 3px 5px;
-  border-radius: 5px;
-  color: var(--mail-shell-muted);
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-chrome);
   cursor: pointer;
 }
-.recipient-tools button:hover { background: var(--mail-shell-hover); }
+.recipient-tools button:hover { background: var(--mac-hover); color: var(--mac-text); }
 
 .button-item {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px;
-  min-height: 53px;
-  padding: 6px 12px;
-  border-top: 1px solid var(--mail-shell-line);
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 12px 8px var(--compose-gutter);
+  border-top: 1px solid var(--mac-line);
+  background: var(--mac-chrome);
 }
 
 .send-actions { grid-column: 1; grid-row: 1; }
@@ -705,9 +707,11 @@ async function close() {
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   gap: 5px;
   align-items: center;
-  padding: 2px 4px;
-  background: var(--mail-shell-rail);
-  border-radius: 5px;
+  padding: 2px 4px 2px 8px;
+  border: 1px solid var(--mac-line);
+  background: var(--mac-surface);
+  border-radius: 6px;
+  font-size: var(--mac-fs-caption);
 }
 
 .att-filename { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

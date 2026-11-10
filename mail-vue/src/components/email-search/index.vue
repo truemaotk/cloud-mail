@@ -2,7 +2,7 @@
   <form ref="searchRef" class="email-search" role="search" @submit.prevent="applySearch">
     <div class="search-bar">
       <button class="search-icon" type="submit" :aria-label="t('search')">
-        <NavigationIcon name="search" :size="18" />
+        <NavigationIcon name="search" :size="16" />
       </button>
       <input ref="inputRef" v-model="searchText" type="text" :aria-label="t('searchMail')"
              :placeholder="t('searchMail')" autocomplete="off" />
@@ -14,7 +14,7 @@
       <button ref="filterButton" class="search-icon filter-button" type="button"
               :aria-label="t('mailSearchFilters')" :title="t('mailSearchFilters')"
               :aria-expanded="visible" aria-controls="mail-search-filters" @click="toggleFilters">
-        <NavigationIcon name="filter" :size="18" />
+        <NavigationIcon name="filter" :size="16" />
         <span v-if="appliedFilters" class="filter-dot" aria-hidden="true" />
       </button>
     </div>
@@ -165,70 +165,82 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.email-search { position: relative; z-index: 15; flex: 1 1 650px; min-width: 0; max-width: 790px; }
+.email-search { position: relative; z-index: 15; flex: 0 1 300px; min-width: 180px; }
 .search-bar {
   display: flex;
   align-items: center;
-  gap: 5px;
-  height: 42px;
-  padding: 0 6px;
-  border: 1px solid var(--mail-shell-line);
+  gap: 2px;
+  height: 32px;
+  padding: 0 3px 0 4px;
+  border: 1px solid var(--mac-line);
   border-radius: var(--mail-radius-control);
-  background: var(--mail-shell-hover);
+  background: var(--mac-chrome);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
 }
-.search-bar:focus-within { border-color: var(--mail-shell-muted); background: var(--el-bg-color); }
+.search-bar:focus-within {
+  border-color: var(--mac-focus);
+  background: var(--mac-surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mac-focus) 22%, transparent);
+}
 .search-bar input {
   flex: 1;
   min-width: 0;
+  height: 100%;
   background: transparent;
   color: var(--el-text-color-primary);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--mac-fs-chrome);
   outline: none;
 }
+.search-bar input::placeholder { color: var(--mac-text-3); }
 .search-icon {
   position: relative;
   display: grid;
-  flex: 0 0 31px;
-  width: 31px;
-  height: 31px;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
   place-items: center;
-  border-radius: 50%;
-  color: var(--mail-shell-muted);
+  border-radius: 6px;
+  color: var(--mac-text-2);
   cursor: pointer;
 }
-.search-icon:hover, .filter-button[aria-expanded='true'] { background: var(--mail-shell-active); color: var(--el-text-color-primary); }
+.search-icon:hover, .filter-button[aria-expanded='true'] { background: var(--mac-hover); color: var(--el-text-color-primary); }
+.search-icon:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: -2px; }
 .search-shortcut {
-  padding: 0 6px;
-  border: 1px solid var(--mail-shell-line);
+  min-width: 18px;
+  margin-inline-end: 2px;
+  padding: 0 5px;
+  border: 1px solid var(--mac-line);
   border-radius: 4px;
-  background: var(--el-bg-color);
-  color: var(--mail-shell-muted);
+  background: var(--mac-surface);
+  color: var(--mac-text-2);
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
 }
-.filter-dot { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--mail-shell-marker); }
+.filter-dot { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--mac-accent); }
 .search-filters {
   position: absolute;
-  inset-block-start: calc(100% + 7px);
+  inset-block-start: calc(100% + 6px);
   inset-inline-end: 0;
   width: min(440px, calc(100vw - 24px));
-  padding: 14px;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: var(--mail-radius-card);
-  background: var(--el-bg-color-overlay);
-  box-shadow: var(--el-box-shadow-light);
+  padding: 16px;
+  border: 1px solid var(--mac-line);
+  border-radius: var(--mail-radius-menu);
+  background: var(--mac-chrome);
+  box-shadow: var(--mac-shadow-pop);
 }
-.search-filter-title { margin-bottom: 7px; font-size: 13px; font-weight: 600; }
+.search-filter-title { margin-bottom: 8px; font-size: var(--mac-fs-chrome); line-height: var(--mac-lh-chrome); font-weight: 600; }
 .search-filters :deep(.el-segmented) { max-width: 100%; }
-.search-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
-.search-dates label { display: grid; gap: 4px; min-width: 0; font-size: 12px; }
+.search-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.search-dates label { display: grid; gap: 4px; min-width: 0; font-size: var(--mac-fs-caption); color: var(--mac-text-2); }
 .search-dates :deep(.el-date-editor) { width: 100%; }
 .search-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 .search-panel-enter-active, .search-panel-leave-active { transition: opacity 140ms ease, translate 140ms ease; }
 .search-panel-enter-from, .search-panel-leave-to { opacity: 0; translate: 0 -4px; }
 @media (max-width: 767px) {
-  .search-bar { height: 36px; }
+  .email-search { flex: 1 1 auto; }
   .search-shortcut { display: none; }
   .search-filters { width: min(440px, calc(100vw - 20px)); }
 }

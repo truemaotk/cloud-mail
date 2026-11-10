@@ -111,6 +111,7 @@ onBeforeUnmount(() => {
 .el-aside {
   width: min(var(--mail-sidebar-width), calc(100vw - 24px));
   border-inline-end: 1px solid var(--mail-shell-line);
+  background: var(--mac-sidebar);
   transition: transform 180ms ease;
 }
 
@@ -121,7 +122,7 @@ onBeforeUnmount(() => {
     width: var(--mail-sidebar-width);
     overflow: visible;
     transform: none;
-    transition: width 190ms cubic-bezier(.2, .7, .3, 1);
+    transition: width 200ms cubic-bezier(.2, .7, .3, 1);
   }
 
   .el-aside-hide {
@@ -130,50 +131,40 @@ onBeforeUnmount(() => {
 }
 
 .layout {
-  --mail-sidebar-width: 244px;
-  --mail-sidebar-compact-width: 64px;
-  --mail-shell-sidebar: #f5f5f5;
-  --mail-shell-rail: #fafafa;
-  --mail-shell-line: #e6e6e6;
-  --mail-shell-hover: #ededed;
-  --mail-shell-active: #e7e7e7;
-  --mail-shell-muted: #626262;
-  --mail-shell-marker: #353535;
-  --mail-shell-badge: #dedede;
-  --mail-shell-badge-text: #303030;
-  --mail-shell-action: var(--el-color-primary);
-  --mail-shell-action-hover: #414141;
-  --mail-shell-action-text: var(--mail-primary-text);
-  --mail-shell-header: 64px;
+  --mail-sidebar-width: 232px;
+  --mail-sidebar-compact-width: 60px;
+  --mail-shell-sidebar: var(--mac-sidebar);
+  --mail-shell-rail: var(--mac-chrome);
+  --mail-shell-line: var(--mac-line);
+  --mail-shell-hover: var(--mac-hover);
+  --mail-shell-active: var(--mac-selected);
+  --mail-shell-active-text: var(--mac-selected-text);
+  --mail-shell-muted: var(--mac-text-2);
+  --mail-shell-marker: var(--mac-accent);
+  --mail-shell-badge: var(--mac-badge);
+  --mail-shell-badge-text: var(--mac-badge-text);
+  --mail-shell-action: var(--mac-accent);
+  --mail-shell-action-hover: var(--mac-accent-hover);
+  --mail-shell-action-text: var(--mac-accent-text);
+  --mail-shell-header: var(--mac-toolbar);
   --mail-shell-toolbar: 44px;
   --mail-shell-gutter: 16px;
-  --mail-shell-control: 32px;
-  --workspace-toolbar: 56px;
-  --mailbox-rail-width: 244px;
+  --mail-shell-control: var(--mac-hit);
+  --workspace-toolbar: var(--mac-pane-bar);
+  --mailbox-rail-width: 232px;
+  --mail-list-width: 352px;
   height: 100%;
   position: fixed;
   width: 100%;
   top: 0;
   left: 0;
   overflow: hidden;
-}
-
-.mail-shell-dark {
-  --mail-shell-sidebar: #1b1b1b;
-  --mail-shell-rail: #191919;
-  --mail-shell-line: #353535;
-  --mail-shell-hover: #2c2c2c;
-  --mail-shell-active: #373737;
-  --mail-shell-muted: #b4b4b4;
-  --mail-shell-marker: #e3e3e3;
-  --mail-shell-badge: #444;
-  --mail-shell-badge-text: #f1f1f1;
-  --mail-shell-action-hover: #d6d6d6;
+  background: var(--mac-app);
 }
 
 .main-container {
   min-height: 100%;
-  background: var(--el-bg-color);
+  background: var(--mac-app);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -184,8 +175,7 @@ onBeforeUnmount(() => {
 
 .el-header {
   --el-header-height: var(--mail-shell-header);
-  background: var(--el-bg-color);
-  border-bottom: 1px solid var(--mail-shell-line);
+  background: var(--mac-app);
   padding: 0;
 }
 
