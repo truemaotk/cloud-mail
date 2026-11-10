@@ -947,7 +947,7 @@ function submitRegister() {
   transition: background-color var(--mac-dur-1) ease, color var(--mac-dur-1) ease;
 }
 .login-forgot:hover { background: var(--mac-hover); color: var(--login-ink); }
-.login-forgot:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
+.login-forgot:focus-visible { outline: none; outline: 2px solid var(--mac-focus); outline-offset: 1px; }
 
 .login-form :deep(.login-domain-text) {
   display: block;

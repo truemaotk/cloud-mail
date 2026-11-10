@@ -192,7 +192,7 @@ function changeAside() {
 
 .layout-option:hover { color: var(--mac-text); }
 .layout-option[aria-checked='true'] { color: var(--mac-text); }
-.layout-option:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
+.layout-option:focus-visible { outline: none; outline: 2px solid var(--mac-focus); outline-offset: 1px; }
 
 @media (max-width: 1024px) { .layout-switch { display: none; } }
 

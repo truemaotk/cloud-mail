@@ -182,8 +182,8 @@ onBeforeUnmount(() => {
   transition: box-shadow var(--mac-dur-2) var(--mac-ease), background-color var(--mac-dur-2) ease;
 }
 .search-bar:focus-within {
-  background: var(--glass-bg-strong);
-  box-shadow: var(--glass-edge), 0 0 0 1px var(--mac-focus), var(--mac-focus-ring);
+  background: var(--mac-surface);
+  box-shadow: 0 0 0 1px var(--mac-line-strong), 0 2px 8px rgb(0 0 0 / 6%);
 }
 .search-bar input {
   flex: 1;
@@ -209,7 +209,7 @@ onBeforeUnmount(() => {
   transition: background-color var(--mac-dur-1) ease;
 }
 .search-icon:hover, .filter-button[aria-expanded='true'] { background: var(--mac-hover); color: var(--el-text-color-primary); }
-.search-icon:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
+.search-icon:focus-visible { outline: none; outline: 2px solid var(--mac-focus); outline-offset: 1px; }
 .search-shortcut {
   min-width: 18px;
   margin-inline-end: 2px;

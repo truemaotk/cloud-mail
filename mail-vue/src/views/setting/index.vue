@@ -3,7 +3,7 @@
     <SettingsWorkspace :sections="personalSections" v-slot="{ section }">
       <section v-show="section === 'account'" class="personal-section">
         <div class="identity-summary">
-          <span class="identity-avatar" aria-hidden="true"><NavigationIcon name="user" /></span>
+          <span class="identity-avatar" aria-hidden="true"><NavigationIcon name="user-circle" :size="44" /></span>
           <div>
             <h3>{{ userStore.user.name || userStore.user.email }}</h3>
             <p v-if="userStore.user.name">{{ userStore.user.email }}</p>
@@ -43,7 +43,9 @@
             <h3>{{ $t('deleteUser') }}</h3>
             <p>{{ $t('delAccountMsg') }}</p>
           </div>
-          <el-button @click="deleteConfirm">{{ $t('deleteUserBtn') }}</el-button>
+          <el-tooltip :disabled="!protectedSelf" :content="$t('protectedUserDelete')" placement="top">
+            <span><el-button :disabled="protectedSelf" @click="deleteConfirm">{{ $t('deleteUserBtn') }}</el-button></span>
+          </el-tooltip>
         </div>
       </section>
 
@@ -93,6 +95,7 @@
   </div>
 </template>
 <script setup>
+import { isProtectedUser } from '@/utils/protected-user.js'
 import {computed, reactive, ref, defineOptions} from 'vue'
 import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
@@ -204,6 +207,7 @@ const form = reactive({
   newPwd: '',
 })
 
+const protectedSelf = computed(() => isProtectedUser(userStore.user?.email))
 const deleteConfirm = () => {
   ElMessageBox.confirm(t('delAccountConfirm'), {
     confirmButtonText: t('confirm'),
@@ -298,18 +302,16 @@ function submitPwd() {
 
 .identity-avatar {
   display: grid;
-  flex: 0 0 42px;
-  height: 42px;
+  flex: 0 0 44px;
+  height: 44px;
   place-items: center;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: 50%;
-  background: var(--el-bg-color);
-  color: var(--mail-shell-muted);
+  color: var(--mac-text-2);
+  --mail-icon-weight: 1.3;
 }
 
 .identity-avatar svg {
-  width: 20px;
-  height: 20px;
+  width: 44px;
+  height: 44px;
 }
 
 .identity-summary h3 {

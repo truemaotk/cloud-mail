@@ -52,7 +52,7 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
   gap: 16px;
   height: 100%;
   min-height: 0;
-  padding-block: 12px var(--mail-shell-gutter);
+  padding-block: 12px 0;
   background: transparent;
 }
 

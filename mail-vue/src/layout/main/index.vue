@@ -86,6 +86,7 @@ function showNotice(data) {
   grid-template-columns: minmax(0, 1fr);
   height: calc(100% - var(--mail-shell-header));
   padding-inline: var(--mail-shell-gutter);
+  padding-block-end: var(--mail-shell-gutter);
 }
 
 .mail-page-enter-active { transition: opacity 180ms ease-out; }

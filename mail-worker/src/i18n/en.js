@@ -55,6 +55,7 @@ const en = {
 	regKeyExpire: 'Invite code has expired',
 	emailAndPwdEmpty: 'Email and password cannot be empty',
 	notExistUser: 'Email does not exist',
+	protectedUserDelete: 'Accounts whose address starts with admin are protected and cannot be deleted',
 	isDelUser: 'This email has been deleted',
 	isBanUser: 'This email has been banned',
 	regKeyUseCount: 'Usage count cannot be empty',

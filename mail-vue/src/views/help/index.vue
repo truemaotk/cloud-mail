@@ -252,7 +252,7 @@ onMounted(loadInfo)
 }
 .help-inner {
   width: min(100%, 960px);
-  padding: 12px 0 32px;
+  padding: 12px 0 0;
 }
 .help-intro { margin-bottom: 16px; }
 .help-intro h1 { margin: 0 0 4px; font-size: var(--mac-fs-title); line-height: var(--mac-lh-title); font-weight: 600; }

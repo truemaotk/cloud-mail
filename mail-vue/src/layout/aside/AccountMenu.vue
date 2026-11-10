@@ -29,7 +29,7 @@
         @keydown.esc="closeFromKeyboard"
         @pointerdown="keyboardOpening = false"
       >
-        <span class="profile-avatar" aria-hidden="true">{{ avatarInitial }}</span>
+        <span class="profile-avatar" aria-hidden="true"><NavigationIcon name="user-circle" :size="30" /></span>
         <span class="profile-identity">
           <strong>{{ user.name || user.email }}</strong>
           <span :title="user.email">{{ user.email }}</span>
@@ -77,7 +77,6 @@ const { t } = useI18n()
 const uiStore = useUiStore()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
-const avatarInitial = computed(() => (Array.from(String(user.value?.name || user.value?.email || '?'))[0] || '?').toUpperCase())
 const trigger = ref(null)
 const { width: triggerWidth } = useElementSize(trigger, undefined, { box: 'border-box' })
 const copyButton = ref(null)
@@ -167,7 +166,7 @@ function clickLogout() {
   background: transparent;
 }
 .is-compact .profile-trigger:hover { background: var(--mac-hover); }
-.is-compact .profile-avatar { width: 28px; height: 28px; font-size: 12px; }
+.is-compact .profile-avatar { width: 30px; height: 30px; }
 .is-compact :is(.profile-identity, .profile-chevron) { display: none; }
 
 .profile-trigger {
@@ -206,20 +205,14 @@ function clickLogout() {
   border-radius: 0 0 10px 10px;
 }
 
-/* 账户头像：圆形首字母，与左上邮箱图标区分 */
+/* 账户头像：图标库的圆形用户图标，与左上角方形邮箱图标区分 */
 .profile-avatar {
   display: grid;
   width: 32px;
   height: 32px;
   place-items: center;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #A1A1A6, #6E6E73);
-  box-shadow: inset 0 0 0 .5px rgb(0 0 0 / 12%), inset 0 1px 0 rgb(255 255 255 / 22%);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  user-select: none;
+  color: var(--mac-text-2);
+  --mail-icon-weight: 1.4;
 }
 
 .profile-identity {

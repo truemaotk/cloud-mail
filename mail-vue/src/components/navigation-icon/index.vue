@@ -12,7 +12,7 @@ import {
   PanelLeft, ChevronRight, MailX, MailCheck, CircleCheck, CircleX, CircleAlert, Clock, Clipboard,
   Ban, Mailbox, Image, GitBranch, Coffee, BookOpen, Eye, Download, LoaderCircle, FileArchive,
   FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, File, ArrowUpRight,
-  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus, Headset, Columns3, Rows3, EllipsisVertical
+  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus, Headset, Columns3, Rows3, EllipsisVertical, CircleUserRound
 } from '@lucide/vue'
 
 defineProps({
@@ -97,5 +97,6 @@ const icons = {
   columns: Columns3,
   rows: Rows3,
   'more-vertical': EllipsisVertical,
+  'user-circle': CircleUserRound,
 }
 </script>

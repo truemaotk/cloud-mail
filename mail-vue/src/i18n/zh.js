@@ -1,4 +1,5 @@
 const zh = {
+    protectedUserDelete: '以 admin 开头的账号受保护，不能删除',
     forgotPassword: '忘记密码？',
     forgotPasswordHint: '请联系本站管理员在「用户列表」中为你重置密码。登录后可在「个人设置」里改成新的密码。',
     forgotPasswordOk: '知道了',

@@ -1566,7 +1566,7 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
   height: 100%;
   overflow: hidden;
   min-width: 0;
-  background: var(--mail-shell-rail);
+  background: transparent;
   position: relative;
 
 }

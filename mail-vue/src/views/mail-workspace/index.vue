@@ -640,7 +640,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   margin-block-start: 12px;
   overflow: hidden;
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--r-panel);
   background: var(--mac-surface);
   box-shadow: 0 0 0 .5px rgb(0 0 0 / 10%), 0 4px 18px rgb(0 0 0 / 5%);
 }

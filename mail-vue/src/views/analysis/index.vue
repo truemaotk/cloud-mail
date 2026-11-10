@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
   container-type: inline-size;
   display: grid;
   gap: 16px;
-  padding-block: 12px var(--mail-shell-gutter);
+  padding-block: 12px 0;
 }
 
 .analysis-placeholder { height: 112px; border-radius: var(--mail-radius-card); }

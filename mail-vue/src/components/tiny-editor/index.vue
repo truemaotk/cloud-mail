@@ -208,9 +208,7 @@ function destroyEditor() {
   justify-content: center;
 }
 
-:deep(.tox-tbtn.tox-tbtn--select.tox-tbtn--bespoke) {
-  width: 80px !important;
-}
+
 
 :deep(.tox.tox-tinymce.tox-fullscreen) {
   padding-right: 15px;
@@ -269,17 +267,15 @@ function destroyEditor() {
   corner-shape: var(--mac-corner);
 }
 :deep(.tox .tox-tbtn svg) { fill: var(--mac-text-2) !important; }
-:deep(.tox .tox-tbtn:hover), :deep(.tox .tox-tbtn--enabled), :deep(.tox .tox-tbtn--enabled:hover),
-:deep(.tox .tox-split-button:hover .tox-tbtn) {
-  background: var(--mac-selected) !important;
+:deep(.tox .tox-tbtn:not(.tox-split-button .tox-tbtn):hover), :deep(.tox .tox-tbtn--enabled), :deep(.tox .tox-tbtn--enabled:hover) {
+  background: var(--mac-hover) !important;
   color: var(--mac-text);
 }
 :deep(.tox .tox-tbtn--enabled svg), :deep(.tox .tox-tbtn:hover svg) { fill: var(--mac-text) !important; }
 :deep(.tox .tox-tbtn__select-label) { color: var(--mac-text-2); font-size: 13px; }
 :deep(.tox .tox-tbtn--bespoke), :deep(.tox .tox-tbtn--select) { background: transparent !important; }
 :deep(.tox .tox-tbtn--bespoke:hover), :deep(.tox .tox-tbtn--select:hover) { background: var(--mac-hover) !important; }
-:deep(.tox .tox-split-button) { background: transparent !important; }
-:deep(.tox .tox-split-button:hover) { box-shadow: none !important; border-radius: 7px; background: var(--mac-hover) !important; }
+
 :deep(.tox .tox-toolbar__group:not(:last-of-type)) { border-right: 0 !important; }
 
 </style>

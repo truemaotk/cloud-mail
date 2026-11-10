@@ -713,7 +713,7 @@ const handleDelete = () => {
     background: color-mix(in srgb, var(--mac-surface) 92%, var(--mac-text));
   }
   &:active { transform: scale(.97); }
-  &:focus-visible { outline: none; box-shadow: var(--glass-edge), 0 0 0 1px var(--mac-focus), var(--mac-focus-ring); }
+  &:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: 2px; }
 }
 
 @media (max-width: 620px) {

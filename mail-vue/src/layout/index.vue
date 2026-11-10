@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
 .layout {
   --mail-sidebar-width: 232px;
   --mail-sidebar-compact-width: 60px;
-  --mail-sidebar-inset: 8px;
+  --mail-sidebar-inset: 10px;
   --mail-shell-sidebar: var(--mac-sidebar);
   --mail-shell-rail: var(--mac-chrome);
   --mail-shell-line: var(--mac-line);
@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
   --mail-shell-action-text: var(--mac-accent-text);
   --mail-shell-header: var(--mac-toolbar);
   --mail-shell-toolbar: 44px;
-  --mail-shell-gutter: 16px;
+  --mail-shell-gutter: 10px;
   --mail-shell-control: var(--mac-hit);
   --workspace-toolbar: var(--mac-pane-bar);
   --mailbox-rail-width: 232px;
@@ -166,6 +166,7 @@ onBeforeUnmount(() => {
   min-height: 100%;
   background: transparent;
   overflow-y: auto;
+  scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -177,6 +178,11 @@ onBeforeUnmount(() => {
   --el-header-height: var(--mail-shell-header);
   background: transparent;
   padding: 0;
+}
+
+/* 桌面端各页面自己滚动，外层不出现贴边的页面滚动条 */
+@media (min-width: 1025px) {
+  .main-container { overflow: hidden; }
 }
 
 @media (max-width: 767px) {

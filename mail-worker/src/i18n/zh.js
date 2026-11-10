@@ -55,6 +55,7 @@ const zh = {
 	regKeyExpire: '注册码已过期',
 	emailAndPwdEmpty: '邮箱和密码不能为空',
 	notExistUser: '输入的邮箱不存在',
+	protectedUserDelete: '以 admin 开头的账号受保护，不能删除',
 	isDelUser: '该邮箱已被注销',
 	isBanUser: '该邮箱已被禁用',
 	regKeyUseCount: '使用次数不能为空',

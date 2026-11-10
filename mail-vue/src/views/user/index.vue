@@ -47,7 +47,7 @@
             @cell-contextmenu="handleContextmenu"
             :cell-class-name="cellClassName"
         >
-          <el-table-column :width="expandWidth" type="selection" :selectable="row => row.type !== 0" />
+          <el-table-column :width="expandWidth" type="selection" :selectable="row => row.type !== 0 && !isProtectedUser(row.email)" />
           <el-table-column show-overflow-tooltip :tooltip-formatter="tableRowFormatter" :label="$t('tabEmailAddress')"
                            :min-width="emailWidth">
             <template #default="props">
@@ -367,7 +367,7 @@
               </div>
             </template>
           </el-dropdown-item>
-          <el-dropdown-item v-if="rightClickUser.type !== 0" @click="delOneUser(rightClickUser)" >
+          <el-dropdown-item v-if="rightClickUser.type !== 0" :disabled="isProtectedUser(rightClickUser.email)" @click="delOneUser(rightClickUser)" >
             <template #default>
               <div class="right-dropdown-item" >
                 <NavigationIcon name="delete" />
@@ -382,6 +382,7 @@
 </template>
 
 <script setup>
+import { isProtectedUser } from '@/utils/protected-user.js'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import ToolbarButton from '@/components/toolbar-button/index.vue'
 import {computed, defineOptions, h, reactive, ref, watch} from 'vue'
@@ -877,6 +878,10 @@ function delUser(user) {
 }
 
 function delOneUser(user) {
+  if (isProtectedUser(user.email)) {
+    ElMessage({ message: t('protectedUserDelete'), type: 'warning', plain: true })
+    return
+  }
   ElMessageBox.confirm(t('delConfirm', {msg: user.email}), {
     confirmButtonText: t('confirm'),
     cancelButtonText: t('cancel'),

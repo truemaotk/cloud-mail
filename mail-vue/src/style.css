@@ -3,8 +3,11 @@
     padding: 0;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    scrollbar-width: thin;
-    scrollbar-color: var(--dark-border) transparent;
+}
+
+/* 只有不支持 ::-webkit-scrollbar 的浏览器（Firefox）才用标准细滚动条 */
+@supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; scrollbar-color: rgb(0 0 0 / 25%) transparent; }
 }
 
 html, body {
@@ -36,7 +39,7 @@ body {
 }
 
 html, body {
-    background: var(--mac-app);
+    background: var(--mac-wallpaper);
 }
 
 ul, ol {
@@ -160,8 +163,8 @@ html:root, html:root.dark {
     --glass-edge: inset 0 1px 0 rgb(255 255 255 / 85%), inset 0 0 0 .5px rgb(255 255 255 / 55%), inset 0 -1px 0 rgb(0 0 0 / 4%);
     --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 10%), 0 10px 30px rgb(0 0 0 / 10%), 0 2px 8px rgb(0 0 0 / 6%);
     --glass-sidebar: rgb(248 248 250 / 74%);
-    --mac-wallpaper: radial-gradient(1200px 700px at 12% -10%, #FFFFFF 0%, transparent 60%),
-        radial-gradient(900px 600px at 100% 110%, #E6E6EB 0%, transparent 55%), #F2F2F5;
+    /* 窗口底色：纯色，侧栏、顶栏、卡片之间的缝隙都是同一种颜色 */
+    --mac-wallpaper: #F0F0F3;
     --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 10%), 0 12px 32px rgb(0 0 0 / 14%), 0 2px 6px rgb(0 0 0 / 6%);
     --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 10%), 0 24px 64px rgb(0 0 0 / 18%), 0 4px 14px rgb(0 0 0 / 8%);
     --mac-sidebar-glass: var(--glass-sidebar);
@@ -318,8 +321,7 @@ html:root.dark {
     --glass-edge: inset 0 1px 0 rgb(255 255 255 / 14%), inset 0 0 0 .5px rgb(255 255 255 / 10%), inset 0 -1px 0 rgb(0 0 0 / 25%);
     --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 34px rgb(0 0 0 / 45%), 0 2px 8px rgb(0 0 0 / 30%);
     --glass-sidebar: rgb(36 36 38 / 72%);
-    --mac-wallpaper: radial-gradient(1200px 700px at 12% -10%, #2A2A2D 0%, transparent 60%),
-        radial-gradient(900px 600px at 100% 110%, #0A0A0B 0%, transparent 55%), #141416;
+    --mac-wallpaper: #141416;
     --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 32px rgb(0 0 0 / 45%), inset 0 0 0 .5px rgb(255 255 255 / 8%);
     --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 60%), 0 24px 64px rgb(0 0 0 / 55%), inset 0 0 0 .5px rgb(255 255 255 / 10%);
 
@@ -503,7 +505,7 @@ html:root.dark {
 
 .page-skeleton {
     align-self: flex-start;
-    padding: 12px 0 var(--mail-shell-gutter);
+    padding: 12px 0 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -673,7 +675,7 @@ html:root.dark {
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    padding-block: 12px var(--mail-shell-gutter);
+    padding-block: 12px 0;
 }
 
 .mail-table-panel,
@@ -940,8 +942,8 @@ html.dark .el-checkbox { --el-checkbox-input-border: 1px solid #5E5E62; }
     transition: transform var(--mac-dur-2) var(--mac-spring) !important;
 }
 .el-checkbox__input.is-indeterminate .el-checkbox__inner::before { background-color: var(--mac-accent-text); }
-.el-checkbox__input.is-focus .el-checkbox__inner,
-.el-checkbox__original:focus-visible + .el-checkbox__inner { box-shadow: var(--mac-focus-ring); }
+.el-checkbox__input.is-focus .el-checkbox__inner { box-shadow: 0 .5px 1px rgb(0 0 0 / 8%); }
+.el-checkbox__original:focus-visible + .el-checkbox__inner { outline: 2px solid var(--mac-focus); outline-offset: 2px; }
 
 /* 开关：苹果尺寸，旋钮弹簧滑动 */
 .el-switch.el-switch {
@@ -1002,7 +1004,9 @@ html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !import
     --el-button-active-text-color: var(--mac-accent-text);
     box-shadow: inset 0 .5px 0 rgb(255 255 255 / 18%), 0 1px 2px rgb(0 0 0 / 14%);
 }
-.el-button:focus-visible { outline: none; box-shadow: var(--mac-focus-ring) !important; }
+/* 键盘导航才显示焦点框：细线、无光晕 */
+.el-button:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: 2px; }
+.el-button:focus:not(:focus-visible) { outline: none; }
 
 /* 文本框：浅底、细边、聚焦时柔和光环；带前后缀时整组是一个输入框 */
 :is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number, .el-input-tag):is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number, .el-input-tag) {
@@ -1018,8 +1022,9 @@ html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !import
 .el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-input-tag__wrapper {
     transition: box-shadow var(--mac-dur-2) var(--mac-ease), background-color var(--mac-dur-1) ease !important;
 }
+/* 聚焦只加深边框，不画外圈光晕 */
 .el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-textarea__inner:focus, .el-input-tag.is-focused .el-input-tag__wrapper {
-    box-shadow: 0 0 0 1px var(--mac-focus) inset, var(--mac-focus-ring) !important;
+    box-shadow: 0 0 0 1px var(--mac-text-3) inset !important;
 }
 /* 内联字段（写信、表格单元、工具栏紧凑控件）不画框也不发光 */
 :where(.write-box, .compose-field, .mail-inline-field) :is(.el-input__wrapper, .el-select__wrapper, .el-input-tag__wrapper, .el-input-tag),
@@ -1033,7 +1038,7 @@ html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !import
     transition: box-shadow var(--mac-dur-2) var(--mac-ease);
 }
 .el-input-group:has(.el-input-group__append, .el-input-group__prepend):focus-within {
-    box-shadow: 0 0 0 1px var(--mac-focus), var(--mac-focus-ring);
+    box-shadow: 0 0 0 1px var(--mac-text-3);
 }
 .el-input-group:has(.el-input-group__append, .el-input-group__prepend) .el-input__wrapper,
 .el-input-group:has(.el-input-group__append, .el-input-group__prepend) .el-input__wrapper.is-focus {
@@ -1274,10 +1279,14 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
 .el-skeleton.el-skeleton { --el-skeleton-color: color-mix(in srgb, var(--mac-surface) 92%, var(--mac-text)); --el-skeleton-to-color: color-mix(in srgb, var(--mac-surface) 96%, var(--mac-text)); }
 
 /* 滚动条：叠加式，细、圆 */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: rgb(0 0 0 / 22%) padding-box; }
+/* 叠加式滚动条：滑块离容器边缘 4px，圆角面板里上下也让开圆角 */
+::-webkit-scrollbar { width: 14px; height: 14px; }
+::-webkit-scrollbar-thumb { border: 4px solid transparent; border-radius: 10px; background: rgb(0 0 0 / 20%) padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: rgb(0 0 0 / 34%); }
+::-webkit-scrollbar-corner { background: transparent; }
 html.dark ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 24%) padding-box; }
 ::-webkit-scrollbar-track { background: transparent; }
+:is(.settings-surface, .help-section, .mail-table-panel-body, .el-dialog__body, .write-box *)::-webkit-scrollbar-track { margin-block: 10px; }
 .el-scrollbar__thumb { background: rgb(0 0 0 / 35%); opacity: .6; }
 html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
 .el-scrollbar__bar { transition: opacity var(--mac-dur-2) ease; }
@@ -1326,8 +1335,8 @@ html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
 .tox .tox-image-selector-menu .tox-collection__item-checkmark svg path { fill: var(--mac-text) !important; stroke: var(--mac-text) !important; }
 .tox .tox-custom-editor:focus-within, .tox .tox-focusable-wrapper:focus, .tox .tox-listboxfield .tox-listbox--select:focus,
 .tox .tox-textarea-wrap:focus, .tox .tox-textfield:focus {
-    border-color: var(--mac-focus) !important;
-    box-shadow: var(--mac-focus-ring) !important;
+    border-color: var(--mac-text-3) !important;
+    box-shadow: none !important;
 }
 .tox .tox-button:not(.tox-button--secondary, .tox-button--naked, .tox-button--icon) {
     border-color: var(--mac-accent) !important;
@@ -1346,3 +1355,26 @@ html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
     clip-path: inset(50%);
     white-space: nowrap;
 }
+
+/* 带尾部箭头的按钮与下拉框：箭头图形到边框的距离与文字到边框相同（12px 视觉边距，图标自带约 5px 留白） */
+/* 下拉箭头图标自带约 5px 留白：整体右移，让箭头线条到边框的距离等于文字到左边框的距离 */
+.el-select__wrapper .el-select__suffix { margin-inline: 4px -5px; }
+.el-select--small .el-select__wrapper .el-select__suffix { margin-inline-end: -4px; }
+/* 前置图标的按钮：图标线条到左边框 ≈ 文字到右边框 */
+.el-button:has(> .el-icon:first-child):not(.is-circle) { padding-inline-start: 9px !important; }
+.el-button:has(> span > .disclosure-chevron:last-child) { padding-inline-end: 7px !important; }
+.el-button--small:has(> span > .disclosure-chevron:last-child) { padding-inline-end: 6px !important; }
+.action-menu-trigger .disclosure-chevron { margin-inline-start: 2px; }
+
+/* TinyMCE 分体按钮：整体一个悬停底色，内部两段都透明 */
+.tox .tox-split-button, .tox .tox-split-button .tox-tbtn, .tox .tox-split-button .tox-split-button__chevron { background: transparent !important; box-shadow: none !important; }
+.tox .tox-split-button { border-radius: 7px !important; corner-shape: var(--mac-corner); }
+.tox .tox-split-button:hover, .tox .tox-split-button:focus-within { background: var(--mac-hover) !important; }
+.tox .tox-split-button .tox-tbtn:hover, .tox .tox-split-button__chevron:hover { background: transparent !important; }
+.tox .tox-split-button__chevron { width: 18px !important; }
+.tox .tox-split-button__chevron svg { fill: var(--mac-text-3) !important; }
+.tox .tox-tbtn--bespoke { width: auto !important; min-width: 58px; padding-inline: 8px 4px !important; }
+.tox .tox-tbtn--bespoke .tox-tbtn__select-chevron svg { fill: var(--mac-text-3) !important; }
+/* 字号下拉：标签和箭头紧挨着，不留大段空白 */
+.tox .tox-tbtn--bespoke { min-width: 0 !important; padding-inline: 8px 4px !important; }
+.tox .tox-tbtn--bespoke .tox-tbtn__select-label { width: auto !important; margin: 0 2px 0 0 !important; }

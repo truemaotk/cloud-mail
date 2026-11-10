@@ -1,4 +1,5 @@
 const en = {
+    protectedUserDelete: 'Accounts whose address starts with admin are protected and cannot be deleted',
     forgotPassword: 'Forgot password?',
     forgotPasswordHint: 'Ask the site administrator to reset your password in All users. After signing in you can change it in Settings.',
     forgotPasswordOk: 'OK',

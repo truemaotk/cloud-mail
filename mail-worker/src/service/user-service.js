@@ -18,6 +18,7 @@ import { t } from '../i18n/i18n'
 import reqUtils from '../utils/req-utils';
 import {oauth} from "../entity/oauth";
 import oauthService from "./oauth-service";
+import { protectedUserEmails } from '../utils/protected-user';
 import settingService from './setting-service';
 import starService from './star-service';
 
@@ -96,7 +97,17 @@ const userService = {
 			.get();
 	},
 
+	async assertDeletable(c, userIds) {
+		const ids = userIds.map(Number).filter(Number.isFinite);
+		if (!ids.length) return;
+		const rows = await orm(c).select({ email: user.email }).from(user).where(inArray(user.userId, ids)).all();
+		if (protectedUserEmails(rows).length) {
+			throw new BizError(t('protectedUserDelete'), 403);
+		}
+	},
+
 	async delete(c, userId) {
+		await this.assertDeletable(c, [userId]);
 		const { syncDelete } = await settingService.query(c);
 		if (syncDelete === settingConst.syncDelete.OPEN) {
 			await this.physicsDelete(c, { userIds: String(userId) });
@@ -109,7 +120,8 @@ const userService = {
 
 	async physicsDelete(c, params) {
 		let { userIds } = params;
-		userIds = userIds.split(',').map(Number);
+		userIds = String(userIds || '').split(',').map(Number).filter(Number.isFinite);
+		await this.assertDeletable(c, userIds);
 		await starService.removeByUserIds(c, userIds);
 		await accountService.physicsDeleteByUserIds(c, userIds);
 		await oauthService.deleteByUserIds(c, userIds);

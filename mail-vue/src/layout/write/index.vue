@@ -647,9 +647,11 @@ async function close() {
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
+/* 标签宽度随文字：值紧跟在「标签：」后面，间距 4px；发件人 / 收件人 标签等长自然对齐 */
 .compose-field {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 4px;
   align-items: center;
   min-height: 40px;
   padding-inline: var(--compose-gutter) 8px;
@@ -664,6 +666,10 @@ async function close() {
 .compose-from :deep(.el-select__wrapper) { padding: 0 8px 0 0; box-shadow: none; }
 .compose-label { color: var(--mac-text); font-weight: 600; text-align: start; white-space: nowrap; }
 .compose-address { color: var(--mac-text); }
+/* 收件人胶囊左移，胶囊里的文字与「发件人」「主题」的值起点对齐 */
+.compose-field :deep(.el-input-tag__inner) { margin-inline-start: -8px; }
+.compose-field :deep(.el-input-tag__input) { margin-inline-start: 8px; }
+.compose-field :deep(.el-input-tag__inner .el-tag ~ .el-input-tag__input) { margin-inline-start: 0; }
 .compose-field :deep(.el-input__wrapper),
 .compose-field :deep(.el-input-tag) { box-shadow: none; padding-inline: 0; min-width: 0; }
 .compose-field:focus-within .compose-label { color: var(--mac-text); }
