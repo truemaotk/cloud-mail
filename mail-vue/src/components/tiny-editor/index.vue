@@ -99,11 +99,11 @@ function initEditor() {
     skin: `${uiStore.dark ? 'oxide-dark' : 'oxide'}`,
     content_css: `/tinymce/css/index.css,${uiStore.dark ? 'dark' : 'default'}`,
     content_style: `:root {
-         --scrollbar-track-color: ${uiStore.dark ? '#26272B' : '#FFFFFF'};
+         --scrollbar-track-color: ${uiStore.dark ? '#1E1E1F' : '#FFFFFF'};
          --scrollbar-thumb-color: ${uiStore.dark ? '#6B6F78' : '#A8ABB2'};
     }
     html, body.mce-content-body {
-         background: ${uiStore.dark ? '#26272B' : '#FFFFFF'};
+         background: ${uiStore.dark ? '#1E1E1F' : '#FFFFFF'};
          color: ${uiStore.dark ? '#F5F5F7' : '#1D1D1F'};
     }
     body.mce-content-body {
@@ -112,8 +112,8 @@ function initEditor() {
          line-height: 22px;
          margin-top: 12px !important;
     }
-    body.mce-content-body a { color: ${uiStore.dark ? '#64A9FF' : '#005FC4'}; }
-    body.mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before { color: ${uiStore.dark ? '#9A9EA7' : '#6E727C'}; }
+    body.mce-content-body a { color: inherit; text-decoration: underline; }
+    body.mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before { color: ${uiStore.dark ? '#9A9A9E' : '#707074'}; }
     ${props.contentGutter ? `body.mce-content-body { margin-inline: ${props.contentGutter} !important; }` : ''}`,
     plugins: 'link image advlist lists  emoticons fullscreen  table preview code',
     toolbar: 'bold emoticons forecolor backcolor italic fontsize | alignleft aligncenter alignright alignjustify | outdent indent |  bullist numlist | link image  | table code preview fullscreen',

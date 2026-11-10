@@ -133,17 +133,30 @@ function clickLogout() {
 }
 
 
-.account-menu :deep(.mail-profile-popper) {
+.account-menu :deep(.mail-profile-popper.el-popper) {
   max-width: calc(100vw - 24px);
   padding: 0;
-  border-color: var(--mac-line);
+  border: 1px solid var(--mac-line) !important;
+  border-bottom: 0 !important;
   border-radius: var(--mail-radius-card) var(--mail-radius-card) 0 0;
   background: var(--mac-surface);
-  box-shadow: 0 -6px 16px rgb(0 0 0 / 8%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 -10px 24px rgb(0 0 0 / 8%) !important;
+}
+.account-menu :deep(.mail-profile-popper.el-fade-in-linear-enter-active),
+.account-menu :deep(.mail-profile-popper.el-fade-in-linear-leave-active) {
+  transition: clip-path var(--mac-dur-3) var(--mac-ease), opacity var(--mac-dur-2) ease !important;
+}
+.account-menu:not(.is-compact) :deep(.mail-profile-popper.el-fade-in-linear-enter-from),
+.account-menu:not(.is-compact) :deep(.mail-profile-popper.el-fade-in-linear-leave-to) {
+  opacity: 0;
+  transform: none !important;
+  clip-path: inset(100% 0 0 0 round 12px 12px 0 0);
 }
 
 .account-menu.is-compact { margin-inline: 12px; }
-.is-compact :deep(.mail-profile-popper) { border-radius: var(--mail-radius-menu); background: var(--mac-chrome); box-shadow: var(--mac-shadow-pop); }
+.is-compact :deep(.mail-profile-popper.el-popper) { border-bottom: 1px solid var(--mac-line) !important; border-radius: var(--mail-radius-card); box-shadow: var(--mac-shadow-pop) !important; }
 .is-compact .profile-trigger {
   grid-template-columns: 1fr;
   justify-items: center;
@@ -175,9 +188,18 @@ function clickLogout() {
   transition: background-color 140ms ease;
 }
 
-.profile-trigger:hover,
-.profile-trigger[aria-expanded='true'] {
-  background: var(--mac-hover);
+.profile-trigger { position: relative; transition: background-color var(--mac-dur-1) ease, border-radius var(--mac-dur-1) ease !important; }
+.profile-trigger:hover { background: color-mix(in srgb, var(--mac-surface) 94%, var(--mac-text)); }
+.account-menu:not(.is-compact) .profile-trigger[aria-expanded='true'] {
+  border-top-color: transparent;
+  background: var(--mac-surface);
+}
+.account-menu:not(.is-compact) .profile-trigger[aria-expanded='true']::after {
+  position: absolute;
+  inset: -1px 10px auto;
+  height: 1px;
+  background: var(--mac-line);
+  content: '';
 }
 
 .account-menu:not(.is-compact) .profile-trigger[aria-expanded='true'] {
@@ -225,7 +247,7 @@ function clickLogout() {
   width: 14px;
   height: 14px;
   color: var(--mac-text-2);
-  transition: transform 150ms ease;
+  transition: transform var(--mac-dur-3) var(--mac-spring);
 }
 
 .profile-trigger[aria-expanded='true'] .profile-chevron {
@@ -268,8 +290,9 @@ function clickLogout() {
   font-size: 12px;
 }
 
+.profile-action { transition: background-color 80ms ease; }
 .profile-action:hover:not(:disabled) {
-  background: var(--mac-hover);
+  background: var(--mac-selected);
 }
 
 .profile-action:disabled {

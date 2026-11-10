@@ -1,4 +1,7 @@
 const en = {
+    mailSentTo: 'to',
+    mailPositionOf: '{index} of {total}',
+    mailMoreMessageActions: 'More',
     inbox: 'Inbox',
     generateRegKey: 'Generate registration key',
     compose: 'Compose',

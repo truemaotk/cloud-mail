@@ -16,6 +16,7 @@
     </div>
     <div v-if="currentFolder" class="workspace-tools">
       <div class="layout-switch" role="radiogroup" :aria-label="$t('mailReadingLayout')">
+        <span class="layout-thumb" :class="{ 'is-wide': uiStore.wideReading }" aria-hidden="true" />
         <button type="button" role="radio" class="layout-option" :aria-checked="!uiStore.wideReading"
                 :aria-label="$t('mailSplitReading')" :title="$t('mailSplitReading')" @click="setReadingLayout('split')">
           <NavigationIcon name="columns" :size="16" />
@@ -118,8 +119,13 @@ function changeAside() {
   min-width: 0;
 }
 
-.sidebar-toggle {
-  margin-inline-start: -6px;
+.sidebar-toggle.toolbar-button {
+  margin-inline-start: -4px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 .5px rgb(0 0 0 / 8%), 0 2px 8px rgb(0 0 0 / 6%);
 }
 
 .breadcrumb-item {
@@ -146,34 +152,47 @@ function changeAside() {
   min-width: 0;
 }
 
+/* 分段控件：玻璃胶囊 + 弹簧滑块 */
 .layout-switch {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 34px 34px;
   flex: none;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--mac-line);
-  border-radius: var(--mail-radius-control);
-  background: var(--mac-chrome);
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 .5px rgb(0 0 0 / 8%), 0 2px 8px rgb(0 0 0 / 6%);
 }
+
+.layout-thumb {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 3px;
+  width: 34px;
+  border-radius: 999px;
+  background: var(--mac-surface);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 14%);
+  transition: transform var(--mac-dur-3) var(--mac-spring);
+}
+:global(html.dark) .layout-thumb { background: #3A3A3C; }
+.layout-thumb.is-wide { transform: translateX(34px); }
 
 .layout-option {
+  position: relative;
   display: grid;
-  width: 32px;
   height: 26px;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 999px;
   color: var(--mac-text-2);
   cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition: color var(--mac-dur-2) ease;
 }
 
-.layout-option:hover { background: var(--mac-hover); color: var(--mac-text); }
-.layout-option[aria-checked='true'] {
-  background: var(--mac-surface);
-  color: var(--mac-accent);
-  box-shadow: 0 0 0 .5px var(--mac-line), 0 1px 2px rgb(0 0 0 / 8%);
-}
-.layout-option:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: 1px; }
+.layout-option:hover { color: var(--mac-text); }
+.layout-option[aria-checked='true'] { color: var(--mac-text); }
+.layout-option:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
 
 @media (max-width: 1024px) { .layout-switch { display: none; } }
 

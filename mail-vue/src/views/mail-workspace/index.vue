@@ -82,12 +82,12 @@
         </div>
         <div v-for="row in rows" :key="rowId(row)" class="message-row"
              :class="{ 'message-current': messageId === rowId(row), 'message-selected': selected.includes(rowId(row)), unread: isUnread(row), 'draft-row': isDraft }">
+          <span class="unread-dot" :class="{ 'is-unread': isUnread(row) }" role="img"
+                :aria-label="isUnread(row) ? $t('mailUnreadOnly') : undefined" :aria-hidden="isUnread(row) ? undefined : 'true'" />
           <el-checkbox class="row-check" :model-value="selected.includes(rowId(row))"
                        :aria-label="$t('selectMail', { subject: row.subject || $t('noSubject') })"
                        @change="toggleSelected(rowId(row), $event)" />
           <span class="row-status">
-            <span class="unread-dot" :class="{ 'is-unread': isUnread(row) }" role="img"
-                  :aria-label="isUnread(row) ? $t('mailUnreadOnly') : undefined" :aria-hidden="isUnread(row) ? undefined : 'true'" />
             <ToolbarButton v-if="!isAdmin && !isDraft && folder !== 'trash'" class="row-star" :icon="row.isStar ? 'star-fill' : 'star'"
                            :label="$t('star')" :aria-pressed="!!row.isStar"
                            :disabled="starring.has(row.emailId)" @click="toggleStar(row)" />
@@ -111,7 +111,7 @@
         <template #toolbar>
           <ToolbarButton icon="back" class="reader-back" :label="$t('goBack')" @click="closeReader" />
           <MessageActions v-if="actionFolder" :folder="actionFolder" :ids="[activeMessage.emailId]"
-                          :can-reply="canReply" :can-file="activeMessage.type === 0" reader
+                          :can-reply="false" :can-file="activeMessage.type === 0" reader
                           @change="handleAction" @reply="uiStore.writerRef.openReply(activeMessage)"
                           @forward="uiStore.writerRef.openForward(activeMessage)" />
           <div v-if="isAdmin" class="admin-reader-actions">
@@ -138,6 +138,7 @@
             </el-dropdown>
           </div>
           <div class="reader-page-actions">
+            <span v-if="activeIndex >= 0" class="reader-position">{{ $t('mailPositionOf', { index: offset + activeIndex + 1, total }) }}</span>
             <ToolbarButton icon="chevron" class="page-back" :label="$t('mailPreviousMessage')" :disabled="!previousMessage"
                            @click="open(previousMessage)" />
             <ToolbarButton icon="chevron" :label="$t('mailNextMessage')" :disabled="!nextMessage" @click="open(nextMessage)" />
@@ -622,21 +623,22 @@ onBeforeUnmount(() => {
  * 行内对齐线（列表左缘起）：复选框 12px，状态列 36px，文本 62px，日期右对齐 16px。
  */
 .mail-workspace {
-  --row-pad-start: 12px;
+  --row-pad-start: 4px;
   --row-pad-end: 16px;
+  --row-dot: 12px;
   --row-check: 16px;
-  --row-status: 18px;
-  --row-gap: 8px;
-  --row-text-start: calc(var(--row-pad-start) + var(--row-check) + var(--row-status) + var(--row-gap) * 2);
+  --row-status: 22px;
+  --row-gap: 6px;
+  --row-text-start: calc(var(--row-pad-start) + var(--row-dot) + var(--row-check) + var(--row-status) + var(--row-gap) * 3);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   margin-block-start: 12px;
   overflow: hidden;
-  border-radius: var(--mail-radius-surface) var(--mail-radius-surface) 0 0;
+  border-radius: 16px 16px 0 0;
   background: var(--mac-surface);
-  box-shadow: 0 0 0 1px var(--mac-line);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / 10%), 0 4px 18px rgb(0 0 0 / 5%);
 }
 .mail-workspace.split-reading { grid-template-columns: var(--list-width, var(--mail-list-width, 352px)) minmax(0, 1fr); }
 .message-list-pane, .message-reading-pane {
@@ -667,7 +669,7 @@ onBeforeUnmount(() => {
   content: '';
   transition: background-color 140ms ease;
 }
-.message-resize:hover::after, .message-resize:focus-visible::after { background: var(--mac-focus); }
+.message-resize:hover::after, .message-resize:focus-visible::after { background: var(--mac-line-strong); }
 .message-resize:focus-visible { outline: none; }
 
 /* 窗格工具栏：两栏同高，底边连成一条线 */
@@ -677,11 +679,11 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   min-height: var(--workspace-toolbar);
-  padding: 0 var(--row-pad-end) 0 var(--row-pad-start);
+  padding: 0 var(--row-pad-end) 0 calc(var(--row-pad-start) + var(--row-dot) + var(--row-gap));
   border-bottom: 1px solid var(--mac-line);
   background: var(--mac-chrome);
 }
-.message-list-toolbar > .el-checkbox { margin-inline-end: calc(var(--row-status) + var(--row-gap)); height: 32px; }
+.message-list-toolbar > .el-checkbox { margin-inline-end: calc(var(--row-status)); height: 32px; }
 .list-range {
   flex: 1 1 auto;
   min-width: 0;
@@ -696,6 +698,7 @@ onBeforeUnmount(() => {
 .list-bulk-actions { justify-content: flex-end; }
 .admin-reader-actions, .reader-page-actions { display: flex; align-items: center; gap: 4px; }
 .reader-page-actions { margin-inline-start: auto; }
+.reader-position { margin-inline-end: 8px; color: var(--mac-text-2); font-size: var(--mac-fs-caption); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .page-back :deep(svg) { rotate: 180deg; }
 .message-list-body { flex: 1; min-height: 0; }
 .message-list-body :deep(.el-scrollbar__view) { display: flex; flex-direction: column; min-height: 100%; width: 100%; }
@@ -708,7 +711,7 @@ onBeforeUnmount(() => {
   align-content: center;
   gap: 4px calc(var(--row-status) + var(--row-gap) * 2);
   height: 72px;
-  padding: 0 var(--row-pad-end) 0 var(--row-pad-start);
+  padding: 0 var(--row-pad-end) 0 calc(var(--row-pad-start) + var(--row-dot) + var(--row-gap));
   border-bottom: 1px solid var(--mac-line);
 }
 .list-placeholder .placeholder-icon { grid-area: icon; width: 14px; height: 14px; align-self: start; margin-top: 3px; }
@@ -743,20 +746,20 @@ onBeforeUnmount(() => {
 .placeholder-paragraph { width: min(66%, 550px); margin-inline-start: 52px; }
 .placeholder-paragraph:last-child { width: min(50%, 400px); }
 @media (prefers-reduced-motion: no-preference) {
-  .message-loaded { animation: mail-content-in 150ms ease-out; }
+  .message-loaded { animation: mail-content-in var(--mac-dur-3) var(--mac-ease-out); }
 }
 
-/* 邮件行：三栏 72px，三行文本 */
+/* 邮件行：三栏 72px，三行文本。未读点、复选框、星标都与发件人同一行 */
 .message-row {
   position: relative;
   display: grid;
-  grid-template-columns: var(--row-check) var(--row-status) minmax(0, 1fr);
+  grid-template-columns: var(--row-dot) var(--row-check) var(--row-status) minmax(0, 1fr);
   align-items: start;
   column-gap: var(--row-gap);
   min-height: 72px;
   padding: 10px var(--row-pad-end) 10px var(--row-pad-start);
   color: var(--mac-text);
-  transition: background-color 120ms ease;
+  transition: background-color var(--mac-dur-1) ease;
 }
 .message-row::after {
   position: absolute;
@@ -765,37 +768,34 @@ onBeforeUnmount(() => {
   background: var(--mac-line);
   content: '';
 }
-.message-row:hover { background: var(--mac-hover); }
-.message-row.message-current, .message-row.message-selected { background: var(--mac-selected); }
+.message-row:hover { background: color-mix(in srgb, var(--mac-surface) 96%, var(--mac-text)); }
+.message-row.message-current, .message-row.message-selected { background: var(--mac-selected-solid); }
 .message-row:is(.message-current, .message-selected)::after,
 .message-row:has(+ :is(.message-current, .message-selected))::after { background: transparent; }
-.message-row > .el-checkbox { height: 18px; margin: 0; }
-.row-status {
-  display: grid;
-  grid-template-rows: 18px 18px;
-  justify-items: center;
-  align-items: center;
-  row-gap: 0;
-}
+.message-row > :is(.unread-dot, .el-checkbox, .row-status) { height: 18px; margin: 0; align-self: start; }
+.row-status { display: grid; place-items: center; }
 .row-kind { display: grid; place-items: center; color: var(--mac-text-2); }
 .unread-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: transparent;
+  justify-self: center;
+  width: 8px;
+  height: 18px;
+  background: radial-gradient(circle, transparent 0 0, transparent 0) center / 8px 8px no-repeat;
 }
-.unread-dot.is-unread { background: var(--mac-accent); }
+.unread-dot.is-unread { background: radial-gradient(circle closest-side, var(--mac-text) 98%, transparent) center / 8px 8px no-repeat; }
 .toolbar-button.row-star {
   flex-basis: 22px;
   width: 22px;
   height: 22px;
+  margin-top: -2px;
   border-radius: 6px;
   color: var(--mac-text-3);
   opacity: 0;
+  transition: opacity var(--mac-dur-1) ease, color var(--mac-dur-1) ease, transform var(--mac-dur-2) var(--mac-spring);
 }
 .message-row:is(:hover, :focus-within) .row-star, .row-star[aria-pressed='true'] { opacity: 1; }
 .row-star[aria-pressed='true'] { color: var(--mac-star); }
-.row-star :deep(svg) { width: 14px; height: 14px; }
+.row-star:active { transform: scale(.85); }
+.row-star :deep(svg) { width: 15px; height: 15px; }
 .message-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -811,7 +811,7 @@ onBeforeUnmount(() => {
 .message-summary::before { position: absolute; inset: 0; content: ''; }
 .message-row > .el-checkbox, .row-status > * { position: relative; z-index: 1; }
 .message-summary:focus-visible { outline: none; }
-.message-row:has(.message-summary:focus-visible) { box-shadow: inset 0 0 0 2px var(--mac-focus); }
+.message-row:has(.message-summary:focus-visible) { box-shadow: inset 0 0 0 2px var(--mac-focus); border-radius: 6px; }
 .message-copy { grid-area: copy; display: grid; min-width: 0; }
 .message-sender, .message-subject, .message-snippet {
   display: block;
@@ -831,11 +831,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.message-row:is(.message-current, .message-selected) { color: var(--mac-selected-text); }
-.message-row:is(.message-current, .message-selected) :is(.message-snippet, time) {
-  color: color-mix(in srgb, var(--mac-selected-text) 82%, var(--mac-selected));
-}
-.message-row:is(.message-current, .message-selected) .unread-dot.is-unread { background: var(--mac-selected-text); }
+
 
 /* 全宽列表：单行 48px */
 .wide-reading .message-row {
@@ -843,9 +839,7 @@ onBeforeUnmount(() => {
   min-height: 48px;
   padding-block: 0;
 }
-.wide-reading .row-status { grid-template-rows: none; grid-template-columns: 9px 22px; column-gap: 0; width: var(--row-status); justify-content: center; }
-.wide-reading { --row-status: 36px; }
-.wide-reading .toolbar-button.row-star { justify-self: center; }
+.wide-reading .message-row > :is(.unread-dot, .el-checkbox, .row-status) { align-self: center; height: 20px; }
 .wide-reading .message-summary {
   grid-template-columns: clamp(120px, 14vw, 200px) minmax(0, 1fr) auto;
   grid-template-areas: 'sender copy date';

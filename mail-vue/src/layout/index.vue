@@ -104,35 +104,35 @@ onBeforeUnmount(() => {
     left: 0;
     z-index: 101;
     height: 100%;
-    background: var(--el-bg-color);
   }
 }
 
 .el-aside {
-  width: min(var(--mail-sidebar-width), calc(100vw - 24px));
-  border-inline-end: 1px solid var(--mail-shell-line);
-  background: var(--mac-sidebar);
-  transition: transform 180ms ease;
+  width: min(calc(var(--mail-sidebar-width) + var(--mail-sidebar-inset)), calc(100vw - 24px));
+  padding: var(--mail-sidebar-inset) 0 var(--mail-sidebar-inset) var(--mail-sidebar-inset);
+  background: transparent;
+  transition: transform var(--mac-dur-3) var(--mac-ease);
 }
 
 @media (min-width: 1025px) {
   .el-aside {
     position: relative;
     flex: none;
-    width: var(--mail-sidebar-width);
+    width: calc(var(--mail-sidebar-width) + var(--mail-sidebar-inset));
     overflow: visible;
     transform: none;
-    transition: width 200ms cubic-bezier(.2, .7, .3, 1);
+    transition: width var(--mac-dur-3) var(--mac-ease);
   }
 
   .el-aside-hide {
-    width: var(--mail-sidebar-compact-width);
+    width: calc(var(--mail-sidebar-compact-width) + var(--mail-sidebar-inset));
   }
 }
 
 .layout {
   --mail-sidebar-width: 232px;
   --mail-sidebar-compact-width: 60px;
+  --mail-sidebar-inset: 8px;
   --mail-shell-sidebar: var(--mac-sidebar);
   --mail-shell-rail: var(--mac-chrome);
   --mail-shell-line: var(--mac-line);
@@ -159,12 +159,12 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   overflow: hidden;
-  background: var(--mac-app);
+  background: var(--mac-wallpaper);
 }
 
 .main-container {
   min-height: 100%;
-  background: var(--mac-app);
+  background: transparent;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
 
 .el-header {
   --el-header-height: var(--mail-shell-header);
-  background: var(--mac-app);
+  background: transparent;
   padding: 0;
 }
 
@@ -198,9 +198,9 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgb(0 0 0 / 18%);
   z-index: 99;
-  transition: all 0.3s;
+  transition: opacity var(--mac-dur-2) ease;
 }
 
 .overlay-hide {

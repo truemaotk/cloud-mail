@@ -498,8 +498,35 @@ window.onresize = () => {
   border-radius: var(--mail-radius-control);
 }
 
+/* 展开图标放到右侧，所有层级的箭头在右边对齐成一列 */
+:deep(.permission-tree .el-tree-node__content) {
+  display: flex;
+  gap: 4px;
+  padding-inline-end: 4px;
+}
+:deep(.permission-tree .el-tree-node__content > .el-checkbox) { margin: 0 6px 0 8px; }
+:deep(.permission-tree .el-tree-node__content > div) { flex: 1 1 auto; min-width: 0; }
 :deep(.permission-tree .el-tree-node__expand-icon) {
-  font-size: 15px;
+  order: 99;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-inline-start: auto;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--mac-text-3);
+}
+:deep(.permission-tree .el-tree-node__expand-icon:not(.is-leaf):hover) { background: var(--mac-hover); color: var(--mac-text); }
+:deep(.permission-tree .el-tree-node__children .el-tree-node__content) { padding-inline-start: 22px !important; }
+:deep(.permission-tree .el-tree-node__children) { position: relative; }
+:deep(.permission-tree .el-tree-node__children::before) {
+  position: absolute;
+  inset-block: 2px;
+  inset-inline-start: 15.5px;
+  width: 1px;
+  background: var(--mac-line-strong);
+  content: '';
 }
 
 .role-save {

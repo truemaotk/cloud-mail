@@ -43,16 +43,26 @@
             <img src="/mail.svg" alt="" class="login-mark" />
             <span>mail</span>
           </div>
-          <div v-if="settingStore.settings.register === 0" class="login-mode" role="group" :aria-label="$t('authMode')">
+          <div v-if="settingStore.settings.register === 0" class="login-mode" :class="{ 'is-register': show === 'register' }"
+               role="group" :aria-label="$t('authMode')">
+            <span class="login-mode-thumb" aria-hidden="true" />
             <button type="button" :aria-pressed="show === 'login'" @click="switchMode('login')">{{ $t('loginBtn') }}</button>
             <button type="button" :aria-pressed="show === 'register'" @click="switchMode('register')">{{ $t('regBtn') }}</button>
           </div>
-          <header class="login-heading">
-            <h1>{{ $t(show === 'login' ? 'loginHeading' : 'regSwitch') }}</h1>
-            <p>{{ $t(show === 'login' ? 'loginTitle' : 'regTitle') }}</p>
+          <div class="auth-stack" :class="'is-' + show">
+          <header class="login-heading auth-pane auth-login" :class="{ 'is-active': show === 'login' }" :inert="show !== 'login'">
+            <h1>{{ $t('loginHeading') }}</h1>
+            <p>{{ $t('loginTitle') }}</p>
           </header>
+          <header class="login-heading auth-pane auth-register" :class="{ 'is-active': show === 'register' }" :inert="show !== 'register'">
+            <h1>{{ $t('regSwitch') }}</h1>
+            <p>{{ $t('regTitle') }}</p>
+          </header>
+          </div>
 
-          <form v-show="show === 'login'" class="login-form" @submit.prevent="submit">
+          <div class="auth-stack auth-forms" :class="'is-' + show">
+          <form class="login-form auth-pane auth-login" :class="{ 'is-active': show === 'login' }" :inert="show !== 'login'"
+                :aria-hidden="show !== 'login'" @submit.prevent="submit">
             <EmailField
               id="login-email"
               v-model="form.email"
@@ -69,7 +79,8 @@
             </el-button>
           </form>
 
-          <form v-show="show === 'register'" class="login-form" @submit.prevent="submitRegister">
+          <form class="login-form auth-pane auth-register" :class="{ 'is-active': show === 'register' }" :inert="show !== 'register'"
+                :aria-hidden="show !== 'register'" @submit.prevent="submitRegister">
             <EmailField
               id="register-email"
               v-model="registerForm.email"
@@ -108,6 +119,7 @@
               {{ $t('regBtn') }}
             </el-button>
           </form>
+          </div>
 
           <div v-if="oauthProviders.length" class="login-oauth">
             <p class="login-oauth-label">{{ $t('loginAlternative') }}</p>
@@ -660,7 +672,7 @@ function submitRegister() {
   place-items: center;
   padding: var(--login-edge);
   min-height: 100dvh;
-  background: var(--login-stage);
+  background: var(--mac-wallpaper);
   color: var(--login-ink);
 }
 
@@ -681,10 +693,12 @@ function submitRegister() {
   width: min(100%, 980px);
   height: max(560px, min(620px, calc(100dvh - 2 * var(--login-edge))));
   overflow: hidden;
-  border: 1px solid var(--login-line);
-  border-radius: var(--mail-radius-dialog);
-  background: var(--login-surface);
-  box-shadow: var(--mac-shadow-window);
+  border-radius: 22px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--mac-shadow-window);
+  animation: mac-sheet-in var(--mac-dur-4) var(--mac-spring) both;
 }
 
 .has-custom-background .login-shell {
@@ -714,7 +728,7 @@ function submitRegister() {
   place-items: center;
   min-width: 0;
   padding: 38px clamp(24px, 4vw, 44px);
-  background: var(--login-stage);
+  background: transparent;
 }
 
 .login-scene-inner {
@@ -752,8 +766,8 @@ function submitRegister() {
   padding: clamp(22px, 3vw, 30px) clamp(24px, 4vw, 52px);
   overflow-y: auto;
   scrollbar-width: none;
-  border-inline-start: 1px solid var(--login-line);
-  background: var(--login-surface);
+  border-inline-start: .5px solid rgb(0 0 0 / 8%);
+  background: var(--glass-bg-strong);
 }
 
 .has-custom-background .login-panel {
@@ -767,43 +781,79 @@ function submitRegister() {
   min-width: 0;
 }
 
+/* 分段控件：滑块像开关一样以弹簧滑到另一侧 */
 .login-mode {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  margin-block-end: 18px;
-  padding: 4px;
-  border: 1px solid var(--login-line);
+  margin-block-end: 20px;
+  padding: 3px;
   border-radius: 10px;
-  background: var(--login-stage);
+  background: rgb(0 0 0 / 6%);
 }
+#login-box.is-dark .login-mode { background: rgb(255 255 255 / 8%); }
+
+.login-mode-thumb {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 3px;
+  width: calc(50% - 3px);
+  border-radius: 8px;
+  background: var(--login-surface);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / 8%), 0 2px 6px rgb(0 0 0 / 12%);
+  transition: transform var(--mac-dur-3) var(--mac-spring);
+}
+#login-box.is-dark .login-mode-thumb { background: #3A3A3C; }
+.login-mode.is-register .login-mode-thumb { transform: translateX(100%); }
 
 .login-mode button {
-  min-height: 34px;
-  border: 1px solid transparent;
-  border-radius: 7px;
+  position: relative;
+  min-height: 30px;
+  border: 0;
+  border-radius: 8px;
   color: var(--login-muted);
   cursor: pointer;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color var(--mac-dur-2) ease;
 }
 
 .login-mode button:hover { color: var(--login-ink); }
 
 .login-mode button[aria-pressed="true"] {
-  border-color: var(--login-line);
-  background: var(--login-surface);
   color: var(--login-ink);
+  font-weight: 600;
 }
+
+/* 登录与注册叠放在同一格：外框与位置不变，内容交叉淡入并带方向位移 */
+.auth-stack {
+  display: grid;
+}
+/* 旧内容 100ms 内淡出，新内容延后 90ms 以弹簧滑入，两者几乎不重叠 */
+.auth-stack > .auth-pane {
+  grid-area: 1 / 1;
+  min-width: 0;
+  transition: opacity 260ms var(--mac-ease) 90ms, transform var(--mac-dur-4) var(--mac-spring) 90ms, visibility 0s linear 0s;
+}
+.auth-stack > .auth-pane:not(.is-active) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 100ms ease, transform 200ms var(--mac-ease), visibility 0s linear 200ms;
+}
+.auth-stack > .auth-login:not(.is-active) { transform: translateX(-24px); }
+.auth-stack > .auth-register:not(.is-active) { transform: translateX(24px); }
+.auth-forms { align-items: start; }
 
 .login-heading {
   margin-block-end: 18px;
 }
 
 .login-heading h1 {
-  font-size: clamp(28px, 3vw, 36px);
-  font-weight: 720;
+  font-size: clamp(26px, 2.6vw, 32px);
+  font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -.035em;
+  letter-spacing: -.02em;
 }
 
 .login-heading p {

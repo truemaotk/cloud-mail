@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="theme-color" content="#F4F5F7" id="theme-color-meta">
+  <meta name="theme-color" content="#F2F2F2" id="theme-color-meta">
   <meta name="description" content="mail · 收发和管理邮件">
   <title>mail</title>
   <link rel="icon" href="%BASE_URL%mail.svg" type="image/svg+xml">
@@ -19,20 +19,20 @@
     }
     const metaTag = document.getElementById('theme-color-meta');
     const isMobile =  !window.matchMedia("(pointer: fine) and (hover: hover)").matches;
-    metaTag.setAttribute('content', isDark ? '#1B1C1F' : '#F4F5F7');
+    metaTag.setAttribute('content', isDark ? '#161617' : '#F2F2F2');
   </script>
 </head>
 <style>
   html {
-    background: #F4F5F7;
+    background: #F2F2F2;
   }
   .dark {
-    background: #1B1C1F;
+    background: #161617;
   }
   #loading-first {
-    --startup-background: #F4F5F7;
-    --startup-track: #DDE0E5;
-    --startup-indicator: #005FC4;
+    --startup-background: #F2F2F2;
+    --startup-track: #E3E3E3;
+    --startup-indicator: #1D1D1F;
     position: fixed;
     inset: 0;
     display: flex;
@@ -43,9 +43,9 @@
   }
 
   .dark #loading-first {
-    --startup-background: #1B1C1F;
-    --startup-track: #3E4047;
-    --startup-indicator: #64A9FF;
+    --startup-background: #161617;
+    --startup-track: #343436;
+    --startup-indicator: #F2F2F4;
   }
 
   .loading-icon {

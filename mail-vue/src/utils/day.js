@@ -80,6 +80,25 @@ export function formatDetailDate(time) {
     }
 }
 
+/* Gmail 式邮件头日期：11月9日周一 14:03（1天前） */
+export function formatHeaderDate(time) {
+    const d = dayjs.utc(time).tz(timeZone);
+    const now = dayjs();
+    const minutes = Math.max(0, now.diff(d, 'minute'));
+    const hours = now.diff(d, 'hour');
+    const days = now.diff(d, 'day');
+    const zh = settingStore.lang !== 'en';
+    const relative = minutes < 1 ? (zh ? '刚刚' : 'just now')
+        : minutes < 60 ? (zh ? `${minutes}分钟前` : `${minutes} min ago`)
+        : hours < 24 ? (zh ? `${hours}小时前` : `${hours} hr ago`)
+        : (zh ? `${days}天前` : `${days} day${days > 1 ? 's' : ''} ago`);
+    const sameYear = now.year() === d.year();
+    const base = zh
+        ? d.format(sameYear ? 'M月D日ddd HH:mm' : 'YYYY年M月D日ddd HH:mm')
+        : d.format(sameYear ? 'ddd, MMM D, HH:mm' : 'ddd, MMM D YYYY, HH:mm');
+    return { text: `${base} (${relative})`, full: formatDetailDate(time) };
+}
+
 export function tzDayjs(time) {
     return dayjs.utc(time).tz(timeZone)
 }

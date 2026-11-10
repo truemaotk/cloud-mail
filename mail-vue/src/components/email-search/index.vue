@@ -171,16 +171,17 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 2px;
   height: 32px;
-  padding: 0 3px 0 4px;
-  border: 1px solid var(--mac-line);
-  border-radius: var(--mail-radius-control);
-  background: var(--mac-chrome);
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  padding: 0 4px 0 6px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 .5px rgb(0 0 0 / 8%), 0 2px 8px rgb(0 0 0 / 6%);
+  transition: box-shadow var(--mac-dur-2) var(--mac-ease), background-color var(--mac-dur-2) ease;
 }
 .search-bar:focus-within {
-  border-color: var(--mac-focus);
-  background: var(--mac-surface);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mac-focus) 22%, transparent);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--glass-edge), 0 0 0 1px var(--mac-focus), var(--mac-focus-ring);
 }
 .search-bar input {
   flex: 1;
@@ -200,12 +201,13 @@ onBeforeUnmount(() => {
   width: 26px;
   height: 26px;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 50%;
   color: var(--mac-text-2);
   cursor: pointer;
+  transition: background-color var(--mac-dur-1) ease;
 }
 .search-icon:hover, .filter-button[aria-expanded='true'] { background: var(--mac-hover); color: var(--el-text-color-primary); }
-.search-icon:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: -2px; }
+.search-icon:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
 .search-shortcut {
   min-width: 18px;
   margin-inline-end: 2px;
@@ -219,17 +221,19 @@ onBeforeUnmount(() => {
   line-height: 16px;
   text-align: center;
 }
-.filter-dot { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--mac-accent); }
+.filter-dot { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--mac-text); }
 .search-filters {
   position: absolute;
   inset-block-start: calc(100% + 6px);
   inset-inline-end: 0;
   width: min(440px, calc(100vw - 24px));
   padding: 16px;
-  border: 1px solid var(--mac-line);
   border-radius: var(--mail-radius-menu);
-  background: var(--mac-chrome);
-  box-shadow: var(--mac-shadow-pop);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--mac-shadow-pop);
+  transform-origin: top right;
 }
 .search-filter-title { margin-bottom: 8px; font-size: var(--mac-fs-chrome); line-height: var(--mac-lh-chrome); font-weight: 600; }
 .search-filters :deep(.el-segmented) { max-width: 100%; }
@@ -237,8 +241,9 @@ onBeforeUnmount(() => {
 .search-dates label { display: grid; gap: 4px; min-width: 0; font-size: var(--mac-fs-caption); color: var(--mac-text-2); }
 .search-dates :deep(.el-date-editor) { width: 100%; }
 .search-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
-.search-panel-enter-active, .search-panel-leave-active { transition: opacity 140ms ease, translate 140ms ease; }
-.search-panel-enter-from, .search-panel-leave-to { opacity: 0; translate: 0 -4px; }
+.search-panel-enter-active { transition: opacity var(--mac-dur-2) var(--mac-ease), transform var(--mac-dur-3) var(--mac-spring); }
+.search-panel-leave-active { transition: opacity var(--mac-dur-1) ease, transform var(--mac-dur-1) ease; }
+.search-panel-enter-from, .search-panel-leave-to { opacity: 0; transform: scale(.96) translateY(-4px); }
 @media (max-width: 767px) {
   .email-search { flex: 1 1 auto; }
   .search-shortcut { display: none; }

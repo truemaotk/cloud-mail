@@ -119,44 +119,65 @@ button, input, select, textarea {
 }
 
 /*
- * macOS Mail 风格语义色（参考 macOS Sequoia 15「邮件」）。
- * 只在这里定义原始色值，其余样式一律引用 --mac-* 变量。
- * 对比度调整记录：
- *   - 占位文字 #6E727C / #9A9EA7：与列表背景对比度 ≥ 4.5:1（Element Plus 默认 #A8ABB2 只有 2.3:1）。
- *   - 禁用文字保持低对比，属 WCAG 豁免范围。
- *   - 深色未读标记用链接蓝 #64A9FF，与 #26272B 对比 6.6:1。
+ * macOS 风格设计变量：配色为黑白灰（等同 macOS「石墨」强调色），材质参考 Liquid Glass。
+ * 原始色值只在这里出现，组件一律引用 --mac-*。
  */
 html:root, html:root.dark {
     color-scheme: light;
-    --mac-app: #F4F5F7;
-    --mac-sidebar: #EEF0F3;
+    --mac-app: #F2F2F2;
+    --mac-sidebar: #EBEBEB;
     --mac-surface: #FFFFFF;
-    --mac-chrome: #FAFAFC;
-    --mac-line: #DDE0E5;
+    --mac-chrome: #FAFAFA;
+    --mac-line: #E3E3E3;
+    --mac-line-strong: #D2D2D2;
     --mac-text: #1D1D1F;
-    --mac-text-2: #555963;
-    --mac-text-3: #6E727C;
-    --mac-hover: #E8EAF0;
-    --mac-selected: #DCEAFF;
-    --mac-selected-text: #003D86;
-    --mac-link: #005FC4;
-    --mac-focus: #007AFF;
-    --mac-accent: #005FC4;
-    --mac-accent-hover: #0A6CD4;
+    --mac-text-2: #5E5E62;
+    --mac-text-3: #707074;
+    --mac-hover: rgb(0 0 0 / 5%);
+    --mac-press: rgb(0 0 0 / 9%);
+    --mac-selected: rgb(0 0 0 / 8%);
+    --mac-selected-solid: #E8E8E8;
+    --mac-selected-text: #1D1D1F;
+    --mac-link: #1D1D1F;
+    --mac-focus: rgb(29 29 31 / 55%);
+    --mac-focus-ring: 0 0 0 3.5px rgb(29 29 31 / 16%);
+    --mac-accent: #1D1D1F;
+    --mac-accent-hover: #3A3A3C;
     --mac-accent-text: #FFFFFF;
-    --mac-star: #E0A100;
-    --mac-success: #1E7F3C;
+    --mac-star: #D99A00;
+    --mac-success: #2B7A3D;
     --mac-danger: #C4291C;
     --mac-warning: #9A5B00;
-    --mac-badge: #D9DCE2;
-    --mac-badge-text: #3A3D44;
-    --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 6%), 0 8px 24px rgb(0 0 0 / 12%), 0 2px 6px rgb(0 0 0 / 6%);
-    --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 8%), 0 18px 48px rgb(0 0 0 / 18%), 0 4px 12px rgb(0 0 0 / 8%);
-    --mac-sidebar-glass: rgb(238 240 243 / 86%);
+    --mac-badge: rgb(0 0 0 / 8%);
+    --mac-badge-text: #3A3A3C;
+
+    /* Liquid Glass：半透明 + 模糊 + 镜面高光；不支持 backdrop-filter 时回退为实色 */
+    --glass-bg: rgb(255 255 255 / 62%);
+    --glass-bg-strong: rgb(255 255 255 / 78%);
+    --glass-bg-solid: #FBFBFB;
+    --glass-blur: blur(28px) saturate(180%);
+    --glass-edge: inset 0 1px 0 rgb(255 255 255 / 85%), inset 0 0 0 .5px rgb(255 255 255 / 55%), inset 0 -1px 0 rgb(0 0 0 / 4%);
+    --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 10%), 0 10px 30px rgb(0 0 0 / 10%), 0 2px 8px rgb(0 0 0 / 6%);
+    --glass-sidebar: rgb(246 246 246 / 66%);
+    --mac-wallpaper: radial-gradient(1200px 700px at 12% -10%, #FFFFFF 0%, transparent 60%),
+        radial-gradient(900px 600px at 100% 110%, #E4E4E4 0%, transparent 55%), #EFEFEF;
+    --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 10%), 0 12px 32px rgb(0 0 0 / 14%), 0 2px 6px rgb(0 0 0 / 6%);
+    --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 10%), 0 24px 64px rgb(0 0 0 / 18%), 0 4px 14px rgb(0 0 0 / 8%);
+    --mac-sidebar-glass: var(--glass-sidebar);
+
+    /* 动效：苹果式弹簧与缓出 */
+    --mac-ease: cubic-bezier(.32, .72, 0, 1);
+    --mac-ease-out: cubic-bezier(.22, 1, .36, 1);
+    --mac-spring: cubic-bezier(.34, 1.32, .64, 1);
+    --mac-dur-1: 120ms;
+    --mac-dur-2: 220ms;
+    --mac-dur-3: 340ms;
+    --mac-dur-4: 480ms;
 
     /* 字体与字号（CSS 像素） */
-    --mac-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", "Microsoft YaHei UI",
-        "Microsoft YaHei", "Hiragino Sans GB", system-ui, sans-serif;
+    /* 苹果设备用 SF + 苹方；其他系统拉丁字符用 Segoe UI，中文落到与苹方最接近的思源黑体，最后才是微软雅黑 */
+    --mac-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI Variable Text", "Segoe UI",
+        "Noto Sans SC", "Source Han Sans SC", "Source Han Sans CN", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
     --mac-fs-caption: 12px; --mac-lh-caption: 16px;
     --mac-fs-chrome: 13px;  --mac-lh-chrome: 18px;
     --mac-fs-body: 14px;    --mac-lh-body: 20px;
@@ -187,8 +208,8 @@ html:root, html:root.dark {
     --mail-primary-text: var(--mac-accent-text);
     --mail-primary-tint: #fff;
     --el-color-primary: var(--mac-accent);
-    --el-color-primary-rgb: 0, 95, 196;
-    --el-color-primary-dark-2: #004EA3;
+    --el-color-primary-rgb: 29, 29, 31;
+    --el-color-primary-dark-2: #000000;
     --el-color-primary-light-3: color-mix(in srgb, var(--mac-accent) 75%, var(--mail-primary-tint));
     --el-color-primary-light-5: color-mix(in srgb, var(--mac-accent) 50%, var(--mail-primary-tint));
     --el-color-primary-light-7: color-mix(in srgb, var(--mac-accent) 30%, var(--mail-primary-tint));
@@ -210,14 +231,14 @@ html:root, html:root.dark {
     --el-border-color-light: var(--mac-line);
     --el-border-color-lighter: color-mix(in srgb, var(--mac-line) 70%, var(--mac-surface));
     --el-border-color-extra-light: color-mix(in srgb, var(--mac-line) 45%, var(--mac-surface));
-    --el-fill-color: var(--mac-hover);
-    --el-fill-color-light: color-mix(in srgb, var(--mac-hover) 60%, var(--mac-surface));
+    --el-fill-color: var(--mac-selected-solid);
+    --el-fill-color-light: color-mix(in srgb, var(--mac-selected-solid) 55%, var(--mac-surface));
     --el-fill-color-lighter: var(--mac-chrome);
     --el-fill-color-blank: var(--mac-surface);
     --el-box-shadow-light: var(--mac-shadow-pop);
     --el-box-shadow: var(--mac-shadow-pop);
     --el-mask-color: rgb(255 255 255 / 80%);
-    --el-overlay-color-lighter: rgb(0 0 0 / 28%);
+    --el-overlay-color-lighter: rgb(0 0 0 / 14%);
 
     --extra-light-fill: var(--mac-chrome);
     --settings-page-background: var(--mac-app);
@@ -225,7 +246,7 @@ html:root, html:root.dark {
     --light-border: var(--mac-line);
     --header-actions-border: inset 0 -1px 0 0 var(--mac-line);
     --aside-backgound: var(--mac-sidebar);
-    --aside-menu-active-background: var(--mac-selected);
+    --aside-menu-active-background: var(--mac-selected-solid);
     --loadding-background: rgb(255 255 255 / 80%);
     --dark-border: #C5C9D0;
     --base-fill: var(--mac-hover);
@@ -234,7 +255,7 @@ html:root, html:root.dark {
     --aside-right-border: none;
     --choose-account-background: var(--mac-selected);
     --email-scroll-content-color: var(--mac-text-2);
-    --search-hit-background: #FFE8A3;
+    --search-hit-background: #FFE9A8;
     --email-hover-background: var(--mac-hover);
     --email-right-click-background: var(--mac-hover);
     --login-border: none;
@@ -253,39 +274,50 @@ html:root, html:root.dark {
 
 html:root.dark {
     color-scheme: dark;
-    --mac-app: #1B1C1F;
-    --mac-sidebar: #232428;
-    --mac-surface: #26272B;
-    --mac-chrome: #2D2E33;
-    --mac-line: #3E4047;
+    --mac-app: #161617;
+    --mac-sidebar: #1E1E20;
+    --mac-surface: #1E1E1F;
+    --mac-chrome: #232325;
+    --mac-line: #343436;
+    --mac-line-strong: #444447;
     --mac-text: #F5F5F7;
-    --mac-text-2: #B2B5BD;
-    --mac-text-3: #9A9EA7;
-    --mac-hover: #34363D;
-    --mac-selected: #203D61;
-    --mac-selected-text: #D4E7FF;
-    --mac-link: #64A9FF;
-    --mac-focus: #64A9FF;
-    --mac-accent: #0A64D9;
-    --mac-accent-hover: #2375E3;
-    --mac-accent-text: #FFFFFF;
+    --mac-text-2: #B4B4B8;
+    --mac-text-3: #9A9A9E;
+    --mac-hover: rgb(255 255 255 / 7%);
+    --mac-press: rgb(255 255 255 / 12%);
+    --mac-selected: rgb(255 255 255 / 11%);
+    --mac-selected-solid: #333335;
+    --mac-selected-text: #F5F5F7;
+    --mac-link: #F5F5F7;
+    --mac-focus: rgb(245 245 247 / 55%);
+    --mac-focus-ring: 0 0 0 3.5px rgb(245 245 247 / 18%);
+    --mac-accent: #F2F2F4;
+    --mac-accent-hover: #D9D9DC;
+    --mac-accent-text: #1D1D1F;
     --mac-star: #F2C14E;
     --mac-success: #4CC27A;
     --mac-danger: #FF6B5E;
     --mac-warning: #F2C14E;
-    --mac-badge: #44464E;
-    --mac-badge-text: #E8E9EC;
-    --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 50%), 0 8px 24px rgb(0 0 0 / 40%), inset 0 0 0 .5px rgb(255 255 255 / 8%);
-    --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 60%), 0 18px 48px rgb(0 0 0 / 50%), inset 0 0 0 .5px rgb(255 255 255 / 10%);
-    --mac-sidebar-glass: rgb(35 36 40 / 88%);
+    --mac-badge: rgb(255 255 255 / 12%);
+    --mac-badge-text: #E8E8EA;
+    --glass-bg: rgb(44 44 46 / 58%);
+    --glass-bg-strong: rgb(44 44 46 / 76%);
+    --glass-bg-solid: #2A2A2C;
+    --glass-edge: inset 0 1px 0 rgb(255 255 255 / 14%), inset 0 0 0 .5px rgb(255 255 255 / 10%), inset 0 -1px 0 rgb(0 0 0 / 25%);
+    --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 34px rgb(0 0 0 / 45%), 0 2px 8px rgb(0 0 0 / 30%);
+    --glass-sidebar: rgb(38 38 40 / 62%);
+    --mac-wallpaper: radial-gradient(1200px 700px at 12% -10%, #2A2A2C 0%, transparent 60%),
+        radial-gradient(900px 600px at 100% 110%, #0E0E0F 0%, transparent 55%), #171718;
+    --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 32px rgb(0 0 0 / 45%), inset 0 0 0 .5px rgb(255 255 255 / 8%);
+    --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 60%), 0 24px 64px rgb(0 0 0 / 55%), inset 0 0 0 .5px rgb(255 255 255 / 10%);
 
     --mail-primary-tint: var(--mac-surface);
-    --el-color-primary-rgb: 10, 100, 217;
-    --el-color-primary-dark-2: #2B7BE6;
+    --el-color-primary-rgb: 242, 242, 244;
+    --el-color-primary-dark-2: #FFFFFF;
     --el-mask-color: rgb(0 0 0 / 50%);
-    --el-overlay-color-lighter: rgb(0 0 0 / 50%);
+    --el-overlay-color-lighter: rgb(0 0 0 / 28%);
     --loadding-background: rgb(0 0 0 / 30%);
-    --dark-border: #5A5D66;
+    --dark-border: #5A5A5E;
     --search-hit-background: #5C4A12;
     --message-block-color: rgba(30, 30, 30, 0.2);
     --scrollbar-track-color: #8D9095;
@@ -453,8 +485,8 @@ html:root.dark {
 }
 
 @keyframes mail-content-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
 }
 
 .page-skeleton {
@@ -486,8 +518,8 @@ html:root.dark {
 
 .el-popper:is(.el-dropdown__popper, .el-select__popper, .el-picker__popper, .mail-envelope-popover) {
     border-radius: var(--mail-radius-menu);
-    --el-dropdown-menuItem-hover-fill: var(--el-fill-color);
-    --el-dropdown-menuItem-hover-color: var(--el-text-color-primary);
+    --el-dropdown-menuItem-hover-fill: var(--mac-selected);
+    --el-dropdown-menuItem-hover-color: var(--mac-text);
 }
 
 .el-popper:is(.el-dropdown__popper, .el-select__popper, .el-picker__popper) > .el-popper__arrow {
@@ -592,11 +624,7 @@ html:root.dark {
     padding-inline-end: 30px;
 }
 
-.el-select__popper .el-select-dropdown__item.is-selected {
-    background: var(--el-fill-color-light);
-    color: var(--el-text-color-primary);
-    font-weight: 500;
-}
+
 
 .el-select__popper :is(.el-select-dropdown, .el-select-dropdown.is-multiple) .el-select-dropdown__item.is-selected::after {
     content: '';
@@ -614,11 +642,7 @@ html:root.dark {
     color: var(--el-text-color-disabled);
 }
 
-.el-select__popper .el-select-dropdown__item.is-hovering:not(.is-disabled),
-.el-dropdown__popper .el-dropdown-menu__item:not(.is-disabled):is(:hover, :focus) {
-    background: var(--el-fill-color);
-    color: var(--el-text-color-primary);
-}
+
 
 .mail-toolbar {
     display: flex;
@@ -867,89 +891,183 @@ html[data-theme-to="light"]::view-transition-old(root) {
 
 
 /* ===== macOS 控件统一（Element Plus） ===== */
+
+/* 玻璃材质工具类：浮层、菜单、弹窗、停靠条共用 */
+.mac-glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-edge), var(--glass-shadow);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .mac-glass { background: var(--glass-bg-solid); }
+}
+
+/* 复选框：圆角方块，勾选时内容缩放出现 */
 .el-checkbox.el-checkbox {
     --el-checkbox-border-radius: 4px;
     --el-checkbox-input-height: 16px;
     --el-checkbox-input-width: 16px;
-    --el-checkbox-input-border: 1px solid #A9AEB8;
+    --el-checkbox-input-border: 1px solid #B9B9BD;
     --el-checkbox-bg-color: var(--mac-surface);
     --el-checkbox-checked-bg-color: var(--mac-accent);
     --el-checkbox-checked-input-border-color: var(--mac-accent);
+    --el-checkbox-input-border-color-hover: #8E8E93;
     --el-checkbox-font-size: var(--mac-fs-chrome);
 }
-html.dark .el-checkbox { --el-checkbox-input-border: 1px solid #6B6F78; }
-.el-checkbox__inner::after { left: 5px; top: 2px; }
+html.dark .el-checkbox { --el-checkbox-input-border: 1px solid #5E5E62; }
+.el-checkbox__inner {
+    box-shadow: 0 .5px 1px rgb(0 0 0 / 8%);
+    transition: background-color var(--mac-dur-1) ease, border-color var(--mac-dur-1) ease, transform var(--mac-dur-1) ease !important;
+}
+.el-checkbox:active .el-checkbox__inner { transform: scale(.92); }
+.el-checkbox__inner::after {
+    left: 5px; top: 2px;
+    border-color: var(--mac-accent-text) !important;
+    transition: transform var(--mac-dur-2) var(--mac-spring) !important;
+}
+.el-checkbox__input.is-indeterminate .el-checkbox__inner::before { background-color: var(--mac-accent-text); }
 .el-checkbox__input.is-focus .el-checkbox__inner,
-.el-checkbox__original:focus-visible + .el-checkbox__inner { outline: 2px solid var(--mac-focus); outline-offset: 1px; }
+.el-checkbox__original:focus-visible + .el-checkbox__inner { box-shadow: var(--mac-focus-ring); }
 
+/* 开关：苹果尺寸，旋钮弹簧滑动 */
+.el-switch.el-switch {
+    --el-switch-on-color: var(--mac-accent);
+    --el-switch-off-color: #D9D9DC;
+    height: 24px;
+}
+html.dark .el-switch.el-switch { --el-switch-off-color: #48484B; }
+.el-switch__core {
+    min-width: 40px !important;
+    height: 24px !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    transition: background-color var(--mac-dur-2) ease !important;
+}
+.el-switch__core .el-switch__action {
+    width: 20px !important;
+    height: 20px !important;
+    left: 2px !important;
+    background: #fff !important;
+    box-shadow: 0 2px 4px rgb(0 0 0 / 18%), 0 0 0 .5px rgb(0 0 0 / 6%);
+    transition: left var(--mac-dur-3) var(--mac-spring), width var(--mac-dur-2) var(--mac-ease) !important;
+}
+.el-switch:active:not(.is-disabled) .el-switch__action { width: 24px !important; }
+.el-switch.is-checked .el-switch__core .el-switch__action { left: calc(100% - 22px) !important; }
+.el-switch.is-checked:active:not(.is-disabled) .el-switch__core .el-switch__action { left: calc(100% - 26px) !important; }
+html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !important; }
+
+/* 按钮：圆角、轻阴影、按下微缩 */
 .el-button.el-button {
     --el-button-font-weight: 500;
     font-size: var(--mac-fs-chrome);
+    transition: background-color var(--mac-dur-1) ease, border-color var(--mac-dur-1) ease, color var(--mac-dur-1) ease,
+        transform var(--mac-dur-1) var(--mac-ease), box-shadow var(--mac-dur-1) ease;
 }
+.el-button:not(.is-disabled):active { transform: scale(.97); }
 .el-button:not(.is-text, .is-link, .is-circle) { padding-inline: 12px; }
 .el-button:not(.el-button--primary, .el-button--danger, .el-button--success, .el-button--warning, .is-text, .is-link) {
     --el-button-bg-color: var(--mac-surface);
-    --el-button-border-color: var(--mac-line);
-    --el-button-hover-bg-color: var(--mac-hover);
-    --el-button-hover-border-color: var(--mac-line);
+    --el-button-border-color: var(--mac-line-strong);
+    --el-button-hover-bg-color: color-mix(in srgb, var(--mac-surface) 92%, var(--mac-text));
+    --el-button-hover-border-color: var(--mac-line-strong);
     --el-button-hover-text-color: var(--mac-text);
-    --el-button-active-bg-color: var(--mac-hover);
-    --el-button-active-border-color: color-mix(in srgb, var(--mac-line) 60%, var(--mac-text-2));
+    --el-button-active-bg-color: color-mix(in srgb, var(--mac-surface) 86%, var(--mac-text));
+    --el-button-active-border-color: var(--mac-line-strong);
     --el-button-text-color: var(--mac-text);
-    box-shadow: 0 .5px 1px rgb(0 0 0 / 6%);
+    box-shadow: 0 .5px 1.5px rgb(0 0 0 / 7%);
 }
 .el-button--primary:not(.is-plain, .is-text, .is-link) {
     --el-button-bg-color: var(--mac-accent);
     --el-button-border-color: var(--mac-accent);
     --el-button-hover-bg-color: var(--mac-accent-hover);
     --el-button-hover-border-color: var(--mac-accent-hover);
-    --el-button-active-bg-color: var(--el-color-primary-dark-2);
-    --el-button-active-border-color: var(--el-color-primary-dark-2);
+    --el-button-active-bg-color: var(--mac-accent);
+    --el-button-active-border-color: var(--mac-accent);
+    --el-button-text-color: var(--mac-accent-text);
+    --el-button-hover-text-color: var(--mac-accent-text);
+    --el-button-active-text-color: var(--mac-accent-text);
+    box-shadow: inset 0 .5px 0 rgb(255 255 255 / 18%), 0 1px 2px rgb(0 0 0 / 14%);
 }
-.el-button:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: 2px; }
+.el-button:focus-visible { outline: none; box-shadow: var(--mac-focus-ring) !important; }
 
-:is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number):is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number) {
+/* 文本框：浅底、细边、聚焦时柔和光环；带前后缀时整组是一个输入框 */
+:is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number, .el-input-tag):is(.el-input, .el-select, .el-textarea, .el-date-editor, .el-input-number, .el-input-tag) {
     --el-input-bg-color: var(--mac-surface);
-    --el-input-border-color: var(--mac-line);
-    --el-input-hover-border-color: color-mix(in srgb, var(--mac-line) 55%, var(--mac-text-2));
+    --el-input-border-color: var(--mac-line-strong);
+    --el-input-hover-border-color: color-mix(in srgb, var(--mac-line-strong) 70%, var(--mac-text-2));
     --el-input-focus-border-color: var(--mac-focus);
     --el-select-input-focus-border-color: var(--mac-focus);
     --el-input-placeholder-color: var(--mac-text-3);
     --el-input-border-radius: var(--mail-radius-control);
     font-size: var(--mac-fs-body);
 }
-.el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-textarea__inner:focus {
-    box-shadow: 0 0 0 1px var(--mac-focus) inset, 0 0 0 3px color-mix(in srgb, var(--mac-focus) 20%, transparent) !important;
+.el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-input-tag__wrapper {
+    transition: box-shadow var(--mac-dur-2) var(--mac-ease), background-color var(--mac-dur-1) ease !important;
 }
-.el-switch.el-switch { --el-switch-on-color: var(--mac-accent); --el-switch-off-color: #C9CDD4; }
-html.dark .el-switch { --el-switch-off-color: #4A4D55; }
-.el-radio { --el-radio-input-border-color-hover: var(--mac-accent); }
+.el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-textarea__inner:focus, .el-input-tag.is-focused .el-input-tag__wrapper {
+    box-shadow: 0 0 0 1px var(--mac-focus) inset, var(--mac-focus-ring) !important;
+}
+.el-input-group:has(.el-input-group__append, .el-input-group__prepend) {
+    border-radius: var(--mail-radius-control);
+    box-shadow: 0 0 0 1px var(--mac-line-strong);
+    transition: box-shadow var(--mac-dur-2) var(--mac-ease);
+}
+.el-input-group:has(.el-input-group__append, .el-input-group__prepend):focus-within {
+    box-shadow: 0 0 0 1px var(--mac-focus), var(--mac-focus-ring);
+}
+.el-input-group:has(.el-input-group__append, .el-input-group__prepend) .el-input__wrapper,
+.el-input-group:has(.el-input-group__append, .el-input-group__prepend) .el-input__wrapper.is-focus {
+    box-shadow: none !important;
+}
+.el-input-group__append, .el-input-group__prepend {
+    box-shadow: none !important;
+    background: var(--mac-chrome) !important;
+    color: var(--mac-text-2) !important;
+}
+.el-input-group__append { border-inline-start: 1px solid var(--mac-line) !important; }
+.el-input-group__prepend { border-inline-end: 1px solid var(--mac-line) !important; }
+.el-radio { --el-radio-input-border-color-hover: var(--mac-text-2); --el-radio-checked-text-color: var(--mac-text); }
 .el-tag.el-tag { --el-tag-border-radius: 6px; }
+
+/* 分段控件：滑块以弹簧移动 */
 .el-segmented.el-segmented {
-    --el-segmented-bg-color: var(--mac-hover);
+    --el-segmented-bg-color: rgb(0 0 0 / 6%);
     --el-segmented-item-selected-bg-color: var(--mac-surface);
     --el-segmented-item-selected-color: var(--mac-text);
-    --el-segmented-item-hover-bg-color: color-mix(in srgb, var(--mac-hover) 60%, var(--mac-surface));
+    --el-segmented-item-hover-bg-color: transparent;
+    --el-segmented-item-hover-color: var(--mac-text);
     --el-segmented-color: var(--mac-text-2);
     --el-border-radius-base: 8px;
     padding: 2px;
 }
-.el-segmented__item-selected { box-shadow: 0 0 0 .5px var(--mac-line), 0 1px 2px rgb(0 0 0 / 10%); }
+html.dark .el-segmented.el-segmented { --el-segmented-bg-color: rgb(255 255 255 / 8%); --el-segmented-item-selected-bg-color: #3A3A3C; }
+.el-segmented__item-selected {
+    box-shadow: 0 0 0 .5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 14%);
+    transition: all var(--mac-dur-3) var(--mac-spring) !important;
+}
 .el-tabs { --el-tabs-header-height: 36px; }
 
-/* 链接色 */
-.layout a:not([class]), .el-link.el-link--primary { color: var(--mac-link); }
+/* 链接：黑白灰里用下划线区分 */
+.layout a:not([class]), .el-link.el-link--primary { color: var(--mac-link); text-decoration: underline; text-underline-offset: 2px; }
 
-/* 弹窗：居中、16px 圆角、内容过高时只滚动正文 */
+/* 遮罩：轻，不压暗整页 */
 .el-overlay { background-color: var(--el-overlay-color-lighter); }
+
+/* 弹窗：玻璃材质、居中、只滚动正文 */
 .el-dialog.el-dialog, .el-message-box.el-message-box {
-    --el-dialog-bg-color: var(--mac-chrome);
+    --el-dialog-bg-color: var(--glass-bg-strong);
     --el-messagebox-border-radius: var(--mail-radius-dialog);
     --el-dialog-padding-primary: 20px;
     --el-dialog-title-font-size: 15px;
-    background: var(--mac-chrome);
-    border: 1px solid var(--mac-line);
-    box-shadow: var(--mac-shadow-window);
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 0;
+    box-shadow: var(--glass-edge), var(--mac-shadow-window);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .el-dialog.el-dialog, .el-message-box.el-message-box { background: var(--glass-bg-solid); }
 }
 .el-overlay-dialog > .el-dialog:not(.is-fullscreen) {
     display: flex;
@@ -963,75 +1081,173 @@ html.dark .el-switch { --el-switch-off-color: #4A4D55; }
     min-height: 0;
     overflow: auto;
     overscroll-behavior: contain;
+    /* 给聚焦光环留出空间，避免被滚动容器裁掉 */
+    margin: -5px;
+    padding: 5px;
 }
+
+/* 单选按钮组：做成苹果分段控件 */
+.el-radio-group:has(> .el-radio-button) {
+    gap: 0;
+    padding: 2px;
+    border-radius: 8px;
+    background: rgb(0 0 0 / 6%);
+}
+html.dark .el-radio-group:has(> .el-radio-button) { background: rgb(255 255 255 / 8%); }
+.el-radio-button .el-radio-button__inner {
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent;
+    box-shadow: none !important;
+    color: var(--mac-text-2);
+    font-weight: 500;
+    transition: background-color var(--mac-dur-2) var(--mac-ease), color var(--mac-dur-2) ease, box-shadow var(--mac-dur-2) ease !important;
+}
+.el-radio-button.is-active .el-radio-button__inner {
+    background: var(--mac-surface) !important;
+    color: var(--mac-text) !important;
+    box-shadow: 0 0 0 .5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 14%) !important;
+}
+html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A3C !important; }
 .el-dialog__header { padding-bottom: 12px; padding-inline-end: 48px; }
 .el-dialog__title, .el-message-box__title { color: var(--mac-text); font-weight: 600; line-height: 22px; }
 .el-dialog__footer { padding-top: 16px; }
 .el-message-box { padding: 20px; }
 .el-message-box__message { color: var(--mac-text-2); }
-:is(.el-dialog .el-dialog__headerbtn, .el-message-box .el-message-box__headerbtn) { top: 12px; right: 12px; width: 28px; height: 28px; }
+:is(.el-dialog .el-dialog__headerbtn, .el-message-box .el-message-box__headerbtn) { top: 14px; right: 14px; width: 26px; height: 26px; border-radius: 50%; }
+:is(.el-dialog .el-dialog__headerbtn, .el-message-box .el-message-box__headerbtn)::before { width: 14px; height: 14px; }
 
-/* 浮层：贴着触发器，统一边框、圆角、阴影 */
+/* 弹窗出现：遮罩淡入，面板从 0.94 弹到 1；关闭时快速收回 */
+.el-overlay.dialog-fade-enter-active, .el-overlay.dialog-fade-leave-active,
+.el-overlay.is-message-box.fade-in-linear-enter-active, .el-overlay.is-message-box.fade-in-linear-leave-active { animation: none !important; transition: opacity var(--mac-dur-2) ease !important; }
+.el-overlay.dialog-fade-enter-from, .el-overlay.dialog-fade-leave-to,
+.el-overlay.is-message-box.fade-in-linear-enter-from, .el-overlay.is-message-box.fade-in-linear-leave-to { opacity: 0; }
+.dialog-fade-enter-active .el-overlay-dialog, .dialog-fade-leave-active .el-overlay-dialog,
+.fade-in-linear-enter-active .el-overlay-message-box, .fade-in-linear-leave-active .el-overlay-message-box { animation: none !important; }
+.dialog-fade-enter-active .el-dialog, .fade-in-linear-enter-active .el-message-box { animation: mac-sheet-in var(--mac-dur-3) var(--mac-spring) both; }
+.dialog-fade-leave-active .el-dialog, .fade-in-linear-leave-active .el-message-box { animation: mac-sheet-out var(--mac-dur-2) var(--mac-ease) both; }
+@keyframes mac-sheet-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes mac-sheet-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.97); } }
+
+/* 浮层：玻璃材质，贴着触发器，从触发器方向缩放出现 */
 .el-popper.is-light, .el-dropdown__popper.el-popper, .el-select__popper.el-popper, .el-picker__popper.el-popper,
 .el-popover.el-popper {
-    --el-popover-bg-color: var(--mac-chrome);
-    --el-bg-color-overlay: var(--mac-chrome);
-    border: 1px solid var(--mac-line) !important;
+    --el-popover-bg-color: var(--glass-bg-strong);
+    --el-bg-color-overlay: transparent;
+    border: 0 !important;
     border-radius: var(--mail-radius-menu);
-    background: var(--mac-chrome);
-    box-shadow: var(--mac-shadow-pop) !important;
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-edge), var(--mac-shadow-pop) !important;
 }
-.el-popper.is-dark { border-radius: 6px; font-size: var(--mac-fs-caption); line-height: var(--mac-lh-caption); padding: 4px 8px; }
-.el-dropdown-menu, .el-select-dropdown { background: var(--mac-chrome); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .el-popper.is-light, .el-dropdown__popper.el-popper, .el-select__popper.el-popper, .el-picker__popper.el-popper,
+    .el-popover.el-popper { background: var(--glass-bg-solid); }
+}
+.el-dropdown-menu, .el-select-dropdown, .el-picker-panel, .el-date-picker { background: transparent !important; }
+.el-popper.is-dark {
+    border: 0;
+    border-radius: 7px;
+    background: rgb(40 40 42 / 92%) !important;
+    color: #F5F5F7;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    font-size: var(--mac-fs-caption);
+    line-height: var(--mac-lh-caption);
+    padding: 4px 8px;
+}
+.el-zoom-in-top-enter-active, .el-zoom-in-top-leave-active,
+.el-zoom-in-bottom-enter-active, .el-zoom-in-bottom-leave-active,
+.el-fade-in-linear-enter-active, .el-fade-in-linear-leave-active {
+    transition: opacity var(--mac-dur-2) var(--mac-ease), transform var(--mac-dur-3) var(--mac-spring) !important;
+}
+.el-zoom-in-top-leave-active, .el-zoom-in-bottom-leave-active, .el-fade-in-linear-leave-active {
+    transition: opacity var(--mac-dur-1) ease, transform var(--mac-dur-1) ease !important;
+}
+.el-zoom-in-top-enter-from, .el-zoom-in-top-leave-to { opacity: 0; transform: scale(.96) translateY(-4px) !important; }
+.el-zoom-in-bottom-enter-from, .el-zoom-in-bottom-leave-to { opacity: 0; transform: scale(.96) translateY(4px) !important; }
+.el-popper.is-light.el-fade-in-linear-enter-from, .el-popper.is-light.el-fade-in-linear-leave-to { opacity: 0; transform: scale(.97); }
 .el-dropdown__popper .el-dropdown-menu__item:not(.is-disabled):is(:hover, :focus),
 .el-select__popper .el-select-dropdown__item.is-hovering:not(.is-disabled) {
-    background: var(--mac-accent);
-    color: var(--mac-accent-text);
+    background: var(--mac-selected);
+    color: var(--mac-text);
 }
-.el-dropdown__popper .el-dropdown-menu__item:not(.is-disabled):is(:hover, :focus) svg { color: inherit; }
+.el-dropdown__popper .el-dropdown-menu__item { transition: background-color 80ms ease; }
+.el-select__popper .el-select-dropdown__item.is-selected { background: transparent; font-weight: 600; }
 .el-dropdown-menu__item--divided { border-top-color: var(--mac-line); }
 .el-message.el-message {
-    --el-message-bg-color: var(--mac-chrome);
-    --el-message-border-color: var(--mac-line);
-    border-radius: 10px;
-    box-shadow: var(--mac-shadow-pop);
+    --el-message-bg-color: var(--glass-bg-strong);
+    --el-message-border-color: transparent;
+    --el-message-text-color: var(--mac-text);
+    border-radius: 12px;
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-edge), var(--mac-shadow-pop);
+}
+.el-message-fade-enter-from, .el-message-fade-leave-to { opacity: 0; transform: translate(-50%, -12px) scale(.96) !important; }
+.el-message { transition: opacity var(--mac-dur-2) var(--mac-ease), transform var(--mac-dur-3) var(--mac-spring), top var(--mac-dur-3) var(--mac-ease) !important; }
+
+/* 目录树（权限）：展开图标放在右侧，行高 32，悬停柔和 */
+.el-tree.el-tree {
+    --el-tree-node-hover-bg-color: var(--mac-hover);
+    --el-tree-node-content-height: 32px;
+    background: transparent;
+}
+.el-tree-node__content {
+    border-radius: 7px;
+    transition: background-color var(--mac-dur-1) ease;
+}
+.el-tree-node:focus > .el-tree-node__content { background: var(--mac-hover); }
+.el-tree-node__expand-icon {
+    transition: transform var(--mac-dur-2) var(--mac-ease) !important;
 }
 
-/* 表格与分页：同一套边界与留白 */
+/* 表格与分页 */
 .el-table.el-table {
     --el-table-border-color: var(--mac-line);
     --el-table-header-bg-color: var(--mac-chrome);
     --el-table-header-text-color: var(--mac-text-2);
-    --el-table-row-hover-bg-color: var(--mac-hover);
+    --el-table-row-hover-bg-color: color-mix(in srgb, var(--mac-surface) 96%, var(--mac-text));
     --el-table-text-color: var(--mac-text);
     --el-table-bg-color: var(--mac-surface);
     --el-table-tr-bg-color: var(--mac-surface);
     font-size: var(--mac-fs-chrome);
 }
 .el-table th.el-table__cell { font-size: var(--mac-fs-caption); }
+.el-table .el-table__body tr { transition: background-color var(--mac-dur-1) ease; }
 .el-pagination.el-pagination {
     --el-pagination-bg-color: transparent;
     --el-pagination-button-bg-color: transparent;
-    --el-pagination-hover-color: var(--mac-accent);
+    --el-pagination-hover-color: var(--mac-text);
     --el-pagination-font-size: var(--mac-fs-chrome);
 }
-.el-pagination.is-background .el-pager li.is-active:not(.is-disabled) { background: var(--mac-accent); }
+.el-pagination.is-background .el-pager li.is-active:not(.is-disabled) { background: var(--mac-accent); color: var(--mac-accent-text); }
 .el-pager li, .el-pagination button { font-variant-numeric: tabular-nums; }
 .el-card.el-card {
     --el-card-bg-color: var(--mac-surface);
     --el-card-border-color: var(--mac-line);
     --el-card-padding: 20px;
 }
-.el-skeleton.el-skeleton { --el-skeleton-color: var(--mac-hover); --el-skeleton-to-color: color-mix(in srgb, var(--mac-hover) 50%, var(--mac-surface)); }
+.el-skeleton.el-skeleton { --el-skeleton-color: color-mix(in srgb, var(--mac-surface) 92%, var(--mac-text)); --el-skeleton-to-color: color-mix(in srgb, var(--mac-surface) 96%, var(--mac-text)); }
 
-/* 滚动条：细、圆、悬停加深 */
+/* 滚动条：叠加式，细、圆 */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: rgb(0 0 0 / 22%) padding-box; }
 html.dark ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 24%) padding-box; }
 ::-webkit-scrollbar-track { background: transparent; }
 .el-scrollbar__thumb { background: rgb(0 0 0 / 35%); opacity: .6; }
 html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
+.el-scrollbar__bar { transition: opacity var(--mac-dur-2) ease; }
+
+/* 进度条 */
+#nprogress .bar { background: var(--mac-accent) !important; height: 2px !important; }
 
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { scroll-behavior: auto !important; }
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+    }
 }

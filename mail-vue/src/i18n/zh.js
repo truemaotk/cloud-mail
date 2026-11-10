@@ -1,4 +1,7 @@
 const zh = {
+    mailSentTo: '发送至',
+    mailPositionOf: '第 {index} 封，共 {total} 封',
+    mailMoreMessageActions: '更多',
     inbox: '收件箱',
     compose: '撰写邮件',
     drafts: '草稿箱',

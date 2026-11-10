@@ -6,7 +6,7 @@
       role="dialog"
       :aria-label="$t('mailboxSwitcher')"
       :placement="compact ? 'right-start' : 'bottom-start'"
-      :offset="compact ? 10 : 6"
+      :offset="compact ? 10 : -1"
       :show-arrow="false"
       :teleported="false"
       persistent
@@ -104,12 +104,10 @@ function closeFromKeyboard() {
   color: var(--mac-text);
   text-align: start;
   cursor: pointer;
-  transition: background-color 140ms ease;
 }
 
-.mailbox-switch-trigger:hover,
-.mailbox-switch-trigger[aria-expanded='true'] {
-  background: var(--mac-hover);
+.mailbox-switch-trigger:hover {
+  background: color-mix(in srgb, var(--mac-surface) 94%, var(--mac-text));
 }
 
 .mailbox-switch-trigger:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: -2px; }
@@ -138,13 +136,51 @@ function closeFromKeyboard() {
 
 .mailbox-switch-trigger .disclosure-chevron { justify-self: center; width: 14px; height: 14px; color: var(--mac-text-2); }
 
-.mailbox-switcher :deep(.mailbox-switch-popover) {
-  width: min(calc(var(--mail-sidebar-width) - 25px), calc(100vw - 49px));
-  padding: 6px;
-  border-color: var(--mac-line);
-  border-radius: var(--mail-radius-menu);
-  background: var(--mac-chrome);
-  box-shadow: var(--mac-shadow-pop);
+/* 展开后与触发器连成一个整体：同底色、同边框，触发器底角与面板顶角变直 */
+.mailbox-switcher :deep(.mailbox-switch-popover.el-popper) {
+  width: calc(var(--mail-sidebar-width) - 24px);
+  max-width: calc(100vw - 49px);
+  padding: 4px 6px 6px;
+  border: 1px solid var(--mac-line) !important;
+  border-top: 0 !important;
+  border-radius: 0 0 var(--mail-radius-card) var(--mail-radius-card);
+  background: var(--mac-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 10%) !important;
+  transform-origin: top center;
+}
+.mailbox-switcher:not(.is-compact) .mailbox-switch-trigger[aria-expanded='true'] {
+  border-bottom-color: transparent;
+  border-radius: var(--mail-radius-card) var(--mail-radius-card) 0 0;
+  background: var(--mac-surface);
+}
+.mailbox-switcher:not(.is-compact) .mailbox-switch-trigger[aria-expanded='true']::after {
+  position: absolute;
+  inset: auto 10px -1px;
+  height: 1px;
+  background: var(--mac-line);
+  content: '';
+}
+.mailbox-switch-trigger { position: relative; transition: background-color var(--mac-dur-1) ease, border-radius var(--mac-dur-1) ease; }
+.mailbox-switch-trigger .disclosure-chevron { transition: transform var(--mac-dur-3) var(--mac-spring); }
+.mailbox-switch-trigger[aria-expanded='true'] .disclosure-chevron { transform: rotate(90deg); }
+/* 面板像卷帘一样从触发器下沿展开 */
+.mailbox-switcher :deep(.mailbox-switch-popover.el-fade-in-linear-enter-active),
+.mailbox-switcher :deep(.mailbox-switch-popover.el-fade-in-linear-leave-active) {
+  transition: clip-path var(--mac-dur-3) var(--mac-ease), opacity var(--mac-dur-2) ease !important;
+}
+.mailbox-switcher:not(.is-compact) :deep(.mailbox-switch-popover.el-fade-in-linear-enter-from),
+.mailbox-switcher:not(.is-compact) :deep(.mailbox-switch-popover.el-fade-in-linear-leave-to) {
+  opacity: 0;
+  transform: none !important;
+  clip-path: inset(0 0 100% 0 round 0 0 12px 12px);
+}
+.mailbox-switcher.is-compact :deep(.mailbox-switch-popover.el-popper) {
+  width: 232px;
+  border-top: 1px solid var(--mac-line) !important;
+  border-radius: var(--mail-radius-card);
+  box-shadow: var(--mac-shadow-pop) !important;
 }
 
 .mailbox-switcher.is-compact { margin-inline: 12px; }

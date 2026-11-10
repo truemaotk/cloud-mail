@@ -13,9 +13,6 @@
             <div class="subject-row">
               <h2 class="email-title">{{ email.subject || $t('noSubject') }}</h2>
               <span v-if="mailboxLabel" class="mailbox-label">{{ $t(mailboxLabel) }}</span>
-              <ToolbarButton v-if="embedded && emailStore.contentData.showStar" class="reader-star subject-star"
-                             :icon="email.isStar ? 'star-fill' : 'star'" :label="$t('star')"
-                             :aria-pressed="!!email.isStar" @click="emit('toggle-star')" />
             </div>
             <div class="envelope">
               <span class="sender-icon" aria-hidden="true">{{ senderInitial }}</span>
@@ -29,40 +26,51 @@
                 </div>
                 <el-tooltip v-model:visible="showEnvelope" trigger="click" placement="bottom-start"
                             role="dialog" effect="light" :aria-label="$t('mailHeaderDetails')"
-                            popper-class="mail-envelope-popover" :show-arrow="false" :offset="6"
+                            popper-class="mail-envelope-popover" :show-arrow="false" :offset="4"
                             :popper-options="envelopePosition">
-                  <button type="button" class="recipient-line" @keydown.esc.stop="showEnvelope = false">
-                    <span>{{ $t('recipient') }}</span>
-                    <span class="recipient-address">{{ recipientAddresses || email.toEmail || '—' }}</span>
+                  <button type="button" class="recipient-line" :aria-expanded="showEnvelope" @keydown.esc.stop="showEnvelope = false">
+                    <span>{{ $t('mailSentTo') }}</span>
+                    <span class="recipient-address">{{ recipientShort }}</span>
                     <NavigationIcon name="chevron" class="recipient-chevron" :size="12" />
                   </button>
                   <template #content>
                     <section class="envelope-panel" @keydown.esc.stop="showEnvelope = false">
-                      <h3>{{ $t('mailHeaderDetails') }}</h3>
                       <dl class="envelope-details">
-                        <dt>{{ $t('from') }}</dt>
+                        <dt>{{ $t('from') }}：</dt>
                         <dd>
                           <strong>{{ senderName }}</strong>
-                          <span v-if="senderAddress" class="envelope-address">{{ senderAddress }}</span>
+                          <span v-if="senderAddress" class="envelope-address">&lt;{{ senderAddress }}&gt;</span>
                         </dd>
-                        <dt>{{ $t('recipient') }}</dt>
+                        <dt>{{ $t('recipient') }}：</dt>
                         <dd>{{ recipientAddresses || email.toEmail || '—' }}</dd>
-                        <dt v-if="copyAddresses">{{ $t('mailCc') }}</dt>
+                        <dt v-if="copyAddresses">{{ $t('mailCc') }}：</dt>
                         <dd v-if="copyAddresses">{{ copyAddresses }}</dd>
-                        <dt v-if="blindCopyAddresses">{{ $t('mailBcc') }}</dt>
+                        <dt v-if="blindCopyAddresses">{{ $t('mailBcc') }}：</dt>
                         <dd v-if="blindCopyAddresses">{{ blindCopyAddresses }}</dd>
-                        <dt v-if="email.createTime">{{ $t('date') }}</dt>
+                        <dt v-if="email.createTime">{{ $t('date') }}：</dt>
                         <dd v-if="email.createTime">{{ formatDetailDate(email.createTime) }}</dd>
+                        <dt>{{ $t('subject') }}：</dt>
+                        <dd>{{ email.subject || $t('noSubject') }}</dd>
                       </dl>
                     </section>
                   </template>
                 </el-tooltip>
               </div>
               <div class="envelope-actions">
-                <time v-if="email.createTime" class="email-date">{{ formatDetailDate(email.createTime) }}</time>
-                <ToolbarButton v-if="!embedded && emailStore.contentData.showStar" class="reader-star" :icon="email.isStar ? 'star-fill' : 'star'"
-                               :label="$t('star')" :aria-pressed="!!email.isStar" @click="changeStar" />
+                <time v-if="email.createTime" class="email-date" :datetime="email.createTime"
+                      :title="headerDate.full">{{ headerDate.text }}</time>
+                <ToolbarButton v-if="emailStore.contentData.showStar" class="reader-star" :icon="email.isStar ? 'star-fill' : 'star'"
+                               :label="$t('star')" :aria-pressed="!!email.isStar" @click="embedded ? emit('toggle-star') : changeStar()" />
                 <ToolbarButton v-if="canReply" icon="reply" :label="$t('reply')" @click="openReply" />
+                <el-dropdown v-if="canReply" trigger="click" placement="bottom-end" :show-arrow="false" @command="headerCommand">
+                  <ToolbarButton icon="more-vertical" :label="$t('mailMoreMessageActions')" />
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="reply"><NavigationIcon name="reply" :size="16" />{{ $t('reply') }}</el-dropdown-item>
+                      <el-dropdown-item command="forward"><NavigationIcon name="forward" :size="16" />{{ $t('forward') }}</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </div>
             </div>
             <el-alert v-if="email.status === 3" :closable="false" :title="toMessage(email.message)" class="email-msg" type="error" show-icon />
@@ -127,7 +135,7 @@ import {emailDelete, emailRead} from "@/request/email.js";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
 import {useUserStore} from "@/store/user.js";
-import {formatDetailDate} from "@/utils/day.js";
+import {formatDetailDate, formatHeaderDate} from "@/utils/day.js";
 import {starAdd, starCancel} from "@/request/star.js";
 import {getExtName, formatBytes} from "@/utils/file-utils.js";
 import {cvtR2Url,toOssDomain} from "@/utils/convert.js";
@@ -193,6 +201,16 @@ function addresses(value) {
   }
 }
 const recipientAddresses = computed(() => addresses(email.value.recipient))
+const recipientShort = computed(() => {
+  const list = (recipientAddresses.value || email.value.toEmail || '').split('、').filter(Boolean)
+  if (!list.length) return '—'
+  return list.length > 1 ? `${list[0]} +${list.length - 1}` : list[0]
+})
+const headerDate = computed(() => email.value.createTime ? formatHeaderDate(email.value.createTime) : { text: '', full: '' })
+function headerCommand(command) {
+  if (command === 'forward') openForward()
+  else openReply()
+}
 const copyAddresses = computed(() => addresses(email.value.cc))
 const blindCopyAddresses = computed(() => email.value.type === 1 ? addresses(email.value.bcc) : '')
 
@@ -425,16 +443,16 @@ const handleDelete = () => {
 .subject-row {
   display: flex;
   align-items: flex-start;
-  gap: 8px 12px;
-  margin-block-end: 16px;
+  gap: 8px 10px;
+  margin-block-end: 20px;
 }
 .email-title {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   color: var(--mac-text);
-  font-size: var(--mac-fs-title);
-  line-height: var(--mac-lh-title);
-  font-weight: 600;
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 500;
   letter-spacing: -.01em;
   overflow-wrap: anywhere;
 }
@@ -449,7 +467,6 @@ const handleDelete = () => {
   line-height: 20px;
   white-space: nowrap;
 }
-.subject-star { flex: none; margin-top: -2px; }
 .reader-star[aria-pressed='true'] { color: var(--mac-star); }
 .envelope {
   display: grid;
@@ -463,14 +480,14 @@ const handleDelete = () => {
   width: var(--avatar-size);
   height: var(--avatar-size);
   border-radius: 50%;
-  background: linear-gradient(180deg, #A4A9B3, #868B95);
+  background: linear-gradient(180deg, #A6A6AA, #7E7E83);
   color: #fff;
   font-size: 17px;
   font-weight: 600;
   line-height: 1;
   user-select: none;
 }
-.sender { display: grid; min-width: 0; gap: 2px; }
+.sender { display: grid; justify-items: start; min-width: 0; gap: 0; padding-top: 1px; }
 .sender-line {
   display: flex;
   flex-wrap: wrap;
@@ -488,8 +505,8 @@ const handleDelete = () => {
 .sender-email {
   min-width: 0;
   color: var(--mac-text-2);
-  font-size: var(--mac-fs-chrome);
-  line-height: var(--mac-lh-chrome);
+  font-size: var(--mac-fs-caption);
+  line-height: var(--mac-lh-body);
   word-break: break-all;
 }
 .recipient-line, .email-date {
@@ -501,12 +518,14 @@ const handleDelete = () => {
   display: inline-flex;
   justify-self: start;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   max-width: 100%;
-  min-height: 24px;
-  padding: 2px 6px;
-  margin-inline-start: -6px;
-  border-radius: 6px;
+  min-height: 20px;
+  padding: 0 4px;
+  margin-inline-start: -4px;
+  border-radius: 5px;
+  font-size: var(--mac-fs-caption);
+  line-height: var(--mac-lh-caption);
   text-align: start;
   cursor: pointer;
   &:hover, &[aria-expanded="true"] {
@@ -526,11 +545,13 @@ const handleDelete = () => {
   flex: none;
 }
 .recipient-chevron {
-  transition: transform 140ms ease;
+  transform: rotate(90deg);
+  transition: transform var(--mac-dur-3) var(--mac-spring);
 }
 .recipient-line[aria-expanded="true"] .recipient-chevron {
-  transform: rotate(90deg);
+  transform: rotate(-90deg);
 }
+.envelope-panel { min-width: 300px; }
 .envelope-panel h3 {
   margin: 0;
   padding-block-end: 8px;
@@ -543,14 +564,13 @@ const handleDelete = () => {
 .envelope-details {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  gap: 8px 12px;
-  margin: 12px 0 0;
+  gap: 6px 10px;
+  margin: 0;
   font-size: var(--mac-fs-chrome);
   line-height: var(--mac-lh-chrome);
   overflow-wrap: anywhere;
   dt {
     color: var(--mac-text-2);
-    font-weight: 600;
     text-align: end;
   }
   dd {
@@ -566,11 +586,12 @@ const handleDelete = () => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 2px;
   margin-top: -6px;
 }
+.envelope-actions .toolbar-button { color: var(--mac-text-2); }
 .email-date {
-  padding-inline-end: 4px;
+  padding-inline-end: 8px;
   font-size: var(--mac-fs-caption);
   line-height: var(--mac-lh-caption);
   font-variant-numeric: tabular-nums;
@@ -580,9 +601,7 @@ const handleDelete = () => {
   margin-top: 16px;
 }
 .reader-body {
-  margin-block-start: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--mac-line);
+  margin-block-start: 20px;
 }
 .shadow-html {
   position: relative;
@@ -657,39 +676,47 @@ const handleDelete = () => {
   font-size: var(--mac-fs-caption);
   font-variant-numeric: tabular-nums;
 }
+/* 回复/转发：Gmail 式描边胶囊，放在左下的液态玻璃托盘里 */
 .reader-footer {
   position: absolute;
   z-index: 2;
   inset-inline-start: calc(var(--reader-gutter) + 52px);
-  inset-block-end: 20px;
+  inset-block-end: 18px;
   display: flex;
   gap: 8px;
-  padding: 4px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--mac-surface) 88%, transparent);
-  box-shadow: var(--mac-shadow-pop);
-  backdrop-filter: blur(12px) saturate(1.4);
+  padding: 5px;
+  border-radius: 24px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+  animation: mac-dock-in var(--mac-dur-4) var(--mac-spring) both;
 }
-@supports not (backdrop-filter: blur(1px)) {
-  .reader-footer { background: var(--mac-surface); }
+@keyframes mac-dock-in { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .reader-footer { background: var(--glass-bg-solid); }
 }
 .reply-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-width: 88px;
-  height: 32px;
-  padding-inline: 12px;
-  border-radius: var(--mail-radius-control);
+  gap: 8px;
+  min-width: 96px;
+  height: 36px;
+  padding-inline: 16px 18px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 18px;
+  background: var(--mac-surface);
   color: var(--mac-text);
   font-size: var(--mac-fs-chrome);
   font-weight: 500;
   cursor: pointer;
+  transition: background-color var(--mac-dur-1) ease, transform var(--mac-dur-1) var(--mac-ease), box-shadow var(--mac-dur-1) ease;
   &:hover {
-    background: var(--mac-hover);
+    background: color-mix(in srgb, var(--mac-surface) 94%, var(--mac-text));
   }
-  &:focus-visible { outline: 2px solid var(--mac-focus); outline-offset: -2px; }
+  &:active { transform: scale(.96); }
+  &:focus-visible { outline: none; box-shadow: var(--mac-focus-ring); }
 }
 @media (max-width: 1280px) {
   .reader-surface { --reader-gutter: 24px; }

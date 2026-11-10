@@ -187,8 +187,8 @@ watchEffect(() => {
 
   const dark = uiStore.dark
   const palette = dark
-    ? { ink: '#F5F5F7', muted: '#B2B5BD', line: '#3E4047', received: '#64A9FF', sent: '#8E96A3', background: '#26272B' }
-    : { ink: '#1D1D1F', muted: '#555963', line: '#DDE0E5', received: '#005FC4', sent: '#9AA1AD', background: '#FFFFFF' }
+    ? { ink: '#F5F5F7', muted: '#B4B4B8', line: '#343436', received: '#F2F2F4', sent: '#6E6E73', background: '#1E1E1F' }
+    : { ink: '#1D1D1F', muted: '#5E5E62', line: '#E3E3E3', received: '#1D1D1F', sent: '#A1A1A6', background: '#FFFFFF' }
   const dateFormatter = new Intl.DateTimeFormat(locale.value, { month: 'short', day: 'numeric', timeZone: 'UTC' })
   const dates = rows => rows.map(({ date }) => dateFormatter.format(new Date(date + 'T00:00:00Z')))
   const chartOptions = (rows, top) => ({

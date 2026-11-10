@@ -54,7 +54,7 @@ function changeDark(nextIsDark, origin) {
     const isMobile = !window.matchMedia("(pointer: fine) and (hover: hover)").matches
     document.getElementById('theme-color-meta')?.setAttribute(
       'content',
-      nextIsDark ? '#1B1C1F' : '#F4F5F7'
+      nextIsDark ? '#161617' : '#F2F2F2'
     )
     uiStore.dark = nextIsDark
   }

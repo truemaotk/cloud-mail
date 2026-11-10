@@ -228,7 +228,15 @@ function followLink(event, navigate) {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: var(--mail-shell-sidebar);
+  border-radius: 18px;
+  background: var(--glass-sidebar);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 .5px rgb(0 0 0 / 8%), 0 8px 24px rgb(0 0 0 / 6%);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sidebar { background: var(--mac-sidebar); }
 }
 
 .brand {
@@ -284,6 +292,9 @@ function followLink(event, navigate) {
   background: var(--mail-shell-action-hover);
 }
 
+.compose-bar { transition: background-color var(--mac-dur-1) ease, transform var(--mac-dur-1) var(--mac-ease), width var(--mac-dur-3) var(--mac-ease); }
+.compose-bar:active { transform: scale(.97); }
+
 .navigation-scroll {
   flex: 1 1 0;
   min-height: 0;
@@ -324,13 +335,15 @@ function followLink(event, navigate) {
   text-align: left;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition: background-color var(--mac-dur-1) ease, color var(--mac-dur-1) ease, transform var(--mac-dur-1) var(--mac-ease);
 }
+
+.nav-main:active, .nav-group-toggle:active, .nav-child:active { transform: scale(.985); background: var(--mac-press); }
 
 .nav-main,
 .nav-group-toggle {
   grid-template-columns: 18px minmax(0, 1fr) var(--rail-trailing-width);
-  padding-inline-end: var(--rail-trailing-inset);
+  padding-inline: 10px var(--rail-trailing-inset);
 }
 
 .nav-main > svg,
@@ -340,6 +353,7 @@ function followLink(event, navigate) {
   height: 17px;
   justify-self: center;
   color: var(--mac-text-2);
+  transition: color var(--mac-dur-1) ease;
 }
 
 .nav-group-toggle .nav-chevron,
@@ -351,8 +365,8 @@ function followLink(event, navigate) {
 .nav-group-toggle .nav-chevron {
   width: 14px;
   height: 14px;
-  color: var(--mac-text-2);
-  transition: transform 180ms ease;
+  color: var(--mac-text-3);
+  transition: transform var(--mac-dur-3) var(--mac-spring);
 }
 
 .nav-group-toggle[aria-expanded='true'] .nav-chevron {
@@ -362,34 +376,33 @@ function followLink(event, navigate) {
 .nav-main:hover,
 .nav-group-toggle:hover,
 .nav-child:hover {
-  background: var(--mail-shell-hover);
+  background: var(--mac-hover);
 }
 
-/* 选中：底色 + 图标着色，字重与文字位置不变 */
+/* 选中：灰底 + 文字加粗，图标转为主色 */
 .nav-main[aria-current='page'],
 .nav-child[aria-current='page'],
 .nav-group-toggle.has-current[aria-expanded='false'] {
-  background: var(--mail-shell-active);
-  color: var(--mac-selected-text);
+  background: var(--mac-selected);
+  color: var(--mac-text);
 }
+
+.nav-main[aria-current='page'] .nav-label,
+.nav-child[aria-current='page'] .nav-label,
+.nav-group-toggle.has-current .nav-label { font-weight: 600; }
 
 .nav-main[aria-current='page'] > svg,
 .nav-child[aria-current='page'] > svg,
 .nav-group-toggle.has-current > svg:first-child {
-  color: var(--mac-accent);
+  color: var(--mac-text);
 }
 
-:global(html.dark) .nav-main[aria-current='page'] > svg,
-:global(html.dark) .nav-child[aria-current='page'] > svg,
-:global(html.dark) .nav-group-toggle.has-current > svg:first-child {
-  color: var(--mac-link);
-}
-
+/* 展开收起：高度与透明度一起流动 */
 .nav-disclosure {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 180ms ease, opacity 150ms ease;
+  transition: grid-template-rows var(--mac-dur-3) var(--mac-ease), opacity var(--mac-dur-2) ease;
 }
 
 .nav-disclosure.is-open {
@@ -402,18 +415,47 @@ function followLink(event, navigate) {
   overflow: hidden;
 }
 
+/* 二级菜单：目录树。竖线与父级图标中心对齐，选中项在竖线上加粗一段 */
 .nav-children {
+  position: relative;
   display: grid;
   gap: 2px;
-  margin: 2px 0 2px;
-  padding-left: 0;
+  margin: 2px 0 4px 19px;
+  padding-left: 12px;
   list-style: none;
 }
 
+.nav-children::before {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-start: 0;
+  width: 1px;
+  background: rgb(0 0 0 / 16%);
+  content: '';
+}
+:global(html.dark) .nav-children::before { background: rgb(255 255 255 / 18%); }
+
 .nav-child {
-  grid-template-columns: 18px minmax(0, 1fr) auto;
-  min-height: 32px;
-  padding-inline-start: 33px;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  min-height: 30px;
+}
+
+.nav-child::before {
+  position: absolute;
+  inset-block: 7px;
+  inset-inline-start: -13px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--mac-text);
+  content: '';
+  opacity: 0;
+  transform: scaleY(.3);
+  transition: opacity var(--mac-dur-2) ease, transform var(--mac-dur-3) var(--mac-spring);
+}
+
+.nav-child[aria-current='page']::before {
+  opacity: 1;
+  transform: none;
 }
 
 .nav-child > svg {
@@ -430,7 +472,7 @@ function followLink(event, navigate) {
   height: 2px;
   z-index: 1;
   border-radius: 1px;
-  background: var(--mail-shell-marker);
+  background: var(--mac-text);
   pointer-events: none;
   content: '';
 }
@@ -442,8 +484,10 @@ function followLink(event, navigate) {
   padding-inline: 0;
 }
 .is-compact .brand > span,
-.is-compact .compose-bar > span,
-.is-compact .nav-label { display: none; }
+.is-compact .compose-bar > span { display: none; }
+/* 折叠时图标位置不变，只让文字淡出，宽度随侧栏一起流动 */
+.nav-label { transition: opacity var(--mac-dur-2) ease; }
+.is-compact .nav-label { opacity: 0; }
 .is-compact .compose-bar {
   align-self: center;
   width: 36px;
@@ -454,12 +498,12 @@ function followLink(event, navigate) {
 .is-compact .side-navigation { padding-inline: 12px; }
 .is-compact .utility-navigation-group { margin-inline: 0; }
 .is-compact .nav-children { margin: 2px 0; padding: 0; border: 0; }
+.is-compact .nav-children::before, .is-compact .nav-child::before { display: none; }
 .is-compact :is(.nav-main, .nav-group-toggle, .nav-child) {
-  grid-template-columns: 1fr;
-  justify-items: center;
   width: 36px;
   min-height: 36px;
-  padding-inline: 0;
+  overflow: hidden;
+  padding-inline: 10px 0;
 }
 .is-compact .nav-group-toggle[aria-expanded='true'] {
   color: var(--el-text-color-primary);
