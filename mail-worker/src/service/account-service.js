@@ -244,12 +244,13 @@ const accountService = {
 			size = 30;
 		}
 
-		num = (num - 1) * size;
+		num = Math.max(0, num - 1) * size;
 
 		const userRow = await userService.selectByIdIncludeDel(c, userId);
 
-		const list = await orm(c).select().from(account).where(and(eq(account.userId, userId),ne(account.email,userRow.email))).limit(size).offset(num);
-		const { total } = await orm(c).select({ total: count() }).from(account).where(eq(account.userId, userId)).get();
+		const matching = and(eq(account.userId, userId), ne(account.email, userRow.email));
+		const list = await orm(c).select().from(account).where(matching).orderBy(account.accountId).limit(size).offset(num);
+		const { total } = await orm(c).select({ total: count() }).from(account).where(matching).get();
 
 		return { list, total }
 	},

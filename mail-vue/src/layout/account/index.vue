@@ -111,10 +111,12 @@
         {{ $t('addAccount') }}
       </button>
     </div>
-    <el-dialog close-icon="MailCloseIcon" v-model="showAdd" class="mailbox-form-dialog" :title="$t('addAccount')"
+    <el-dialog close-icon="MailCloseIcon" v-model="showAdd" class="mailbox-add-dialog" :title="$t('addAccount')"
                width="min(400px, calc(100vw - 32px))" align-center append-to-body @opened="addRef?.focus()">
       <div class="container">
+        <label class="mailbox-add-label" for="new-mailbox-address">{{ $t('emailAccount') }}</label>
         <el-input
+          id="new-mailbox-address"
           ref="addRef"
           v-model="addForm.email"
           class="mail-address-input"
@@ -151,7 +153,7 @@
       </div>
       <template #footer>
         <el-button @click="showAdd = false">{{ $t('cancel') }}</el-button>
-        <el-button type="primary" :loading="addLoading" @click="submit">{{ $t('add') }}</el-button>
+        <el-button type="primary" :loading="addLoading" @click="submit">{{ $t('addAccount') }}</el-button>
       </template>
     </el-dialog>
     <el-dialog close-icon="MailCloseIcon" v-model="setNameShow" class="mailbox-form-dialog" :title="$t('changeUserName')"

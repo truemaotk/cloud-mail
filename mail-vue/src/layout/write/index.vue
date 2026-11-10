@@ -1,5 +1,5 @@
 <template>
-  <div class="send" v-show="show">
+  <div class="send" :class="{ 'send-expanded': expanded }" v-show="show">
     <div class="write-box" :class="{ 'write-expanded': expanded }" role="region" :aria-label="$t('mailNewMessage')">
       <div class="title">
         <span class="title-text">{{ $t(form.sendType === 'reply' ? 'reply' : form.sendType === 'forward' ? 'forward' : 'mailNewMessage') }}</span>
@@ -13,7 +13,7 @@
         <div class="compose-fields">
           <div class="compose-field compose-from">
             <span class="compose-label">{{ fieldLabel('from') }}</span>
-            <el-select v-if="senderOptions.length > 1" :model-value="form.accountId" :aria-label="$t('mailSenderAddress')"
+            <el-select v-if="senderOptions.length > 1" suffix-icon="MailChevronDown" :model-value="form.accountId" :aria-label="$t('mailSenderAddress')"
                        placement="bottom-start" :show-arrow="false" :offset="5" fit-input-width
                        @change="chooseSender">
               <el-option v-for="item in senderOptions" :key="item.accountId" :label="item.email" :value="item.accountId" />
@@ -481,10 +481,10 @@ function openDraft(draft) {
 }
 
 const handleKeyDown = (event) => {
-  if (event.key === 'Escape' && !event.defaultPrevented && show.value
-      && !event.target?.closest?.('.el-overlay, .el-popper, .tox-dialog')) {
-    close()
-  }
+  if (event.key !== 'Escape' || event.defaultPrevented || !show.value) return
+  const fromPopup = event.composedPath().some(node =>
+    node.matches?.('.el-overlay, .el-popper, .tox-tinymce-aux, .tox-dialog'))
+  if (!fromPopup) close()
 };
 
 onMounted(() => {
@@ -592,6 +592,12 @@ async function close() {
   align-items: flex-end;
   justify-content: flex-end;
   padding: 16px 22px 22px;
+}
+
+.send-expanded {
+  align-items: center;
+  justify-content: center;
+  padding-block: 18px;
 }
 
 .write-box {

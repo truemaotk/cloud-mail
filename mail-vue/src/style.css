@@ -117,6 +117,8 @@ button, input, select, textarea {
 }
 
 html:root {
+    --el-component-size: 36px;
+    --el-component-size-small: 28px;
     --mail-radius-control: 8px;
     --mail-radius-close: 6px;
     --mail-radius-card: 12px;
@@ -232,12 +234,64 @@ html:root.dark {
     --el-card-border-radius: var(--mail-radius-card);
 }
 
-.el-overlay .el-dialog:not(.is-fullscreen) {
-    --el-dialog-border-radius: var(--mail-radius-dialog);
+.el-button:not(.is-text, .is-link, .el-button--small, .el-button--large) {
+    min-height: var(--el-component-size);
 }
 
-.el-message-box {
+.el-button.el-button--small:not(.is-text, .is-link) {
+    min-height: var(--el-component-size-small);
+}
+
+.el-select:not(.el-select--small, .el-select--large) .el-select__wrapper {
+    min-height: var(--el-component-size);
+}
+
+.el-select.el-select--small .el-select__wrapper {
+    min-height: var(--el-component-size-small);
+}
+
+.el-pagination.el-pagination {
+    --el-pagination-border-radius: var(--mail-radius-control);
+    --el-pagination-button-width: var(--el-component-size);
+    --el-pagination-button-height: var(--el-component-size);
+    --el-pagination-button-width-small: var(--el-component-size-small);
+    --el-pagination-button-height-small: var(--el-component-size-small);
+}
+
+.el-pagination.is-background .el-pager li.is-active:not(.is-disabled) {
+    color: var(--mail-primary-text);
+}
+
+.el-overlay-dialog:has(> .el-dialog:not(.is-fullscreen)),
+.is-message-box .el-overlay-message-box {
+    display: flex;
+    padding: 16px;
+}
+
+.el-overlay-dialog > .el-dialog:not(.is-fullscreen) {
+    --el-dialog-border-radius: var(--mail-radius-dialog);
+    flex: 0 0 auto;
+    max-inline-size: 100%;
+    margin: auto;
+}
+
+.is-message-box .el-overlay-message-box::after {
+    display: none;
+}
+
+.el-overlay-message-box > .el-message-box {
+    flex: 0 0 auto;
+    margin: auto;
     border-radius: var(--mail-radius-dialog);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .el-overlay:is(.dialog-fade-enter-active, .dialog-fade-leave-active),
+    .el-overlay.is-message-box:is(.fade-in-linear-enter-active, .fade-in-linear-leave-active),
+    .el-overlay:is(.dialog-fade-enter-active, .dialog-fade-leave-active) .el-overlay-dialog,
+    .el-overlay.is-message-box:is(.fade-in-linear-enter-active, .fade-in-linear-leave-active) .el-overlay-message-box {
+        animation: none;
+    }
 }
 
 .el-dialog.mailbox-form-dialog {
@@ -251,6 +305,34 @@ html:root.dark {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+.el-dialog.mailbox-add-dialog {
+    --el-dialog-padding-primary: 20px;
+}
+
+.mailbox-add-dialog .el-dialog__header {
+    padding-bottom: 14px;
+}
+
+.mailbox-add-dialog .el-dialog__title {
+    font-weight: 600;
+}
+
+.mailbox-add-dialog .el-dialog__body {
+    padding-block: 0;
+}
+
+.mailbox-add-label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--el-text-color-primary);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.mailbox-add-dialog .el-dialog__footer {
+    padding-top: 18px;
 }
 
 :is(.mail-window-close, .el-dialog__headerbtn, .el-drawer__close-btn, .el-message-box__headerbtn,
@@ -345,6 +427,74 @@ html:root.dark {
     --el-dropdown-menuItem-hover-color: var(--el-text-color-primary);
 }
 
+.el-popper:is(.el-dropdown__popper, .el-select__popper, .el-picker__popper) > .el-popper__arrow {
+    display: none;
+}
+
+.el-picker__popper .el-picker-panel {
+    border-radius: var(--mail-radius-menu);
+}
+
+.tox.tox-tinymce-aux .tox-menu {
+    border-color: var(--el-border-color-light);
+    border-radius: var(--mail-radius-menu);
+    box-shadow: var(--el-box-shadow-light);
+}
+
+.tox.tox-tinymce-aux .tox-collection__item {
+    border-radius: var(--mail-radius-control);
+}
+
+.tox.tox-tinymce-aux .tox-collection--list .tox-collection__item--active:not(.tox-collection__item--state-disabled) {
+    background: var(--el-fill-color);
+    color: var(--el-text-color-primary);
+}
+
+.tox.tox-tinymce-aux .tox-dialog {
+    border: 1px solid var(--el-border-color-light);
+    border-radius: var(--mail-radius-dialog);
+}
+
+.tox.tox-tinymce-aux .tox-dialog__header .tox-button--icon {
+    display: grid;
+    padding: 0;
+}
+
+.tox.tox-tinymce-aux .tox-dialog__header .tox-button--icon::before {
+    position: static;
+    opacity: 1;
+    box-shadow: none;
+}
+
+.tox.tox-tinymce-aux .tox-dialog :is(.tox-textfield, .tox-textarea, .tox-listbox--select),
+.tox.tox-tinymce-aux .tox-dialog__footer .tox-button {
+    border-radius: var(--mail-radius-control);
+}
+
+.tox.tox-tinymce-aux .tox-dialog :is(.tox-textfield, .tox-textarea, .tox-listbox--select):focus {
+    border-color: var(--el-text-color-secondary);
+    box-shadow: inset 0 0 0 1px var(--el-text-color-secondary);
+}
+
+.tox.tox-tinymce-aux .tox-dialog__footer .tox-button:not(.tox-button--secondary, .tox-button--icon, :disabled) {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary);
+    color: var(--mail-primary-text);
+}
+
+.tox.tox-tinymce-aux .tox-dialog__footer .tox-button:not(.tox-button--secondary, .tox-button--icon, :disabled):hover {
+    border-color: var(--el-color-primary-light-3);
+    background: var(--el-color-primary-light-3);
+}
+
+.tox.tox-tinymce-aux .tox-dialog__footer .tox-button:focus-visible::before {
+    box-shadow: 0 0 0 2px var(--el-text-color-secondary);
+}
+
+.tox.tox-tinymce-aux .tox-dialog-wrap__backdrop {
+    background: var(--el-overlay-color-lighter);
+}
+
 .el-popper.mail-envelope-popover {
     width: min(360px, calc(100vw - 32px));
     padding: 12px 14px;
@@ -360,21 +510,51 @@ html:root.dark {
     min-width: 124px;
 }
 
-.el-dropdown-menu .el-dropdown-menu__item,
-.el-select-dropdown .el-select-dropdown__item {
+.el-dropdown__popper .el-dropdown-menu__item,
+.el-select__popper .el-select-dropdown__item {
     border-radius: var(--mail-radius-control);
-    padding-inline: 9px;
-}
-
-.el-dropdown-menu .el-dropdown-menu__item {
-    gap: 8px;
-    min-height: 32px;
-    padding-block: 4px;
+    padding-inline: 10px;
     font-size: 13px;
 }
 
-.el-select-dropdown .el-select-dropdown__item.is-hovering {
+.el-dropdown__popper .el-dropdown-menu__item {
+    gap: 8px;
+    min-height: 32px;
+    padding-block: 4px;
+}
+
+.el-select__popper .el-select-dropdown__item {
+    height: 32px;
+    line-height: 32px;
+    padding-inline-end: 30px;
+}
+
+.el-select__popper .el-select-dropdown__item.is-selected {
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-primary);
+    font-weight: 500;
+}
+
+.el-select__popper :is(.el-select-dropdown, .el-select-dropdown.is-multiple) .el-select-dropdown__item.is-selected::after {
+    content: '';
+    position: absolute;
+    inset-inline-end: 10px;
+    inset-block-start: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translateY(-50%);
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m20 6-11 11-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.el-select__popper .el-select-dropdown__item.is-disabled {
+    color: var(--el-text-color-disabled);
+}
+
+.el-select__popper .el-select-dropdown__item.is-hovering:not(.is-disabled),
+.el-dropdown__popper .el-dropdown-menu__item:not(.is-disabled):is(:hover, :focus) {
     background: var(--el-fill-color);
+    color: var(--el-text-color-primary);
 }
 
 .mail-toolbar {
@@ -386,6 +566,71 @@ html:root.dark {
     padding: 5px var(--mail-shell-gutter);
     border-bottom: 1px solid var(--mail-shell-line);
     background: var(--el-bg-color);
+}
+
+.mail-admin-page {
+    --mail-panel-outset: min(8px, calc(var(--mail-shell-gutter) / 2));
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    margin-inline: calc(-1 * var(--mail-panel-outset));
+    padding-block: 12px var(--mail-shell-gutter);
+}
+
+.mail-table-panel,
+.el-table.mail-inset-table {
+    border: 1px solid var(--el-border-color-light);
+    border-radius: var(--mail-radius-card);
+    background: var(--el-bg-color);
+}
+
+.mail-table-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mail-table-panel > .mail-toolbar {
+    flex-shrink: 0;
+    gap: 8px;
+    padding: 9px max(12px, var(--mail-panel-outset));
+    padding-inline-start: calc(var(--mail-panel-outset) - 1px);
+}
+
+.mail-table-panel > .mail-toolbar > .el-button:first-child {
+    padding-inline-start: calc(var(--mail-shell-control) / 2 - 9px);
+}
+
+.mail-table-panel-body {
+    min-height: 0;
+    overflow: auto;
+}
+
+:is(.mail-table-panel .el-table, .el-table.mail-inset-table) {
+    --el-table-header-bg-color: var(--el-fill-color-lighter);
+}
+
+:is(.mail-table-panel .el-table, .el-table.mail-inset-table) .el-table__cell {
+    height: 46px;
+}
+
+:is(.mail-table-panel .el-table, .el-table.mail-inset-table) .el-table__empty-block {
+    min-height: 88px;
+}
+
+:is(.mail-table-panel .el-table, .el-table.mail-inset-table) .el-tag {
+    --el-tag-border-radius: var(--mail-radius-close);
+    min-height: 24px;
+}
+
+:is(.mail-table-panel .el-table, .el-table.mail-inset-table) tbody tr:last-child > .el-table__cell {
+    border-bottom: 0;
+}
+
+:is(.mail-table-panel .el-table, .el-table.mail-inset-table) .el-table__inner-wrapper::before {
+    display: none;
 }
 
 .toolbar-group {

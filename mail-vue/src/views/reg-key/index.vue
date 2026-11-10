@@ -1,5 +1,6 @@
 <template>
-  <div class="reg-key">
+  <div class="reg-key mail-admin-page">
+    <div class="mail-table-panel">
     <div class="mail-toolbar">
       <el-button type="primary" @click="openAdd">
         <template #icon><NavigationIcon name="add" :size="16" /></template>
@@ -81,6 +82,7 @@
         </el-empty>
       </div>
     </el-scrollbar>
+    </div>
     <el-dialog close-icon="MailCloseIcon" v-model="showAdd" :title="$t('addRegKey')">
       <div class="container">
         <el-input v-model="addForm.code" type="password" autocomplete="new-password"
@@ -89,25 +91,28 @@
             <ToolbarButton class="gen-code" icon="refresh" :label="$t('generateRegKey')" @click.stop="genCode" />
           </template>
         </el-input>
-        <el-select suffix-icon="MailChevronDown" v-model="addForm.roleId" :placeholder="$t('roleDesc')">
+        <el-select suffix-icon="MailChevronDown" v-model="addForm.roleId" :aria-label="$t('roleDesc')" :placeholder="$t('roleDesc')">
           <el-option v-for="item in roleList" :label="item.name" :value="item.roleId" :key="item.roleId"/>
         </el-select>
-        <el-date-picker prefix-icon="MailCalendarIcon"
-            v-model="addForm.expireTime"
-            type="date"
-            :placeholder="$t('validUntil')"
-        />
-        <el-input-number v-model="addForm.count" :min="1" :max="99999" @keyup.enter="submit"/>
+        <div class="key-limits">
+          <div>
+            <label for="key-expiry">{{ $t('validUntil') }}</label>
+            <el-date-picker id="key-expiry" prefix-icon="MailCalendarIcon" v-model="addForm.expireTime"
+                            type="date" :placeholder="$t('validUntil')" />
+          </div>
+          <div>
+            <label for="key-count">{{ $t('remainingUses') }}</label>
+            <el-input-number id="key-count" v-model="addForm.count" :min="1" :max="99999" @keyup.enter="submit" />
+          </div>
+        </div>
         <el-button class="btn" type="primary" @click="submit" :loading="addLoading"
         >{{ $t('add') }}
         </el-button>
       </div>
     </el-dialog>
     <el-dialog close-icon="MailCloseIcon" class="history-list" v-model="showRegKeyHistory" :title="$t('useHistory')">
-      <div class="loading" :class="historyLoading ? 'loading-show' : 'loading-hide'">
-        <loading/>
-      </div>
-      <el-table v-if="!historyLoading" :data="historyList" :fit="true" style="height: 100%">
+      <el-skeleton v-if="historyLoading" :rows="3" animated />
+      <el-table v-else class="mail-inset-table" :data="historyList" max-height="360">
         <el-table-column :min-width="emailColumnWidth" property="email" :label="$t('user')"
                          :show-overflow-tooltip="true"/>
         <el-table-column :width="createTimeColumnWidth" :formatter="formatUserCreateTime" property="createTime"
@@ -416,13 +421,6 @@ function openAdd() {
 </script>
 
 <style scoped lang="scss">
-.reg-key {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 100%;
-  overflow: hidden;
-}
-
 .scrollbar {
   min-height: 0;
   position: relative;
@@ -490,11 +488,15 @@ function openAdd() {
   }
 }
 
+.scrollbar:has(.loading-show .page-skeleton) {
+  min-height: min(180px, 30dvh);
+}
+
 .empty {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: min(340px, 55dvh);
+  min-height: min(180px, 35dvh);
 }
 
 .empty-title {
@@ -504,28 +506,7 @@ function openAdd() {
 }
 
 :deep(.history-list.el-dialog) {
-  min-height: 300px;
   width: 500px !important;
-  @media (max-width: 540px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-.history-list .loading {
-  position: absolute;
-  top: 10px;
-  z-index: 0;
-  background: rgba(255, 255, 255, 0);
-}
-
-:deep(.history-list .el-dialog__header) {
-  padding-bottom: 5px;
-}
-
-:deep(.el-scrollbar__view) {
-  height: calc(100% - 80px);
 }
 
 .loading {
@@ -558,13 +539,25 @@ function openAdd() {
   gap: 15px;
 }
 
+.key-limits {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .72fr);
+  gap: 12px;
+}
+
+.key-limits label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.key-limits :is(.el-date-editor, .el-input-number) {
+  width: 100%;
+}
+
 :deep(.el-dialog) {
   width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
 }
 
 .setting {

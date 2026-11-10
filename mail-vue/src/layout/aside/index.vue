@@ -188,6 +188,7 @@ const entries = [
       { route: 'sys-setting', label: 'SystemSettings', icon: 'screen', permission: 'setting:query' },
     ],
   },
+  { key: 'help', route: 'help', label: 'help', icon: 'headset' },
 ]
 
 function can(permission) {

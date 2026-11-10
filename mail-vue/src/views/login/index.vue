@@ -37,15 +37,15 @@
         </div>
       </div>
 
-      <main class="login-panel">
+      <main ref="loginPanel" class="login-panel">
         <div class="login-content">
           <div class="login-brand">
             <img src="/mail.svg" alt="" class="login-mark" />
             <span>mail</span>
           </div>
           <div v-if="settingStore.settings.register === 0" class="login-mode" role="group" :aria-label="$t('authMode')">
-            <button type="button" :aria-pressed="show === 'login'" @click="show = 'login'">{{ $t('loginBtn') }}</button>
-            <button type="button" :aria-pressed="show === 'register'" @click="show = 'register'">{{ $t('regBtn') }}</button>
+            <button type="button" :aria-pressed="show === 'login'" @click="switchMode('login')">{{ $t('loginBtn') }}</button>
+            <button type="button" :aria-pressed="show === 'register'" @click="switchMode('register')">{{ $t('regBtn') }}</button>
           </div>
           <header class="login-heading">
             <h1>{{ $t(show === 'login' ? 'loginHeading' : 'regSwitch') }}</h1>
@@ -175,6 +175,12 @@ const bindLoading = ref(false)
 const oauthLoading = ref(false);
 const showBindForm = ref(false);
 const show = ref('login')
+const loginPanel = ref(null)
+
+function switchMode(mode) {
+  show.value = mode
+  loginPanel.value?.scrollTo({ top: 0 })
+}
 
 const oauthKeys = ['linuxdo', 'github', 'google']
 
@@ -646,6 +652,7 @@ function submitRegister() {
   --el-color-primary: var(--login-action);
   --el-input-focus-border-color: var(--login-focus);
   --login-edge: clamp(16px, 4vw, 48px);
+  --login-control-height: 42px;
   color-scheme: light;
 
   position: relative;
@@ -680,8 +687,9 @@ function submitRegister() {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   width: min(100%, 980px);
-  min-height: min(620px, calc(100dvh - 2 * var(--login-edge)));
+  height: min(620px, calc(100dvh - 2 * var(--login-edge)));
   overflow: hidden;
   border: 1px solid var(--login-line);
   border-radius: 20px;
@@ -699,7 +707,7 @@ function submitRegister() {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin-block-end: 22px;
+  margin-block-end: 16px;
   font-size: 22px;
   font-weight: 730;
   letter-spacing: -.045em;
@@ -747,9 +755,13 @@ function submitRegister() {
 .login-panel {
   position: relative;
   display: grid;
-  place-items: center;
+  justify-items: center;
+  align-content: safe center;
   min-width: 0;
-  padding: clamp(24px, 4vw, 52px);
+  min-height: 0;
+  padding: clamp(22px, 3vw, 30px) clamp(24px, 4vw, 52px);
+  overflow-y: auto;
+  scrollbar-width: none;
   border-inline-start: 1px solid var(--login-line);
   background: var(--login-surface);
 }
@@ -769,7 +781,7 @@ function submitRegister() {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
-  margin-block-end: 23px;
+  margin-block-end: 18px;
   padding: 4px;
   border: 1px solid var(--login-line);
   border-radius: 10px;
@@ -794,7 +806,7 @@ function submitRegister() {
 }
 
 .login-heading {
-  margin-block-end: 23px;
+  margin-block-end: 18px;
 }
 
 .login-heading h1 {
@@ -805,14 +817,14 @@ function submitRegister() {
 }
 
 .login-heading p {
-  margin-block-start: 10px;
+  margin-block-start: 7px;
   color: var(--login-muted);
   line-height: 1.65;
 }
 
 .login-form, .login-oauth {
   display: grid;
-  gap: 13px;
+  gap: 10px;
 }
 
 .login-field-note {
@@ -823,7 +835,7 @@ function submitRegister() {
 .login-form :deep(.login-field) {
   display: grid;
   min-width: 0;
-  gap: 6px;
+  gap: 5px;
 }
 
 .login-form :deep(label) {
@@ -833,7 +845,7 @@ function submitRegister() {
 }
 
 .login-form :deep(.el-input) {
-  --el-input-height: 46px;
+  --el-input-height: var(--login-control-height);
   --el-input-bg-color: var(--login-field);
   --el-input-border-color: var(--login-line);
   --el-input-hover-border-color: var(--login-focus);
@@ -883,7 +895,7 @@ function submitRegister() {
 }
 
 .login-form :deep(.login-domain-select .el-select__wrapper) {
-  min-height: 46px;
+  min-height: var(--login-control-height);
   padding-inline: 10px;
   border-radius: 0 8px 8px 0;
   background: transparent;
@@ -893,11 +905,6 @@ function submitRegister() {
 
 .login-form :deep(.login-domain-select .el-select__wrapper.is-focused) {
   box-shadow: 0 0 0 1px var(--login-focus) inset;
-}
-
-:global(.cloud-mail-login-domains .el-select-dropdown__item.is-selected) {
-  color: var(--el-text-color-primary);
-  background: var(--el-fill-color-light);
 }
 
 .login-submit.el-button {
@@ -911,7 +918,7 @@ function submitRegister() {
   --el-button-active-border-color: var(--login-action);
   --el-button-active-text-color: var(--login-action-ink);
   width: 100%;
-  height: 46px;
+  height: var(--login-control-height);
   margin-block-start: 2px;
   border-radius: 8px;
   font-weight: 650;
@@ -969,7 +976,6 @@ function submitRegister() {
   .login-shell {
     width: min(100%, 470px);
     grid-template-columns: minmax(0, 1fr);
-    min-height: auto;
   }
 
   .login-scene { display: none; }
@@ -978,6 +984,13 @@ function submitRegister() {
     padding: clamp(20px, 5vw, 36px);
     border-inline-start: 0;
   }
+}
+
+@media (max-height: 680px) {
+  #login-box { --login-control-height: 38px; }
+  .login-panel { padding-block: 18px; }
+  .login-brand, .login-mode, .login-heading { margin-block-end: 12px; }
+  .login-form { gap: 8px; }
 }
 
 </style>

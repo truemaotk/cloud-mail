@@ -38,6 +38,12 @@ const routes = [
                     menu: true
                 }
             },
+            {
+                path: '/help',
+                name: 'help',
+                component: () => import('@/views/help/index.vue'),
+                meta: { title: 'help', name: 'help', menu: true },
+            },
         ]
 
     },

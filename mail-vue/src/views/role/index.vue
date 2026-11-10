@@ -1,24 +1,18 @@
 <template>
-  <div class="perm-box">
-    <div class="mail-toolbar">
-      <el-button type="primary" @click="openAddRole">
-        <template #icon><NavigationIcon name="add" :size="16" /></template>
-        {{ $t('addRoleTitle') }}
-      </el-button>
-      <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
-    </div>
-    <el-scrollbar class="perm-scrollbar">
-      <div class="loading" :class="tableLoading ? 'loading-show' : 'loading-hide'"
-           :style="first ? 'background: transparent' : ''">
-        <el-skeleton v-if="first" class="page-skeleton" :rows="6" animated />
-        <loading v-else />
+  <div class="mail-admin-page">
+    <section class="mail-table-panel perm-panel" :aria-busy="tableLoading">
+      <div class="mail-toolbar">
+        <el-button type="primary" @click="openAddRole">
+          <template #icon><NavigationIcon name="add" :size="16" /></template>
+          {{ $t('addRoleTitle') }}
+        </el-button>
+        <ToolbarButton icon="refresh" :label="$t('refreshMail')" :busy="tableLoading" @click="getRoleList" />
       </div>
-      <el-table
+      <div class="mail-table-panel-body">
+        <el-skeleton v-if="first" class="page-skeleton" :rows="3" animated />
+        <el-table v-else
           :data="roles"
-          style="height: 100%;"
-          :empty-text="''"
-      >
-        <el-table-column width="10"/>
+        >
         <el-table-column :label="$t('role')" prop="name" :min-width="roleWidth">
           <template #default="props">
             <div class="role-name">
@@ -49,11 +43,12 @@
             </el-dropdown>
           </template>
         </el-table-column>
-      </el-table>
-    </el-scrollbar>
-    <el-dialog close-icon="MailCloseIcon" top="5vh" class="dialog" v-model="roleFormShow" @closed="resetForm">
-      <template #header>
-        <span style="font-size: 18px">{{ dialogType.title }}</span>
+        </el-table>
+      </div>
+    </section>
+    <el-dialog close-icon="MailCloseIcon" width="460px" class="role-editor-dialog" v-model="roleFormShow" @closed="resetForm">
+      <template #header="{ titleId, titleClass }">
+        <span :id="titleId" :class="titleClass">{{ dialogType.title }}</span>
         <el-popover
             width="340"
             :title="t('featDesc')"
@@ -105,6 +100,8 @@
           <el-radio-button :label="$t('collapse')" :value="false"/>
         </el-radio-group>
         <el-tree
+            class="permission-tree"
+            icon="MailChevronRight"
             :expand-on-click-node="false"
             :check-on-click-node="false"
             ref="tree"
@@ -139,10 +136,12 @@
             </div>
           </template>
         </el-tree>
-        <el-button class="btn" type="primary" :loading="permLoading" @click="roleFormClick"
-        >{{ $t('save') }}
-        </el-button>
       </div>
+      <template #footer>
+        <el-button class="role-save" type="primary" :loading="permLoading" @click="roleFormClick">
+          {{ $t('save') }}
+        </el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -151,7 +150,6 @@ import NavigationIcon from '@/components/navigation-icon/index.vue'
 import ToolbarButton from '@/components/toolbar-button/index.vue'
 import {defineOptions, nextTick, reactive, ref} from "vue";
 import {roleAdd, roleDelete, rolePermTree, roleRoleList, roleSet, roleSetDef} from "@/request/role.js";
-import loading from '@/components/loading/index.vue';
 import {useRoleStore} from "@/store/role.js";
 import {useUserStore} from "@/store/user.js";
 import {useSettingStore} from "@/store/setting.js";
@@ -201,7 +199,7 @@ const expand = ref(false)
 
 let chooseRole = {}
 
-refresh()
+getRoleList()
 
 rolePermTree().then(tree => {
   treeList.push(...tree)
@@ -387,20 +385,13 @@ function addRole() {
 }
 
 
-function refresh() {
-  tableLoading.value = true
-  roles.length = 0
-  getRoleList()
-}
-
 function getRoleList() {
+  tableLoading.value = true
   roleRoleList().then(list => {
     roles.value = list
   }).finally(() => {
     tableLoading.value = false
-    setTimeout(() => {
-      first.value = false
-    }, 200)
+    first.value = false
   })
 }
 
@@ -421,16 +412,8 @@ window.onresize = () => {
 </script>
 <style scoped lang="scss">
 
-.perm-box {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 100%;
-  overflow: hidden;
-  width: 100%;
-
-  .perm-scrollbar {
-    min-height: 0;
-  }
+.perm-panel :deep(.el-table__cell:first-child .cell) {
+  padding-inline-start: calc(var(--mail-panel-outset) + var(--mail-shell-control) / 2 - 1px);
 }
 
 .send-num {
@@ -460,28 +443,6 @@ window.onresize = () => {
   text-overflow: ellipsis;
 }
 
-.loading {
-  height: calc(100% - 41px);
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  background: var(--loadding-background);
-  z-index: 2;
-}
-
-.loading-show {
-  transition: all 200ms ease 200ms;
-  opacity: 1;
-}
-
-.loading-hide {
-  pointer-events: none;
-  transition: var(--loading-hide-transition);
-  opacity: 0;
-}
-
 .role-name {
   white-space: nowrap;
   overflow: hidden;
@@ -507,30 +468,41 @@ window.onresize = () => {
 }
 
 .perm-expand {
-  margin-bottom: 5px;
-  --el-border-radius-base: 4px;
-  position: relative;
-  bottom: 5px;
+  margin-bottom: 8px;
+}
+
+.perm-expand :deep(.el-radio-button__inner) {
+  display: flex;
+  align-items: center;
+  min-height: var(--el-component-size-small);
 }
 
 
-:deep(.el-dialog) {
-  margin-bottom: 20px !important;
-  width: 460px !important;
-  @media (max-width: 500px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-
-  }
+:deep(.role-editor-dialog) {
+  display: flex;
+  flex-direction: column;
+  max-block-size: calc(100dvh - 32px);
 }
 
-:deep(.el-scrollbar__view) {
-  height: 100%;
+:deep(.role-editor-dialog .el-dialog__body) {
+  min-height: 0;
+  overflow: auto;
 }
 
-.btn {
+:deep(.permission-tree) {
+  --el-tree-node-content-height: 32px;
+  --el-tree-expand-icon-color: var(--el-text-color-secondary);
+}
+
+:deep(.permission-tree .el-tree-node__content) {
+  border-radius: var(--mail-radius-control);
+}
+
+:deep(.permission-tree .el-tree-node__expand-icon) {
+  font-size: 15px;
+}
+
+.role-save {
   width: 100%;
-  margin-top: 15px;
 }
 </style>

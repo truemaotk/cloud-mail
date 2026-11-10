@@ -623,7 +623,7 @@ Authorization: &lt;secret&gt;</pre>
         </template>
       </el-dialog>
       <el-dialog close-icon="MailCloseIcon" class="resend-table" v-model="showResendList" :title="$t('resendTokenList')">
-        <el-table :data="resendList">
+        <el-table class="mail-inset-table" :data="resendList" max-height="min(360px, calc(100dvh - 120px))">
           <el-table-column min-width="150" property="key" :label="$t('domain')"
                            :show-overflow-tooltip="true"/>
           <el-table-column min-width="170" label="Token">
@@ -651,7 +651,7 @@ Authorization: &lt;secret&gt;</pre>
           <el-button type="primary" :loading="settingLoading" @click="saveAddVerifyCount">{{ $t('save') }}</el-button>
         </form>
       </el-dialog>
-      <el-dialog close-icon="MailCloseIcon" top="5vh" v-model="noticePopupShow" :title="$t('noticePopup')" class="notice-popup"
+      <el-dialog close-icon="MailCloseIcon" v-model="noticePopupShow" :title="$t('noticePopup')" class="notice-popup"
                  @closed="resetNoticeForm">
         <form @submit.prevent>
           <el-input v-model="noticeForm.noticeTitle" :placeholder="t('titleDesc')" @keyup.enter="saveNoticePopup"/>
@@ -1575,7 +1575,8 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
 .background {
   width: min(220px, 45vw);
   aspect-ratio: 16 / 9;
-  border-radius: 4px;
+  overflow: hidden;
+  border-radius: var(--mail-radius-control);
   border: 1px solid var(--light-border);
 }
 
@@ -1592,14 +1593,15 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
 .settings-card {
   min-width: 0;
   border: 1px solid var(--mail-shell-line);
-  border-radius: 8px;
+  border-radius: var(--mail-radius-card);
   background: var(--el-bg-color);
 }
 
 .card-title {
+  --heading-radius: calc(var(--mail-radius-card) - 1px);
   padding: 12px 16px;
   border-bottom: 1px solid var(--mail-shell-line);
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--heading-radius) var(--heading-radius) 0 0;
   background: var(--mail-shell-rail);
   font-size: 14px;
   font-weight: 650;
@@ -1707,8 +1709,8 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
 }
 
 .cropper {
-  border-radius: 4px;
-  border: 1px solid #D4D7DE;
+  border-radius: var(--mail-radius-control);
+  border: 1px solid var(--mail-shell-line);
   height: 397px;
   width: 705px;
   @media (max-width: 767px) {
@@ -1778,35 +1780,15 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
 
 :deep(.el-dialog) {
   width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
 }
 
 :deep(.resend-table.el-dialog) {
-  min-height: 300px;
   width: 500px !important;
-  @media (max-width: 540px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
 }
 
 :deep(.notice-popup.el-dialog) {
   min-height: 300px;
   width: 820px !important;
-  @media (max-width: 860px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-:deep(.resend-table .el-dialog__header) {
-  padding-bottom: 5px;
 }
 
 :deep(.el-table__inner-wrapper:before) {
@@ -1821,11 +1803,6 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
 
 :deep(.forward-dialog.el-dialog) {
   width: 500px !important;
-  @media (max-width: 540px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
 }
 
 .forward-dialog {
@@ -1916,7 +1893,7 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
     font-size: 12px;
     line-height: 1.5;
     overflow-x: auto;
-    border-radius: 4px;
+    border-radius: var(--mail-radius-control);
     background: var(--el-fill-color-light);
   }
 }
@@ -2013,11 +1990,7 @@ form .el-button {
 :deep(.el-button--small) {
   margin-top: 2px !important;
   margin-bottom: 2px !important;
-  height: 24px;
-}
-
-:deep(.el-select__wrapper) {
-  min-height: 28px;
+  height: var(--el-component-size-small);
 }
 
 </style>

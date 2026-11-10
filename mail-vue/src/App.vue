@@ -1,5 +1,5 @@
 <template>
-  <el-config-provider :locale="settingStore.lang === 'zh' ? zhCn : null">
+  <el-config-provider :locale="settingStore.lang === 'zh' ? zhCn : null" :dialog="dialogDefaults">
     <router-view />
   </el-config-provider>
 </template>
@@ -8,6 +8,7 @@ import { useI18n } from "vue-i18n";
 import { watch } from "vue";
 import {useSettingStore} from "@/store/setting.js";
 const settingStore = useSettingStore()
+const dialogDefaults = { alignCenter: true }
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import('@/icons/index.js')
 const { locale } = useI18n()

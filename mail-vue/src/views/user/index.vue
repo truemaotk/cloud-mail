@@ -1,5 +1,6 @@
 <template>
-  <div class="user-box">
+  <div class="user-box mail-admin-page">
+    <div class="mail-table-panel">
     <div class="mail-toolbar">
       <el-button type="primary" @click="openAdd">
         <template #icon><NavigationIcon name="add" :size="16" /></template>
@@ -148,6 +149,7 @@
         </div>
       </div>
     </el-scrollbar>
+    </div>
     <el-dialog close-icon="MailCloseIcon" class="dialog" v-model="setPwdShow" :title="$t('changePassword')" @closed="resetUserForm">
       <div class="dialog-box">
         <el-input v-model="userForm.password" type="password" :placeholder="$t('newPassword')" autocomplete="off" @keyup.enter="updatePwd">
@@ -202,7 +204,7 @@
       </div>
     </el-dialog>
     <el-dialog close-icon="MailCloseIcon" class="account-dialog" v-model="accountShow" :title="t('userAccount')" @closed="resetAccountList" >
-      <el-table :data="accountList" style="height: 480px" v-loading="accountLoading" element-loading-background="transparent" :empty-text="accountLoading ? '' : null">
+      <el-table class="mail-inset-table" :data="accountList" max-height="440" v-loading="accountLoading" element-loading-background="transparent" :empty-text="accountLoading ? '' : null">
         <el-table-column property="email" :label="t('emailAccount')" >
           <template #default="props">
             <div class="email-row">{{ props.row.email }}</div>
@@ -227,13 +229,14 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="account-pagination">
+      <div v-if="accountParams.total > accountParams.size" class="account-pagination">
         <el-pagination
             :disabled="accountLoading"
             background
-
             layout="prev, pager, next"
             :pager-count="3"
+            :current-page="accountParams.num"
+            :page-size="accountParams.size"
             :total="accountParams.total"
             @current-change="accountCurChange"
         />
@@ -500,9 +503,10 @@ const settingLoading = ref(false)
 const tableLoading = ref(true)
 const roleList = reactive([])
 const accountList = reactive([])
+let accountListRequest = 0
 const accountParams = reactive({
   size: 10,
-  num: 0,
+  num: 1,
   total: 0,
   userId: 0,
 })
@@ -605,15 +609,17 @@ function accountCurChange(e) {
 }
 
 function resetAccountList() {
+  accountListRequest++
+  accountLoading.value = false
   accountList.length = 0
-  accountParams.num = 0
+  accountParams.num = 1
   accountParams.size = 10
   accountParams.total = 0
 }
 
 function openAccountList(userId) {
   accountParams.userId = userId
-  getAccountList(true)
+  getAccountList()
   accountShow.value = true
 }
 
@@ -622,13 +628,24 @@ function openDetails(user) {
   detailsShow.value = true;
 }
 
-function getAccountList(loading = false) {
-  accountLoading.value = loading
-  userAllAccount(accountParams.userId,accountParams.num, accountParams.size).then(({list,total}) => {
+function getAccountList() {
+  const request = ++accountListRequest
+  accountLoading.value = true
+  userAllAccount(accountParams.userId, accountParams.num, accountParams.size).then(({list, total}) => {
+    if (request !== accountListRequest) return
+    const lastPage = Math.max(1, Math.ceil(total / accountParams.size))
+    if (accountParams.num > lastPage) {
+      accountParams.num = lastPage
+      getAccountList()
+      return
+    }
     accountList.length = 0
     accountList.push(...list)
     accountParams.total = total
-    accountLoading.value = false
+  }).catch(() => {
+    // The request interceptor displays the error.
+  }).finally(() => {
+    if (request === accountListRequest) accountLoading.value = false
   })
 }
 
@@ -1090,29 +1107,12 @@ function adjustWidth() {
   background: var(--el-color-warning-light-9);
 }
 
-.user-box {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
-  height: 100%;
-}
-
 :deep(.el-dialog) {
   width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
 }
 
 :deep(.account-dialog) {
   width: 500px !important;
-  @media (max-width: 540px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
 }
 
 .mail-toolbar .search-input {
@@ -1142,6 +1142,10 @@ function adjustWidth() {
 .scrollbar {
   width: 100%;
   min-height: 0;
+}
+
+.scrollbar:has(.loading-show .page-skeleton) {
+  min-height: min(180px, 30dvh);
 }
 
 .details {
@@ -1175,6 +1179,7 @@ function adjustWidth() {
   display: flex;
   justify-content: end;
   width: 100%;
+  margin-block-start: 12px;
 }
 
 .pagination {

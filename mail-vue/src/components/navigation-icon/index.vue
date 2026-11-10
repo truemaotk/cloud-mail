@@ -12,7 +12,7 @@ import {
   PanelLeft, ChevronRight, MailX, MailCheck, CircleCheck, CircleX, CircleAlert, Clock, Clipboard,
   Ban, Mailbox, Image, GitBranch, Coffee, BookOpen, Eye, Download, LoaderCircle, FileArchive,
   FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, File, ArrowUpRight,
-  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus
+  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus, Headset
 } from '@lucide/vue'
 
 defineProps({
@@ -74,6 +74,7 @@ const icons = {
   version: GitBranch,
   support: Coffee,
   docs: BookOpen,
+  headset: Headset,
   eye: Eye,
   download: Download,
   loading: LoaderCircle,

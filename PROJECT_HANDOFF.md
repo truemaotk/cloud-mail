@@ -19,15 +19,30 @@
 | 邮件目录与权限 | `mail-worker/src/service/mail-workspace-service.js`、`mail-worker/src/entity/mailbox-message-state.js`、`mail-worker/src/security/security.js`。目录状态由 D1 的 `mailbox_message_state` 保存；个人操作校验用户和邮箱归属。「全部邮件」查询另外校验管理权限。 |
 | 机器人通知 | `mail-worker/src/service/chat-bot-service.js`、`mail-worker/src/email/email.js`、`mail-worker/src/api/setting-api.js`。配置入口为「系统设置 → 推送与集成」。正常通知按转发规则入队，内容包括主题、发件人和收件邮箱。保存成功和测试消息到达需要分别检查。 |
 | 页面外壳和分析 | `mail-vue/src/layout/`、`mail-vue/src/style.css`、`mail-vue/src/views/analysis/index.vue`。桌面共用 64px 顶栏和 16px 内容边距。延续现有黑白灰主题，本轮未切换配色。 |
+| 弹窗、下拉与表格 | `mail-vue/src/App.vue` 和 `mail-vue/src/style.css` 统一居中、圆角与控件尺寸；菜单、日期面板和邮箱切换仍贴住触发控件。权限、用户、注册密钥和 Token 表格共用完整边框。写信小窗停靠右下，放大后居中。 |
+| 用户邮箱分页 | `mail-vue/src/views/user/index.vue` 与 `mail-worker/src/service/account-service.js`。首屏从第 1 页开始，分页只在超过一页时出现，表格与分页相距 12px。查询总数与列表使用相同条件，均排除登录邮箱，按邮箱 ID 稳定分页。 |
 
-## 本轮本地验证
+## 桌面界面复核（2026-11-10）
+
+| 步骤 | 界面与结果 |
+| --- | --- |
+| 1 | 登录与注册：保持同一外框尺寸，表单区域居中，桌面状态无多余滚动条。启动页图标与进度条间距为 16px。 |
+| 2 | 邮件工作区：核对各目录、空状态、搜索筛选、分栏详情和邮箱／账号菜单。保留既定的邮件面板直角底边、顶部留白及贴附菜单。 |
+| 3 | 撰写和编辑：小窗停靠右下，放大后在视口内居中。编辑器的下拉和插入链接弹窗使用与主界面一致的圆角与黑白灰色；Esc 关闭下拉时保留写信窗口。 |
+| 4 | 用户、权限和注册密钥：检查边框连续、普通下拉与输入框等高、表单标签与控件对齐。用户邮箱单页隐藏分页，多页留出间距；较矮窗口中权限弹窗正文可滚动。 |
+| 5 | 个人设置、系统设置和分析：检查分类卡片、配置项、Token 空状态、日期面板，以及深色分析页。 |
+| 6 | 获取帮助：验证联系方式骨架屏、正式内容及版本区。普通部署显示联系方式，维护入口需按下文配置。 |
+
+本次复核使用 Edge 的 1440×880 和 1280×640 桌面视口。截图和本地核对日志位于 `mail-worker/.wrangler/local/output/playwright/ui-release/`，未提交到 Git。使用的是本地演示数据与受控分页样例，未发送邮件或机器人测试消息。此轮覆盖桌面可达页面与代表性交互；未在生产环境修改设置或验证真实外部投递。
+
+## 本地构建与功能检查
 
 | 检查 | 结果 |
 | --- | --- |
 | 安装与打包 | 使用 Node.js `24.18.0`、pnpm `11.25.0`，两个子目录分别执行 `pnpm install --frozen-lockfile` 成功。前端 `pnpm run build` 成功；静态产物在 `mail-worker/dist`。Wrangler 使用本地配置进行 `--dry-run` 成功。 |
-| 桌面交互 | Chromium 实测 1912px、1440px。单栏与分栏均有 12px 顶部留白，阅读区和列表顶边齐平，底部贴齐。侧栏箭头和数字中心实测同在 x=213px，`3`、`12`、`99+` 宽度变化时中心不偏移。复测了页面切换、折叠提示、搜索、刷新动画、分栏翻信、回复、保存草稿、邮箱弹窗和分析页。 |
+| 邮件工作区基线 | 上一轮 Chromium 实测 1912px、1440px。单栏与分栏均有 12px 顶部留白，阅读区和列表顶边齐平，底部贴齐。侧栏箭头和数字中心实测同在 x=213px，`3`、`12`、`99+` 宽度变化时中心不偏移。覆盖了页面切换、折叠提示、搜索、刷新动画、分栏翻信、回复、保存草稿、邮箱弹窗和分析页。 |
 | 本地接口 | 独立空 D1 初始化成功。管理员及普通账号可注册登录；验证匿名请求、跨用户邮箱读取、未授权的管理详情均被拒绝。通过 15 项邮件接口检查，覆盖查询、星标、归档、垃圾邮件、稍后处理、回收站、恢复及专用测试邮件永久删除。 |
-| 机器人自动化测试 | `mail-worker` 下 `pnpm test` 通过 3 项模拟测试，包括失败重试。此次未向真实飞书或企业微信群发送消息，也未验证生产邮件路由。 |
+| Worker 自动化测试 | `mail-worker` 下 `pnpm test` 通过 8 项测试，包括 3 项机器人通知测试和 5 项帮助页、版本更新测试。本地分页接口验证了总数、分页边界与结果无重复。 |
 | 依赖扫描 | 升级 S3 SDK、Hono、Drizzle、Vue、Axios 等依赖，移除未使用的旧 Cloudflare Vite 插件。更新后两个子项目的生产依赖扫描均无严重或高危告警。剩余 2 项中危、1 项低危：ECharts 的 `lines` 序列提示风险（当前只注册并使用 `bar`、`line`）、uuid 的 v3/v5/v6 缓冲区告警、Resend 间接依赖 deepmerge 告警。保留后续升级任务，涉及真实发件和 S3 的回归仍需在测试环境完成。 |
 
 本轮另外将原来会部署测试 Worker 的 `pnpm test` 改成真正的本地测试。部署旧测试环境需要明确执行 `pnpm run deploy:test`，日常验证不需要用它。Vite 构建仍有大包和浏览器数据过旧的警告。开发机的测试日志和演示截图在 `mail-worker/.wrangler/local`，其中 `output/playwright/mail-release-layout.png` 对应这次的侧栏和留白。
@@ -61,3 +76,13 @@ Cloudflare 参考：[Wrangler 配置](https://developers.cloudflare.com/workers/
 ## 接手后的优先顺序
 
 先打开 `E:/cloud-mail` 的现有工作区验收布局；然后核对 Cloudflare 中的真实生产绑定及授权仓库，补齐生产配置，跑一次隔离预览。生产发布前核对当前版本和 D1 备份，留好回滚路径。此次本地验证通过，但 Cloudflare 生产绑定、线上收发与机器人链路仍待验收。
+
+## 帮助页和客户更新
+
+入口是侧栏的「获取帮助」。帮助页读取 `truemaotk/cloud-mail` 的 `project-support` 分支内的 `project-support.json`，文件建立前使用代码内的默认联系方式。微信号可复制，飞书可分别填写显示号码和邀请链接，WhatsApp 号码会生成聊天链接，博客打开所填网址。四个默认图标使用项目维护者提供的 SVG。
+
+在官方仓库创建 `project-support` 分支。只在项目主账号使用的 Worker 里配置 `MAIL_SUPPORT_OWNER_EMAIL`，值与该 Worker 的 `admin` 一致。用 `truemaotk` 的细粒度 GitHub token 配置 Worker Secret `MAIL_SUPPORT_GITHUB_TOKEN`，授予官方仓库的 `Contents: write` 权限。保存联系方式时，服务端同时核验邮箱和 GitHub 账号，随后将公开内容写入独立分支。客户部署从同一公开来源读取信息。GitHub 的文件更新接口用文件 SHA 校验编辑版本。[GitHub 仓库内容接口](https://docs.github.com/en/rest/repos/contents#create-or-update-file-contents)
+
+正式发布时，先更新 `mail-worker/src/service/project-service.js` 里的 `version`，再在官方仓库为同一提交创建相同版本号的 GitHub Release，例如 `v0.2.0`。帮助页只检查正式发布。客户 Worker 继续使用 Cloudflare Git 集成，跟踪其自己的 fork 部署分支。[GitHub 发布接口](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)
+
+如需启用「立即更新」，客户部署须配置自己的 `MAIL_UPDATE_REPOSITORY`（格式为 `账号/仓库`）、`MAIL_UPDATE_BRANCH`（Cloudflare 跟踪的分支），以及 Worker Secret `MAIL_UPDATE_GITHUB_TOKEN`（仅授权该 fork 的 `Contents: write`）。只有该部署的主账号可提交更新。应用核验官方发布标签后尝试将客户分支快进到对应提交，Cloudflare 接收 GitHub 的分支更新后构建。若分支已分叉或受保护，应用保留当前分支并提示在 GitHub 处理。[GitHub 分支引用接口](https://docs.github.com/en/rest/git/refs#update-a-reference) · [Cloudflare Git 集成](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/)
