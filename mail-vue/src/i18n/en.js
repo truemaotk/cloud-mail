@@ -1,4 +1,13 @@
 const en = {
+    paletteTitle: 'Color scheme',
+    paletteHint: 'Backgrounds and text stay neutral; the scheme only changes accent colors such as buttons, selection and links.',
+    paletteGraphite: 'Graphite',
+    paletteOcean: 'Ocean',
+    paletteIndigo: 'Indigo',
+    paletteSage: 'Sage',
+    paletteTerracotta: 'Terracotta',
+    paletteRose: 'Rose',
+    palettePlum: 'Plum',
     protectedUserDelete: 'Accounts whose address starts with admin are protected and cannot be deleted',
     forgotPassword: 'Forgot password?',
     forgotPasswordHint: 'Ask the site administrator to reset your password in All users. After signing in you can change it in Settings.',

@@ -148,6 +148,7 @@ html:root, html:root.dark {
     --mac-accent: #2C2C2E;
     --mac-accent-hover: #3A3A3C;
     --mac-accent-text: #FFFFFF;
+    --mac-accent-ink: var(--mac-text);
     --mac-star: #D99A00;
     --mac-success: #2B7A3D;
     --mac-danger: #C4291C;
@@ -1378,3 +1379,44 @@ html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
 /* 字号下拉：标签和箭头紧挨着，不留大段空白 */
 .tox .tox-tbtn--bespoke { min-width: 0 !important; padding-inline: 8px 4px !important; }
 .tox .tox-tbtn--bespoke .tox-tbtn__select-label { width: auto !important; margin: 0 2px 0 0 !important; }
+
+
+/* ===== 配色方案（外观设置里切换）=====
+ * 底色、文字、分隔线始终是苹果系统灰阶；方案只改变强调色：主按钮、选中、链接、焦点、侧栏选中图标。
+ * 每套给浅色和深色各一个值，深色用更亮的色值并配深色按钮文字，保证对比度 ≥ 4.5:1。
+ */
+html:root[data-palette="ocean"]      { --pal: #1F5FBF; --pal-dark: #7FB2FF; }
+html:root[data-palette="indigo"]     { --pal: #5452CC; --pal-dark: #A5A3FF; }
+html:root[data-palette="sage"]       { --pal: #2D7457; --pal-dark: #7FD1A8; }
+html:root[data-palette="terracotta"] { --pal: #A9512B; --pal-dark: #F0A07C; }
+html:root[data-palette="rose"]       { --pal: #AE3B5C; --pal-dark: #F29AB3; }
+html:root[data-palette="plum"]       { --pal: #7A3E8F; --pal-dark: #D3A2E3; }
+
+html:root[data-palette]:not([data-palette="graphite"]) {
+    --mac-accent: var(--pal);
+    --mac-accent-hover: color-mix(in srgb, var(--pal) 86%, #000);
+    --mac-accent-text: #FFFFFF;
+    --mac-accent-ink: var(--pal);
+    --mac-selected: color-mix(in srgb, var(--pal) 12%, transparent);
+    --mac-selected-solid: color-mix(in srgb, var(--pal) 10%, #FFFFFF);
+    --mac-link: var(--pal);
+    --mac-focus: color-mix(in srgb, var(--pal) 60%, transparent);
+    --mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--pal) 18%, transparent);
+    --mail-primary-tint: #FFFFFF;
+}
+html:root.dark[data-palette]:not([data-palette="graphite"]) {
+    --mac-accent: var(--pal-dark);
+    --mac-accent-hover: color-mix(in srgb, var(--pal-dark) 86%, #fff);
+    --mac-accent-text: #141416;
+    --mac-accent-ink: var(--pal-dark);
+    --mac-selected: color-mix(in srgb, var(--pal-dark) 16%, transparent);
+    --mac-selected-solid: color-mix(in srgb, var(--pal-dark) 13%, #1C1C1E);
+    --mac-link: var(--pal-dark);
+    --mac-focus: color-mix(in srgb, var(--pal-dark) 60%, transparent);
+    --mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--pal-dark) 20%, transparent);
+    --mail-primary-tint: #1C1C1E;
+}
+/* 彩色方案下链接不再需要下划线区分 */
+html:root[data-palette]:not([data-palette="graphite"]) :is(.layout a:not([class]), .el-link.el-link--primary) { text-decoration: none; }
+/* 切换方案时颜色平滑过渡 */
+html.palette-switching, html.palette-switching * { transition: background-color var(--mac-dur-3) var(--mac-ease), color var(--mac-dur-3) var(--mac-ease), border-color var(--mac-dur-3) var(--mac-ease) !important; }

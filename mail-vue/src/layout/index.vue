@@ -1,5 +1,5 @@
 <template>
-  <el-container class="layout" :class="{ 'mail-shell-dark': uiStore.dark }">
+  <el-container class="layout" :class="{ 'mail-shell-dark': uiStore.dark, 'mobile-nav-open': isMobile && uiStore.asideShow }">
     <el-aside
         id="mail-sidebar"
         class="aside"
@@ -87,6 +87,27 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+/* 手机端：菜单展开时占满整屏，内容区和写信窗口让位；菜单关闭后内容区再淡入回来 */
+@media (max-width: 1024px) {
+  .layout.mobile-nav-open {
+    --mail-sidebar-width: calc(100vw - 2 * var(--mail-sidebar-inset));
+  }
+  .layout.mobile-nav-open .el-aside.aside-show {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: var(--mail-sidebar-inset);
+    transform: none;
+    animation: mac-nav-in var(--mac-dur-3) var(--mac-ease-out) both;
+  }
+  .layout.mobile-nav-open .main-container,
+  .layout.mobile-nav-open :deep(.send) { display: none !important; }
+  .layout:not(.mobile-nav-open) .main-container { animation: mac-main-in var(--mac-dur-3) var(--mac-ease-out) both; }
+  .overlay-show { display: none; }
+}
+@keyframes mac-nav-in { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+@keyframes mac-main-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+
 .el-aside-hide {
   position: fixed;
   left: 0;

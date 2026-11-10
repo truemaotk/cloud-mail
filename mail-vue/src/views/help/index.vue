@@ -257,7 +257,7 @@ onMounted(loadInfo)
 .help-intro { margin-bottom: 16px; }
 .help-intro h1 { margin: 0 0 4px; font-size: var(--mac-fs-title); line-height: var(--mac-lh-title); font-weight: 600; }
 .help-intro p { margin: 0; color: var(--el-text-color-secondary); }
-.help-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.help-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--mail-shell-gutter); align-items: start; }
 .help-section { min-width: 0; overflow: hidden; border: 1px solid var(--mac-line); border-radius: var(--mail-radius-surface); background: var(--mac-surface); }
 .help-section-header { min-height: 58px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .help-section-header h2 { margin: 0; font-size: 15px; font-weight: 650; }

@@ -3,6 +3,10 @@
        @pointerover="showRailHint" @pointerout="hideRailHintOnExit"
        @pointerdown.capture="clearRailHint" @click.capture="clearRailHint"
        @focusin="showRailHint" @focusout="hideRailHintOnExit" @keydown.esc="dismissRailHint">
+    <div class="mobile-bar">
+      <span class="mobile-bar-title">mail</span>
+      <ToolbarButton icon="panel-left" :label="$t('toggleMailNavigation')" @click="uiStore.asideShow = false" />
+    </div>
     <MailboxSwitcher v-if="showMailboxes" :compact="compact" />
     <div v-else class="brand">
       <img class="brand-mark" src="/mail.svg" alt="" />
@@ -110,6 +114,7 @@ import { userDraftStore } from '@/store/draft.js'
 import { mailFolders } from '@/utils/mail-workspace.js'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import UnreadBadge from '@/components/unread-badge/index.vue'
+import ToolbarButton from '@/components/toolbar-button/index.vue'
 import AccountMenu from './AccountMenu.vue'
 import MailboxSwitcher from './MailboxSwitcher.vue'
 import { useNavigationOrder } from './use-navigation-order.js'
@@ -237,6 +242,18 @@ function followLink(event, navigate) {
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .sidebar { background: var(--mac-sidebar); }
+}
+
+.mobile-bar { display: none; }
+@media (max-width: 1024px) {
+  .mobile-bar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 0 18px;
+  }
+  .mobile-bar-title { font-size: var(--mac-fs-title); line-height: var(--mac-lh-title); font-weight: 600; }
 }
 
 .brand {
@@ -394,7 +411,7 @@ function followLink(event, navigate) {
 .nav-main[aria-current='page'] > svg,
 .nav-child[aria-current='page'] > svg,
 .nav-group-toggle.has-current > svg:first-child {
-  color: var(--mac-text);
+  color: var(--mac-accent-ink);
 }
 
 /* 展开收起：高度与透明度一起流动 */
@@ -446,7 +463,7 @@ function followLink(event, navigate) {
   inset-inline-start: -13px;
   width: 3px;
   border-radius: 2px;
-  background: var(--mac-text);
+  background: var(--mac-accent-ink);
   content: '';
   opacity: 0;
   transform: scaleY(.3);

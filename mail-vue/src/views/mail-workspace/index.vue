@@ -82,8 +82,6 @@
         </div>
         <div v-for="row in rows" :key="rowId(row)" class="message-row"
              :class="{ 'message-current': messageId === rowId(row), 'message-selected': selected.includes(rowId(row)), unread: isUnread(row), 'draft-row': isDraft }">
-          <span class="unread-dot" :class="{ 'is-unread': isUnread(row) }" role="img"
-                :aria-label="isUnread(row) ? $t('mailUnreadOnly') : undefined" :aria-hidden="isUnread(row) ? undefined : 'true'" />
           <el-checkbox class="row-check" :model-value="selected.includes(rowId(row))"
                        :aria-label="$t('selectMail', { subject: row.subject || $t('noSubject') })"
                        @change="toggleSelected(rowId(row), $event)" />
@@ -627,13 +625,13 @@ onBeforeUnmount(() => {
  * 行内对齐线（列表左缘起）：复选框 12px，状态列 36px，文本 62px，日期右对齐 16px。
  */
 .mail-workspace {
-  --row-pad-start: 4px;
+  --row-pad-start: 12px;
   --row-pad-end: 16px;
-  --row-dot: 12px;
+  --row-dot: 0px;
   --row-check: 16px;
   --row-status: 22px;
   --row-gap: 6px;
-  --row-text-start: calc(var(--row-pad-start) + var(--row-dot) + var(--row-check) + var(--row-status) + var(--row-gap) * 3);
+  --row-text-start: calc(var(--row-pad-start) + var(--row-check) + var(--row-status) + var(--row-gap) * 2);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
@@ -683,7 +681,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   min-height: var(--workspace-toolbar);
-  padding: 0 var(--row-pad-end) 0 calc(var(--row-pad-start) + var(--row-dot) + var(--row-gap));
+  padding: 0 var(--row-pad-end) 0 var(--row-pad-start);
   border-bottom: 1px solid var(--mac-line);
   background: var(--mac-chrome);
 }
@@ -715,7 +713,7 @@ onBeforeUnmount(() => {
   align-content: center;
   gap: 4px calc(var(--row-status) + var(--row-gap) * 2);
   height: 72px;
-  padding: 0 var(--row-pad-end) 0 calc(var(--row-pad-start) + var(--row-dot) + var(--row-gap));
+  padding: 0 var(--row-pad-end) 0 var(--row-pad-start);
   border-bottom: 1px solid var(--mac-line);
 }
 .list-placeholder .placeholder-icon { grid-area: icon; width: 14px; height: 14px; align-self: start; margin-top: 3px; }
@@ -757,7 +755,7 @@ onBeforeUnmount(() => {
 .message-row {
   position: relative;
   display: grid;
-  grid-template-columns: var(--row-dot) var(--row-check) var(--row-status) minmax(0, 1fr);
+  grid-template-columns: var(--row-check) var(--row-status) minmax(0, 1fr);
   align-items: start;
   column-gap: var(--row-gap);
   min-height: 72px;
@@ -765,9 +763,10 @@ onBeforeUnmount(() => {
   color: var(--mac-text);
   transition: background-color var(--mac-dur-1) ease;
 }
+/* 分隔线贯穿整行 */
 .message-row::after {
   position: absolute;
-  inset: auto 0 0 var(--row-text-start);
+  inset: auto 0 0 0;
   height: 1px;
   background: var(--mac-line);
   content: '';
@@ -776,16 +775,9 @@ onBeforeUnmount(() => {
 .message-row.message-current, .message-row.message-selected { background: var(--mac-selected-solid); }
 .message-row:is(.message-current, .message-selected)::after,
 .message-row:has(+ :is(.message-current, .message-selected))::after { background: transparent; }
-.message-row > :is(.unread-dot, .el-checkbox, .row-status) { height: 18px; margin: 0; align-self: start; }
+.message-row > :is(.el-checkbox, .row-status) { height: 18px; margin: 0; align-self: start; }
 .row-status { display: grid; place-items: center; }
 .row-kind { display: grid; place-items: center; color: var(--mac-text-2); }
-.unread-dot {
-  justify-self: center;
-  width: 8px;
-  height: 18px;
-  background: radial-gradient(circle, transparent 0 0, transparent 0) center / 8px 8px no-repeat;
-}
-.unread-dot.is-unread { background: radial-gradient(circle closest-side, var(--mac-text) 98%, transparent) center / 8px 8px no-repeat; }
 .toolbar-button.row-star {
   flex-basis: 22px;
   width: 22px;
@@ -843,7 +835,7 @@ onBeforeUnmount(() => {
   min-height: 48px;
   padding-block: 0;
 }
-.wide-reading .message-row > :is(.unread-dot, .el-checkbox, .row-status) { align-self: center; height: 20px; }
+.wide-reading .message-row > :is(.el-checkbox, .row-status) { align-self: center; height: 20px; }
 .wide-reading .message-summary {
   grid-template-columns: clamp(120px, 14vw, 200px) minmax(0, 1fr) auto;
   grid-template-areas: 'sender copy date';

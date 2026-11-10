@@ -1,4 +1,13 @@
 const zh = {
+    paletteTitle: '配色方案',
+    paletteHint: '底色与文字保持系统灰阶，配色只改变按钮、选中与链接等强调色。',
+    paletteGraphite: '石墨',
+    paletteOcean: '海蓝',
+    paletteIndigo: '靛紫',
+    paletteSage: '松绿',
+    paletteTerracotta: '陶土',
+    paletteRose: '玫瑰',
+    palettePlum: '梅紫',
     protectedUserDelete: '以 admin 开头的账号受保护，不能删除',
     forgotPassword: '忘记密码？',
     forgotPasswordHint: '请联系本站管理员在「用户列表」中为你重置密码。登录后可在「个人设置」里改成新的密码。',

@@ -49,7 +49,7 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
 .settings-workspace {
   display: grid;
   grid-template-columns: 192px minmax(0, 1fr);
-  gap: 16px;
+  gap: var(--mail-shell-gutter);
   height: 100%;
   min-height: 0;
   padding-block: 12px 0;
@@ -103,8 +103,7 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
   background: var(--mac-selected);
 }
 
-.section-link[aria-current='page'] svg { color: var(--mac-accent); }
-:global(html.dark) .section-link[aria-current='page'] svg { color: var(--mac-link); }
+.section-link[aria-current='page'] svg { color: var(--mac-accent-ink); }
 
 .section-link:focus-visible {
   outline: 2px solid var(--mac-focus);

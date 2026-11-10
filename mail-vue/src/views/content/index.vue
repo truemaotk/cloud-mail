@@ -682,7 +682,8 @@ const handleDelete = () => {
 .reader-footer {
   position: absolute;
   z-index: 2;
-  inset-inline-start: calc(var(--reader-gutter) + 52px);
+  /* 左缘与顶部工具栏第一个按钮对齐 */
+  inset-inline-start: calc(var(--reader-gutter) - 8px);
   inset-block-end: 20px;
   display: flex;
   gap: 12px;
@@ -728,7 +729,7 @@ const handleDelete = () => {
   .subject-row, .reader-body, .email-msg, .att {
     margin-inline-start: 0;
   }
-  .reader-footer { inset-inline-start: var(--reader-gutter); }
+  .reader-footer { inset-inline-start: calc(var(--reader-gutter) - 8px); }
   .envelope {
     grid-template-columns: var(--avatar-size) minmax(0, 1fr);
   }

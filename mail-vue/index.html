@@ -16,6 +16,7 @@
       isDark = uiStore.dark
       const root = document.documentElement
       root.setAttribute('class', isDark ? 'dark' : '');
+      root.dataset.palette = uiStore.palette || 'graphite';
     }
     const metaTag = document.getElementById('theme-color-meta');
     const isMobile =  !window.matchMedia("(pointer: fine) and (hover: hover)").matches;

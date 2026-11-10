@@ -68,6 +68,11 @@
             <h3>{{ $t('themeStyle') }}</h3>
             <ThemeSelector />
           </div>
+          <div class="theme-section">
+            <h3>{{ $t('paletteTitle') }}</h3>
+            <p class="palette-hint">{{ $t('paletteHint') }}</p>
+            <PaletteSelector />
+          </div>
         </div>
       </section>
 
@@ -107,6 +112,7 @@ import {useSettingStore} from "@/store/setting.js";
 import {useUiStore} from "@/store/ui.js";
 import {hasPerm} from '@/perm/perm.js'
 import ThemeSelector from "@/components/theme-selector/index.vue";
+import PaletteSelector from "@/components/palette-selector/index.vue";
 
 import SettingsWorkspace from "@/components/settings-workspace/index.vue";
 import NavigationIcon from "@/components/navigation-icon/index.vue";
@@ -388,6 +394,13 @@ function submitPwd() {
 .theme-section h3 {
   margin-bottom: 10px;
   font-size: 14px;
+}
+
+.palette-hint {
+  margin: -6px 0 12px;
+  color: var(--mac-text-2);
+  font-size: var(--mac-fs-caption);
+  line-height: var(--mac-lh-caption);
 }
 
 .notice-status {
