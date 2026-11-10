@@ -16,7 +16,7 @@
       </RouterLink>
     </nav>
     <div ref="scrollArea" class="settings-surface">
-      <header class="section-heading">
+      <header :key="active.key" class="section-heading">
         <h2>{{ $t(active.label) }}</h2>
         <p v-if="active.description">{{ $t(active.description) }}</p>
       </header>
@@ -41,13 +41,18 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
 </script>
 
 <style scoped>
+@media (prefers-reduced-motion: no-preference) {
+  .section-heading,
+  .section-body :deep(> section) { animation: mail-content-in 180ms ease-out; }
+}
+
 .settings-workspace {
   display: grid;
   grid-template-columns: 192px minmax(0, 1fr);
   gap: 16px;
   height: 100%;
   min-height: 0;
-  padding: var(--mail-shell-gutter);
+  padding-block: var(--mail-shell-gutter);
   background: var(--mail-shell-rail);
 }
 

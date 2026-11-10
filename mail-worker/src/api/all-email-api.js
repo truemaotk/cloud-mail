@@ -1,10 +1,23 @@
 import app from '../hono/hono';
 import emailService from '../service/email-service';
+import mailWorkspaceService from '../service/mail-workspace-service';
 import result from '../model/result';
 
 app.get('/allEmail/list', async (c) => {
 	const data = await emailService.allList(c, c.req.query());
 	return c.json(result.ok(data));
+})
+
+app.get('/allEmail/detail', async (c) => {
+	const email = await emailService.allEmailDetail(c, c.req.query());
+	if (email) {
+		const personal = await mailWorkspaceService.personalActions(c, email, c.get('user').userId);
+		if (personal) {
+			email.personalFolder = personal.folder;
+			email.isStar = personal.isStar;
+		}
+	}
+	return c.json(result.ok(email));
 })
 
 app.delete('/allEmail/delete', async (c) => {

@@ -70,6 +70,9 @@ const forwardMime = {
 			`Subject: ${encodeMimeWord(params.subject || '')}`,
 			'MIME-Version: 1.0'
 		];
+		if (params.cc?.length) {
+			headers.push(`Cc: ${params.cc.join(', ')}`);
+		}
 		if (params.sendType === 'reply' && params.messageId) {
 			headers.push(`In-Reply-To: ${params.messageId}`, `References: ${params.messageId}`);
 		}

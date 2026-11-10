@@ -1,12 +1,12 @@
 <template>
-  <span v-if="count > 0" class="unread-badge" role="img" :aria-label="$t('unreadMessages', { count })"
-        :title="$t('unreadMessages', { count })">
+  <span v-if="count > 0" class="unread-badge" role="img" :aria-label="label || $t('unreadMessages', { count })"
+        :title="label || $t('unreadMessages', { count })">
     {{ count > 99 ? '99+' : count }}
   </span>
 </template>
 
 <script setup>
-defineProps({ count: { type: Number, default: 0 } })
+defineProps({ count: { type: Number, default: 0 }, label: String })
 </script>
 
 <style scoped>

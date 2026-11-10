@@ -3,6 +3,23 @@ import emailService from '../service/email-service';
 import result from '../model/result';
 import userContext from '../security/user-context';
 import attService from '../service/att-service';
+import mailWorkspace from '../service/mail-workspace-service';
+
+app.get('/email/workspace/list', async c =>
+	c.json(result.ok(await mailWorkspace.list(c, c.req.query(), userContext.getUserId(c)))));
+
+app.get('/email/workspace/detail', async c =>
+	c.json(result.ok(await mailWorkspace.detail(c, c.req.query(), userContext.getUserId(c)))));
+
+app.put('/email/workspace/move', async c => {
+	await mailWorkspace.move(c, await c.req.json(), userContext.getUserId(c));
+	return c.json(result.ok());
+});
+
+app.put('/email/delete/workspace', async c => {
+	await mailWorkspace.trash(c, await c.req.json(), userContext.getUserId(c));
+	return c.json(result.ok());
+});
 
 app.get('/email/list', async (c) => {
 	const data = await emailService.list(c, c.req.query(), userContext.getUserId(c));

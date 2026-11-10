@@ -1,4 +1,5 @@
 import {useUserStore} from "@/store/user.js";
+import { mailFolders } from '@/utils/mail-workspace.js'
 
 export default {
     mounted(el, binding) {
@@ -37,28 +38,12 @@ export function permsToRouter(permKeys) {
 }
 
 const routers = {
-    'email:send': [
-        {
-            path: '/sent',
-            name: 'send',
-            component: () => import('@/views/send/index.vue'),
-            meta: {
-                title: 'sent',
-                name: 'send',
-                menu: true
-            }
-        },
-        {
-            path: '/drafts',
-            name: 'draft',
-            component: () => import('@/views/draft/index.vue'),
-            meta: {
-                title: 'drafts',
-                name: 'draft',
-                menu: true
-            }
-        }
-    ],
+    'email:send': mailFolders.filter(folder => folder.permission === 'email:send').map(folder => ({
+        path: '/' + folder.path,
+        name: folder.name,
+        component: () => import('@/views/mail-workspace/index.vue'),
+        meta: { title: folder.label, name: folder.name, workspace: folder.path, menu: true },
+    })),
     'user:query': [{
         path: '/all-users',
         name: 'user',
@@ -102,10 +87,11 @@ const routers = {
     'all-email:query': [{
         path: '/all-mail',
         name: 'all-email',
-        component: () => import('@/views/all-email/index.vue'),
+        component: () => import('@/views/mail-workspace/index.vue'),
         meta: {
             title: 'allMail',
             name: 'all-email',
+            workspace: 'all-mail',
             menu: true
         }
     }],

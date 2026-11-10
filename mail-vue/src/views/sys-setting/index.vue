@@ -1,9 +1,7 @@
 <template>
   <div class="settings-container">
-    <div class="loading" :class="firstLoading ? 'loading-show' : 'loading-hide'">
-      <loading/>
-    </div>
-    <SettingsWorkspace v-if="!firstLoading" :sections="systemSections" v-slot="{ section }">
+    <el-skeleton v-if="firstLoading" class="page-skeleton" :rows="6" animated />
+    <SettingsWorkspace v-else :sections="systemSections" v-slot="{ section }">
       <!-- Basic Settings Card -->
       <section v-show="section === 'general'" class="settings-card">
         <h3 class="card-title">{{ $t('websiteSetting') }}</h3>
@@ -837,7 +835,6 @@ import {cvtR2Url, toOssDomain} from "@/utils/convert.js";
 import {storeToRefs} from "pinia";
 import {debounce} from 'lodash-es'
 import {isDomain, isEmail, isIpUrl} from "@/utils/verify-utils.js";
-import loading from "@/components/loading/index.vue";
 import {fileToBase64} from "@/utils/file-utils.js"
 import {useI18n} from 'vue-i18n';
 import SettingsWorkspace from "@/components/settings-workspace/index.vue";
@@ -1572,28 +1569,6 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
   background: var(--mail-shell-rail);
   position: relative;
 
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    z-index: 2;
-    width: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-
-  .loading-show {
-    transition: all 200ms ease 200ms;
-    opacity: 1;
-  }
-
-  .loading-hide {
-    transition: var(--loading-hide-transition);
-    pointer-events: none;
-    opacity: 0;
-  }
 }
 
 

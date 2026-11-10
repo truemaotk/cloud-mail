@@ -17,8 +17,24 @@ export function emailUnreadCounts() {
     return http.get('/email/unreadCounts', {noMsg: true, timeout: 10000})
 }
 
-export function emailRead(emailIds) {
-    return http.put('/email/read', {emailIds})
+export function emailRead(emailIds, unread = false) {
+    return http.put('/email/read', {emailIds, unread})
+}
+
+export function workspaceList(folder, accountId, offset, size, search, unread) {
+    return http.get('/email/workspace/list', { params: {
+        folder, accountId, offset, size, unread: unread ? 1 : 0,
+        searchType: search?.type, text: search?.text, startDate: search?.startDate, endDate: search?.endDate,
+    }, timeout: 15000 })
+}
+
+export function workspaceDetail(folder, accountId, emailId) {
+    return http.get('/email/workspace/detail', { params: { folder, accountId, emailId }, timeout: 15000 })
+}
+
+export function workspaceMove(action, emailIds, until) {
+    const path = ['trash', 'restore', 'purge'].includes(action) ? '/email/delete/workspace' : '/email/workspace/move'
+    return http.put(path, { action, emailIds, until }, { timeout: 15000 })
 }
 
 export function emailSend(form,progress) {

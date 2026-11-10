@@ -3,6 +3,7 @@ import NProgress from 'nprogress';
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
 import {cvtR2Url} from "@/utils/convert.js";
+import { mailFolders } from '@/utils/mail-workspace.js'
 
 const routes = [
     {
@@ -11,18 +12,14 @@ const routes = [
         redirect: '/inbox',
         component: () => import('@/layout/index.vue'),
         children: [
+            ...mailFolders.filter(folder => !folder.permission).map(folder => ({
+                path: '/' + folder.path,
+                name: folder.name,
+                component: () => import('@/views/mail-workspace/index.vue'),
+                meta: { title: folder.label, name: folder.name, workspace: folder.path, menu: true },
+            })),
             {
-                path: '/inbox',
-                name: 'email',
-                component: () => import('@/views/email/index.vue'),
-                meta: {
-                    title: 'inbox',
-                    name: 'email',
-                    menu: true
-                }
-            },
-            {
-                path: '/:mailbox(inbox|starred|sent|all-mail)/messages',
+                path: '/:mailbox(inbox|starred|sent|snoozed|archived|spam|trash|all-mail)/messages/:messageId(\\d+)?',
                 name: 'content',
                 component: () => import('@/views/content/index.vue'),
                 meta: {
@@ -38,16 +35,6 @@ const routes = [
                 meta: {
                     title: 'settings',
                     name: 'setting',
-                    menu: true
-                }
-            },
-            {
-                path: '/starred',
-                name: 'star',
-                component: () => import('@/views/star/index.vue'),
-                meta: {
-                    title: 'starred',
-                    name: 'star',
                     menu: true
                 }
             },
@@ -162,14 +149,6 @@ router.afterEach((to) => {
     }
 
     const uiStore = useUiStore()
-    if (to.meta.menu) {
-        if (['content', 'email', 'send'].includes(to.meta.name)) {
-            uiStore.accountShow = window.innerWidth > 767;
-        } else {
-            uiStore.accountShow = false
-        }
-    }
-
     if (window.innerWidth < 1025) {
         uiStore.asideShow = false
     }

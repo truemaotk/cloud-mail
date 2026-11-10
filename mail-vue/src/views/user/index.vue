@@ -1,7 +1,10 @@
 <template>
   <div class="user-box">
     <div class="mail-toolbar">
-      <ToolbarButton icon="add" :label="$t('addUser')" @click="openAdd" />
+      <el-button type="primary" @click="openAdd">
+        <template #icon><NavigationIcon name="add" :size="16" /></template>
+        {{ $t('addUser') }}
+      </el-button>
       <div class="toolbar-group">
         <el-input
             v-model="params.email"
@@ -30,7 +33,8 @@
       <div>
         <div class="loading" :class="tableLoading ? 'loading-show' : 'loading-hide'"
              :style="first ? 'background: transparent' : ''">
-          <loading/>
+          <el-skeleton v-if="first" class="page-skeleton" :rows="6" animated />
+          <loading v-else />
         </div>
         <el-table
             @filter-change="tableFilter"

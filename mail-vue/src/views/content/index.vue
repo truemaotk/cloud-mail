@@ -1,9 +1,11 @@
 <template>
-  <div class="box">
+  <div class="box" :class="{ embedded }">
     <section class="reader-surface" :aria-label="$t('message')">
       <div class="mail-toolbar">
-        <ToolbarButton icon="back" :label="$t('goBack')" @click="handleBack" />
-        <ToolbarButton v-perm="'email:delete'" icon="delete" :label="$t('delete')" @click="handleDelete" />
+        <slot name="toolbar">
+          <ToolbarButton icon="back" :label="$t('goBack')" @click="handleBack" />
+          <ToolbarButton v-perm="'email:delete'" icon="delete" :label="$t('delete')" @click="handleDelete" />
+        </slot>
       </div>
       <el-scrollbar class="scrollbar">
         <article class="reader">
@@ -11,6 +13,9 @@
             <div class="subject-row">
               <h2 class="email-title">{{ email.subject || $t('noSubject') }}</h2>
               <span v-if="mailboxLabel" class="mailbox-label">{{ $t(mailboxLabel) }}</span>
+              <ToolbarButton v-if="embedded && emailStore.contentData.showStar" class="reader-star subject-star"
+                             :icon="email.isStar ? 'star-fill' : 'star'" :label="$t('star')"
+                             :aria-pressed="!!email.isStar" @click="emit('toggle-star')" />
             </div>
             <div class="envelope">
               <span class="sender-icon"><NavigationIcon name="user" :size="19" /></span>
@@ -42,6 +47,10 @@
                         </dd>
                         <dt>{{ $t('recipient') }}</dt>
                         <dd>{{ recipientAddresses || email.toEmail || '—' }}</dd>
+                        <dt v-if="copyAddresses">{{ $t('mailCc') }}</dt>
+                        <dd v-if="copyAddresses">{{ copyAddresses }}</dd>
+                        <dt v-if="blindCopyAddresses">{{ $t('mailBcc') }}</dt>
+                        <dd v-if="blindCopyAddresses">{{ blindCopyAddresses }}</dd>
                         <dt v-if="email.createTime">{{ $t('date') }}</dt>
                         <dd v-if="email.createTime">{{ formatDetailDate(email.createTime) }}</dd>
                       </dl>
@@ -51,7 +60,7 @@
               </div>
               <div class="envelope-actions">
                 <time v-if="email.createTime" class="email-date">{{ formatDetailDate(email.createTime) }}</time>
-                <ToolbarButton v-if="emailStore.contentData.showStar" :icon="email.isStar ? 'star-fill' : 'star'"
+                <ToolbarButton v-if="!embedded && emailStore.contentData.showStar" class="reader-star" :icon="email.isStar ? 'star-fill' : 'star'"
                                :label="$t('star')" :aria-pressed="!!email.isStar" @click="changeStar" />
                 <ToolbarButton v-if="canReply" icon="reply" :label="$t('reply')" @click="openReply" />
               </div>
@@ -86,18 +95,18 @@
               </div>
             </div>
           </section>
-          <footer v-if="canReply" class="reader-footer">
-            <button type="button" class="reply-button" @click="openReply">
-              <NavigationIcon name="reply" :size="17" />
-              {{ $t('reply') }}
-            </button>
-            <button type="button" class="reply-button" @click="openForward">
-              <NavigationIcon name="forward" :size="17" />
-              {{ $t('forward') }}
-            </button>
-          </footer>
         </article>
       </el-scrollbar>
+      <footer v-if="canReply" class="reader-footer">
+        <button type="button" class="reply-button" @click="openReply">
+          <NavigationIcon name="reply" :size="17" />
+          {{ $t('reply') }}
+        </button>
+        <button type="button" class="reply-button" @click="openForward">
+          <NavigationIcon name="forward" :size="17" />
+          {{ $t('forward') }}
+        </button>
+      </footer>
     </section>
     <el-image-viewer
         v-if="showPreview"
@@ -129,6 +138,9 @@ import {useUiStore} from "@/store/ui.js";
 import {useI18n} from "vue-i18n";
 import {EmailUnreadEnum} from "@/enums/email-enum.js";
 import {hasPerm} from "@/perm/perm.js";
+import { mailFolders } from '@/utils/mail-workspace.js'
+const props = defineProps({ embedded: Boolean })
+const emit = defineEmits(['toggle-star'])
 const { t } = useI18n()
 
 const uiStore = useUiStore();
@@ -139,7 +151,8 @@ const userStore = useUserStore();
 const router = useRouter()
 const route = useRoute()
 const canReply = computed(() => emailStore.contentData.showReply && hasPerm('email:send'))
-const mailboxLabel = computed(() => ['inbox', 'sent', 'starred'].find(folder => folder === route.params.mailbox))
+const mailboxLabel = computed(() => mailFolders.find(folder =>
+  folder.path === (email.value.personalFolder || route.params.mailbox))?.label)
 
 const showPreview = ref(false)
 const showEnvelope = ref(false)
@@ -166,24 +179,27 @@ const sentViaEmail = computed(() => {
 
 const senderName = computed(() => email.value.name || email.value.sendEmail || '—')
 const senderAddress = computed(() => email.value.sendEmail !== senderName.value ? email.value.sendEmail : '')
-const recipientAddresses = computed(() => {
+function addresses(value) {
   try {
-    const recipients = JSON.parse(email.value.recipient || '[]')
+    const recipients = JSON.parse(value || '[]')
     return Array.isArray(recipients)
       ? [...new Set(recipients.map(item => item?.address).filter(Boolean))].join('、') : ''
   } catch {
     return ''
   }
-})
+}
+const recipientAddresses = computed(() => addresses(email.value.recipient))
+const copyAddresses = computed(() => addresses(email.value.cc))
+const blindCopyAddresses = computed(() => email.value.type === 1 ? addresses(email.value.bcc) : '')
 
 watch(() => accountStore.currentAccountId, () => {
-  handleBack()
+  if (!props.embedded) handleBack()
 })
 
 let readRequesting = false
 
 function tryMarkRead() {
-  if (!emailStore.contentData.showUnread || readRequesting) return
+  if (props.embedded || !emailStore.contentData.showUnread || readRequesting) return
   const current = email.value
   if (!current?.emailId || current.unread !== EmailUnreadEnum.UNREAD) return
 
@@ -220,6 +236,7 @@ watch(
 )
 
 onMounted(() => {
+  if (props.embedded) return
   const { mailbox, viewerId } = emailStore.contentData
   if (!email.value.emailId || mailbox !== route.params.mailbox || viewerId !== userStore.user.userId) {
     router.replace('/' + route.params.mailbox)
@@ -230,6 +247,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (props.embedded) return
   emailStore.contentData.showUnread = false;
   readRequesting = false
   window.removeEventListener('keydown', handleKeyDown);
@@ -363,9 +381,34 @@ const handleDelete = () => {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: var(--mail-radius-dialog) var(--mail-radius-dialog) 0 0;
   background: var(--el-bg-color);
 }
+
+.box.embedded {
+  padding: 0;
+  background: var(--el-bg-color);
+}
+
+.embedded .reader-surface { --reader-gutter: 22px; border-radius: 0; }
+.embedded .mail-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: var(--workspace-toolbar);
+  padding-inline: 16px;
+  border-bottom: 1px solid var(--mail-shell-line);
+}
+.embedded .reader {
+  --avatar-size: 44px;
+  --avatar-gap: 12px;
+  padding-top: 16px;
+}
+.embedded .subject-row { margin-inline-start: 0; margin-block-end: 15px; }
+.embedded .email-title { font-size: clamp(19px, 1.6vw, 24px); font-weight: 550; }
+.subject-star { margin-inline-start: auto; }
+.embedded .reader-star[aria-pressed='true'] { color: var(--el-color-warning); }
 
 .mail-toolbar {
   flex-shrink: 0;
@@ -386,7 +429,7 @@ const handleDelete = () => {
   padding: 18px clamp(16px, 1.7vw, 32px) 48px var(--reader-gutter);
 }
 
-.subject-row, .reader-body, .reader-footer, .email-msg, .att {
+.subject-row, .reader-body, .email-msg, .att {
   margin-inline-start: var(--message-indent);
 }
 
@@ -619,9 +662,12 @@ const handleDelete = () => {
 
 .reader-footer {
   display: flex;
+  flex-shrink: 0;
   flex-wrap: wrap;
   gap: 8px;
-  margin-block-start: 32px;
+  padding: 10px var(--reader-gutter) 12px;
+  border-top: 1px solid var(--mail-shell-line, var(--el-border-color-light));
+  background: var(--el-bg-color);
 }
 
 .reply-button {
@@ -633,7 +679,7 @@ const handleDelete = () => {
   min-height: 36px;
   padding-inline: 16px;
   border: 1px solid var(--el-border-color);
-  border-radius: 18px;
+  border-radius: var(--mail-radius-control);
   color: var(--el-text-color-primary);
   cursor: pointer;
 
@@ -648,7 +694,7 @@ const handleDelete = () => {
   }
 
   .reader-surface {
-    border-radius: 12px;
+    border-radius: var(--mail-radius-card) var(--mail-radius-card) 0 0;
   }
 
   .reader {
@@ -656,7 +702,7 @@ const handleDelete = () => {
     --avatar-gap: 10px;
   }
 
-  .subject-row, .reader-body, .reader-footer, .email-msg, .att {
+  .subject-row, .reader-body, .email-msg, .att {
     margin-inline-start: 0;
   }
 

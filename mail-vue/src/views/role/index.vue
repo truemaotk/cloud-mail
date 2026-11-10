@@ -1,13 +1,17 @@
 <template>
   <div class="perm-box">
     <div class="mail-toolbar">
-      <ToolbarButton icon="add" :label="$t('addRoleTitle')" @click="openAddRole" />
+      <el-button type="primary" @click="openAddRole">
+        <template #icon><NavigationIcon name="add" :size="16" /></template>
+        {{ $t('addRoleTitle') }}
+      </el-button>
       <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
     </div>
     <el-scrollbar class="perm-scrollbar">
       <div class="loading" :class="tableLoading ? 'loading-show' : 'loading-hide'"
            :style="first ? 'background: transparent' : ''">
-        <loading/>
+        <el-skeleton v-if="first" class="page-skeleton" :rows="6" animated />
+        <loading v-else />
       </div>
       <el-table
           :data="roles"

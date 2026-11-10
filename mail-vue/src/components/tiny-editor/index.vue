@@ -23,6 +23,8 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  compact: Boolean,
+  contentGutter: String,
   editorId: {
     type: String,
     default: () => `editor-${Date.now()}`
@@ -99,10 +101,12 @@ function initEditor() {
     content_style: `:root {
          --scrollbar-track-color: ${uiStore.dark ? '#141414' : '#FFFFFF'};
          --scrollbar-thumb-color: ${uiStore.dark ? '#8D9095' : '#A8ABB2'};
-    }`,
+    }
+    ${props.contentGutter ? `body.mce-content-body { margin-inline: ${props.contentGutter} !important; }` : ''}`,
     plugins: 'link image advlist lists  emoticons fullscreen  table preview code',
     toolbar: 'bold emoticons forecolor backcolor italic fontsize | alignleft aligncenter alignright alignjustify | outdent indent |  bullist numlist | link image  | table code preview fullscreen',
-    toolbar_mode: 'scrolling',
+    toolbar_location: props.compact ? 'bottom' : 'top',
+    toolbar_mode: props.compact ? 'sliding' : 'scrolling',
     font_size_formats: '8px 10px 12px 14px 16px 18px 24px 36px',
     emoticons_search: false,
     language: language.value,
@@ -159,12 +163,12 @@ function initEditor() {
 
 function focus() {
   nextTick(() => {
-    editor.value.focus()
+    editor.value?.focus()
   })
 }
 
 function getContent() {
-  return editor.value.getContent()
+  return editor.value?.getContent() || ''
 }
 
 

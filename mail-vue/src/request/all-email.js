@@ -4,6 +4,10 @@ export function allEmailList(params) {
     return http.get('/allEmail/list', {params: {...params}})
 }
 
+export function allEmailDetail(emailId) {
+    return http.get('/allEmail/detail', { params: { emailId } })
+}
+
 export function allEmailDelete(emailIds) {
     return http.delete('/allEmail/delete?emailIds=' + emailIds)
 }

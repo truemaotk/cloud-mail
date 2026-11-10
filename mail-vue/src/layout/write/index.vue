@@ -1,48 +1,52 @@
 <template>
   <div class="send" v-show="show">
-    <div class="write-box">
+    <div class="write-box" :class="{ 'write-expanded': expanded }" role="region" :aria-label="$t('mailNewMessage')">
       <div class="title">
-        <div class="title-left">
-          <span class="title-text">
-            <NavigationIcon name="compose" />
-          </span>
-          <span class="sender">{{ $t('sender') }}:</span>
-          <span class="sender-name">{{ form.name }}</span>
-          <span class="send-email"><{{ form.sendEmail }}></span>
+        <span class="title-text">{{ $t(form.sendType === 'reply' ? 'reply' : form.sendType === 'forward' ? 'forward' : 'mailNewMessage') }}</span>
+        <div class="window-actions">
+          <ToolbarButton :icon="expanded ? 'minimize' : 'maximize'"
+                         :label="$t(expanded ? 'mailRestoreComposer' : 'mailExpandComposer')" @click="expanded = !expanded" />
+          <ToolbarButton class="mail-window-close" icon="close" :label="$t('closeComposer')" @click="close" />
         </div>
-        <ToolbarButton icon="close" :label="$t('closeComposer')" @click="close" />
       </div>
       <div class="container">
-        <el-input-tag  @add-tag="addTagChange" tag-type="primary" @input="inputChange" size="default" v-model="form.receiveEmail" >
-          <template #prefix>
-            <div class="item-title" >{{ $t('recipient') }}</div>
-            <el-select suffix-icon="MailChevronDown"
-                ref="mySelect"
-                class="write-select"
-                popper-class="write-select"
-                :show-arrow="false"
-                :no-match-text="' '"
-                :no-data-text="' '"
-                @visible-change="selectStatusChange"
-                @change="selectChange"
-            >
-              <el-option
-                  v-for="item in selectRecipientList"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                  style="color: #999896;"
-              />
+        <div class="compose-fields">
+          <div class="compose-field compose-from">
+            <span class="compose-label">{{ fieldLabel('from') }}</span>
+            <el-select v-if="senderOptions.length > 1" :model-value="form.accountId" :aria-label="$t('mailSenderAddress')"
+                       placement="bottom-start" :show-arrow="false" :offset="5" fit-input-width
+                       @change="chooseSender">
+              <el-option v-for="item in senderOptions" :key="item.accountId" :label="item.email" :value="item.accountId" />
             </el-select>
-          </template>
-          <template #suffix>
-            <div style="display: flex;margin-right: 3px;">
-              <ToolbarButton class="add-contact" icon="user-add" :label="$t('recentContacts')" @click.stop="openContacts" />
-            </div>
-          </template>
-        </el-input-tag>
-        <el-input v-model="form.subject" :placeholder="t('subject')" />
-        <tinyEditor :def-value="defValue" ref="editor" @change="change" @focus="focusChange" />
+            <span v-else class="compose-address">{{ form.sendEmail }}</span>
+          </div>
+          <div class="compose-field">
+            <span class="compose-label">{{ fieldLabel('recipient') }}</span>
+            <el-input-tag @add-tag="addTagChange" tag-type="primary"
+                          size="default" v-model="form.receiveEmail" :aria-label="$t('recipient')">
+              <template #suffix>
+                <div class="recipient-tools">
+                  <button v-if="!showCc" type="button" @click.stop="showCc = true">{{ $t('mailCc') }}</button>
+                  <button v-if="!showBcc" type="button" @click.stop="showBcc = true">{{ $t('mailBcc') }}</button>
+                </div>
+              </template>
+            </el-input-tag>
+          </div>
+          <div v-if="showCc" class="compose-field">
+            <span class="compose-label">{{ fieldLabel('mailCc') }}</span>
+            <el-input-tag v-model="form.cc" :aria-label="$t('mailCc')" />
+          </div>
+          <div v-if="showBcc" class="compose-field">
+            <span class="compose-label">{{ fieldLabel('mailBcc') }}</span>
+            <el-input-tag v-model="form.bcc" :aria-label="$t('mailBcc')" />
+          </div>
+          <div class="compose-field">
+            <span class="compose-label">{{ fieldLabel('subject') }}</span>
+            <el-input v-model="form.subject" :aria-label="t('subject')" />
+          </div>
+        </div>
+        <tinyEditor :def-value="defValue" :content-gutter="composeGutter" ref="editor"
+                    @change="change" compact />
         <div class="button-item">
           <div class="toolbar-group">
             <ToolbarButton icon="attach" :label="$t('addAttachment')" @click="chooseFile" />
@@ -65,37 +69,17 @@
                   <el-dropdown-item command="together">
                     {{ $t(form.sendType === 'forward' ? 'forward' : 'send') }}
                   </el-dropdown-item>
-                  <el-dropdown-item command="divide">
+                  <el-dropdown-item command="divide" :disabled="!!(form.cc.length || form.bcc.length)">
                     {{ separateSendLabel }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
           </div>
+          <ToolbarButton class="discard-button" icon="delete" :label="$t('mailDiscardDraft')" @click="discardComposer" />
         </div>
       </div>
     </div>
-    <el-dialog close-icon="MailCloseIcon" top="10vh" v-model="showContacts" @closed="clearSelectContact" :title="t('recentContacts')">
-      <el-table ref="contactsTabRef" row-key="email" :data="contacts" style="height: 445px">
-        <el-table-column type="selection" width="32" />
-        <el-table-column property="email" :label="t('emailAccount')" >
-          <template #default="props">
-            <div class="email-row">{{ props.row.email }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column width="55" label="" >
-          <template #default>
-            <div style="display: flex;">
-              <NavigationIcon name="user" />
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="contacts-bottom">
-        <el-button type="default" @click="deleteContact">{{t('clear')}}</el-button>
-        <el-button type="primary" @click="chooseContact">{{t('selectContacts')}}</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 <script setup>
@@ -115,8 +99,7 @@ import {toOssDomain} from "@/utils/convert.js";
 import {formatDetailDate} from "@/utils/day.js";
 import {useSettingStore} from "@/store/setting.js";
 import {userDraftStore} from "@/store/draft.js";
-import {useWriterStore} from "@/store/writer.js";
-import db from "@/db/db.js";
+import { removeDrafts, saveDraft } from '@/db/drafts.js'
 import dayjs from "dayjs";
 import {useI18n} from "vue-i18n";
 import router from "@/router/index.js";
@@ -129,8 +112,9 @@ defineExpose({
   openDraft
 })
 
-const {t} = useI18n()
-const writerStore = useWriterStore();
+const { t, locale } = useI18n()
+const composeGutter = '14px'
+const fieldLabel = key => t(key) + (locale.value === 'zh' ? '：' : ':')
 const draftStore = userDraftStore()
 const settingStore = useSettingStore()
 const emailStore = useEmailStore();
@@ -138,14 +122,13 @@ const accountStore = useAccountStore()
 const editor = ref({})
 const userStore = useUserStore();
 const show = ref(false);
+const expanded = ref(false)
+const showCc = ref(false)
+const showBcc = ref(false)
 const percent = ref(0)
 let percentMessage = null
 let sending = false
 const defValue = ref('')
-const contactsTabRef = ref({})
-const showContacts = ref(false)
-const mySelect = ref()
-let selectStatus = false
 const backReply = reactive({
   receiveEmail: [],
   subject: '',
@@ -155,6 +138,8 @@ const backReply = reactive({
 const form = reactive({
   sendEmail: '',
   receiveEmail: [],
+  cc: [],
+  bcc: [],
   accountId: -1,
   name: '',
   subject: '',
@@ -167,9 +152,20 @@ const form = reactive({
   draftId: null,
 })
 
-const selectRecipientList = ref([])
+const senderOptions = computed(() => {
+  const items = [userStore.user.account, accountStore.currentAccount, ...accountStore.mailboxes]
+  return [...new Map(items.filter(item => item?.accountId).map(item => [item.accountId, item])).values()]
+})
 
-const contacts = computed(() => writerStore.sendRecipientRecord.map(item => ({email: item})))
+function chooseSender(id) {
+  const account = senderOptions.value.find(item => item.accountId === id)
+  if (account) {
+    form.accountId = account.accountId
+    form.sendEmail = account.email
+    form.name = account.name
+  }
+}
+
 const separateSendLabel = computed(() => t(form.sendType === 'forward' ? 'separateForward' : 'separateSend'))
 const sendButtonLabel = computed(() => {
   if (form.manyType === 'divide') return separateSendLabel.value
@@ -182,75 +178,6 @@ function selectSendMode(mode) {
   form.manyType = mode
 }
 
-function openContacts() {
-  showContacts.value = true
-  nextTick(() => {
-    form.receiveEmail.forEach(item => {
-      if (writerStore.sendRecipientRecord.includes(item)) {
-        contactsTabRef.value.toggleRowSelection({email: item});
-      }
-    })
-  })
-}
-
-function deleteContact() {
-  ElMessageBox.confirm(t('confirmDeletionOfContacts'), {
-    confirmButtonText: t('confirm'),
-    cancelButtonText: t('cancel'),
-    type: 'warning'
-  }).then(() => {
-    const contactList = contactsTabRef.value.getSelectionRows().map(item => item.email);
-    form.receiveEmail = form.receiveEmail.filter(item => !contactList.includes(item));
-    writerStore.sendRecipientRecord = writerStore.sendRecipientRecord.filter(item => !contactList.includes(item));
-  })
-}
-
-function chooseContact() {
-
-  const contactList = contactsTabRef.value.getSelectionRows().map(item => item.email);
-  contactList.forEach(item => {
-    if (!form.receiveEmail.includes(item)) {
-      form.receiveEmail.push(item);
-    }
-  })
-
-  form.receiveEmail = form.receiveEmail.filter(item => {
-    return contactList.includes(item) || !writerStore.sendRecipientRecord.includes(item);
-  });
-
-  showContacts.value = false
-}
-
-function clearSelectContact() {
-  contactsTabRef.value.clearSelection();
-}
-
-function selectChange(value) {
-  form.receiveEmail.push(value)
-}
-
-function selectStatusChange(status) {
-  selectStatus = status
-}
-
-const openSelect = () => {
-  mySelect.value.toggleMenu()
-}
-
-function inputChange(value) {
-
-  selectRecipientList.value = writerStore.sendRecipientRecord.filter(item => value && !form.receiveEmail.includes(item) && item.startsWith(value)).slice(0, 10);
-
-  if (!selectStatus && selectRecipientList.value.length > 0) {
-    openSelect()
-  }
-
-  if (selectStatus && selectRecipientList.value.length === 0) {
-    openSelect()
-  }
-
-}
-
 function addTagChange(val) {
 
   const emails = Array.from(new Set(
@@ -259,14 +186,11 @@ function addTagChange(val) {
 
   form.receiveEmail.splice(form.receiveEmail.length - 1, 1)
 
-  let has = false
   emails.forEach(email => {
     if (isEmail(email) && !form.receiveEmail.includes(email)) {
       form.receiveEmail.push(email)
-      has = true
     }
   })
-  if (selectStatus && has) openSelect()
 }
 
 function clearContent() {
@@ -327,6 +251,12 @@ async function sendEmail() {
     return
   }
 
+  if ([...form.cc, ...form.bcc].some(address => !isEmail(address))) {
+    ElMessage.error(t('notEmailMsg'))
+    return
+  }
+  if (form.cc.length || form.bcc.length) form.manyType = 'together'
+
   form.content = editor.value.getContent();
 
   if (!form.content) {
@@ -361,15 +291,12 @@ async function sendEmail() {
 
   emailSend(form, (e) => {
     percent.value = Math.round((e.loaded * 98) / e.total)
-  }).then(result => {
+  }).then(async result => {
     const emailList = Array.isArray(result) ? result : result.emails
     const email = emailList[0]
-    emailList.forEach(item => {
-      emailStore.sendScroll?.addItem(item)
-    })
+    emailStore.workspaceRevision++
 
     userStore.refreshUserInfo();
-    addRecipientRecord();
 
     if (result.failedRecipients?.length) {
       form.receiveEmail = result.failedRecipients
@@ -391,10 +318,12 @@ async function sendEmail() {
     })
 
     if (form.draftId) {
-      form.subject = ''
-      form.content = ''
-      form.receiveEmail = []
-      draftStore.setDraft = {...toRaw(form)}
+      try {
+        await removeDrafts([form.draftId])
+        draftStore.refreshList++
+      } catch {
+        ElMessage.error(t('mailSaveDraftFailed'))
+      }
     }
 
     show.value = false
@@ -411,7 +340,6 @@ async function sendEmail() {
       router.replace('/login');
     }
     show.value = true
-    addRecipientRecord();
   }).finally(() => {
     percentMessage.close()
     percent.value = 0
@@ -419,24 +347,21 @@ async function sendEmail() {
   })
 }
 
-function addRecipientRecord() {
-  writerStore.sendRecipientRecord = writerStore.sendRecipientRecord.filter(
-      email => !form.receiveEmail.includes(email)
-  );
-
-  writerStore.sendRecipientRecord.unshift(...form.receiveEmail);
-  writerStore.sendRecipientRecord = writerStore.sendRecipientRecord.slice(0, 500);
-}
-
 function resetForm() {
   form.receiveEmail = []
+  form.cc = []
+  form.bcc = []
   form.subject = ''
   form.content = ''
+  form.text = ''
   form.manyType = 'together'
   form.attachments = []
   form.sendType = ''
   form.emailId = 0
   form.draftId = null
+  showCc.value = false
+  showBcc.value = false
+  expanded.value = false
   backReply.content = ''
   backReply.subject = ''
   backReply.receiveEmail = []
@@ -449,11 +374,8 @@ function change(content, text) {
   form.text = text
 }
 
-function focusChange() {
-  if (selectStatus) openSelect()
-}
-
 function openForward(email) {
+  if (show.value) return editor.value.focus()
   resetForm();
 
   email.subject = email.subject || ''
@@ -480,7 +402,7 @@ function openForward(email) {
 }
 
 function openReply(email) {
-
+  if (show.value) return editor.value.focus()
   resetForm();
 
   email.subject = email.subject || ''
@@ -527,6 +449,10 @@ function formatImage(content) {
 }
 
 function open() {
+  if (show.value) {
+    editor.value.focus()
+    return
+  }
   if (!accountStore.currentAccount.email) {
     form.sendEmail = userStore.user.email;
     form.accountId = userStore.user.account.accountId;
@@ -541,7 +467,13 @@ function open() {
 }
 
 function openDraft(draft) {
-  Object.assign(form, {...draft, manyType: draft.manyType || 'together'})
+  if (show.value) {
+    editor.value.focus()
+    return
+  }
+  Object.assign(form, { ...draft, cc: draft.cc || [], bcc: draft.bcc || [], manyType: draft.manyType || 'together' })
+  showCc.value = !!form.cc.length
+  showBcc.value = !!form.bcc.length
   defValue.value = ''
   setTimeout(() => defValue.value = form.content)
   show.value = true;
@@ -549,7 +481,8 @@ function openDraft(draft) {
 }
 
 const handleKeyDown = (event) => {
-  if (event.key === 'Escape') {
+  if (event.key === 'Escape' && !event.defaultPrevented && show.value
+      && !event.target?.closest?.('.el-overlay, .el-popper, .tox-dialog')) {
     close()
   }
 };
@@ -562,22 +495,50 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
 });
 
-function close() {
+function hasDraftContent() {
+  return !!(form.content || form.subject || form.receiveEmail.length || form.cc.length || form.bcc.length || form.attachments.length)
+}
 
-  if (selectStatus) openSelect();
+async function discardComposer() {
+  try {
+    if (hasDraftContent() || form.draftId) {
+      await ElMessageBox.confirm(t('mailDiscardDraftConfirm'), {
+        confirmButtonText: t('mailDiscardDraft'), cancelButtonText: t('cancel'), type: 'warning',
+      })
+    }
+    if (form.draftId) {
+      await removeDrafts([form.draftId])
+      draftStore.refreshList++
+    }
+    show.value = false
+    resetForm()
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(t('mailSaveDraftFailed'))
+  }
+}
+
+async function close() {
+  if (!show.value || sending) return
+
 
   if (!form.content) {
-    form.content = editor.value.getContent();
+    form.content = editor.value.getContent() || ''
   }
 
   if (form.draftId) {
-    draftStore.setDraft = {...toRaw(form)}
-    show.value = false
-    resetForm()
+    try {
+      if (hasDraftContent()) await saveDraft(toRaw(form), form.draftId)
+      else await removeDrafts([form.draftId])
+      draftStore.refreshList++
+      show.value = false
+      resetForm()
+    } catch {
+      ElMessage.error(t('mailSaveDraftFailed'))
+    }
     return;
   }
 
-  if (!(form.content || form.subject || form.receiveEmail.length > 0)) {
+  if (!hasDraftContent()) {
     show.value = false
     resetForm()
     return;
@@ -590,7 +551,7 @@ function close() {
     if (backReply.sendType === 'forward' && form.receiveEmail.length === 0) {
       receiveFlag = true;
     }
-    if (subjectFlag && contentFlag && receiveFlag) {
+    if (subjectFlag && contentFlag && receiveFlag && !form.cc.length && !form.bcc.length && !form.attachments.length) {
       resetForm();
       close()
       return;
@@ -603,12 +564,7 @@ function close() {
     type: 'warning',
     distinguishCancelAndClose: true
   }).then(async () => {
-    const formData = {...toRaw(form)};
-    delete formData.draftId
-    delete formData.attachments
-    formData.createTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss');
-    const draftId = await db.value.draft.add({...formData})
-    db.value.att.add({draftId, attachments: toRaw(form.attachments)})
+    await saveDraft({ ...toRaw(form), createTime: dayjs().utc().format('YYYY-MM-DD HH:mm:ss') })
     draftStore.refreshList++
     show.value = false
     await nextTick(() => {
@@ -618,185 +574,152 @@ function close() {
     if (action === 'cancel') {
       show.value = false
       resetForm()
+    } else if (action !== 'close') {
+      ElMessage.error(t('mailSaveDraftFailed'))
     }
   })
 
 }
 
 </script>
-<style>
-.write-select .el-select-dropdown {
-  min-width: 0 !important;
-}
-</style>
 <style scoped lang="scss">
 .send {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 16px 22px 22px;
+}
+
+.write-box {
+  --compose-gutter: v-bind(composeGutter);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(600px, 100%);
+  height: min(520px, max(355px, 49.6dvh));
+  overflow: hidden;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: var(--mail-radius-card);
+  background: var(--el-bg-color);
+  box-shadow: 0 8px 34px rgb(0 0 0 / 21%);
+  pointer-events: auto;
+}
+
+.write-box.write-expanded {
+  width: min(1060px, calc(100vw - 44px));
+  height: min(800px, calc(100dvh - 36px));
+}
+
+.title, .window-actions, .recipient-tools {
   display: flex;
   align-items: center;
-  justify-content: center;
+}
 
-  .write-box {
-    background: var(--el-bg-color);
-    width: min(1367px, calc(100% - 80px));
-    box-shadow: var(--el-box-shadow-light);
-    border: 1px solid var(--el-border-color-light);
-    transition: var(--el-transition-duration);
-    padding: 15px;
-    border-radius: 8px;
-    display: grid;
-    grid-template-rows: auto 1fr;
-    overflow: hidden;
-    @media (max-width: 1024px) {
-      width: 100%;
-      height: 100%;
-      border-radius: 0;
-      border: 0;
-      padding-top: 10px;
-    }
+.title {
+  min-height: 40px;
+  justify-content: space-between;
+  padding: 0 9px 0 var(--compose-gutter);
+  color: #fff;
+  background: #242424;
+  font-size: 14px;
+  font-weight: 600;
+}
 
-    @media (min-width: 1025px) {
-      height: min(800px, calc(100vh - 60px));
-    }
+.window-actions {
+  --mail-shell-muted: #fff;
+  --mail-shell-hover: #414141;
+  --mail-close-color: #fff;
+  --mail-close-hover-color: #fff;
+  gap: 2px;
+}
+.window-actions .toolbar-button:hover { color: #fff; }
 
-    .title {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
+.container {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
 
-      .title-left {
-        align-items: center;
-        display: grid;
-        grid-template-columns: auto auto auto 1fr;
-      }
+.compose-field {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  min-height: 37px;
+  padding-inline: var(--compose-gutter) 8px;
+  border-bottom: 1px solid var(--mail-shell-line);
+  font-size: 13px;
+}
 
-      .title-text {
-      }
+.compose-fields { max-height: 36vh; overflow: auto; }
 
-      .sender {
-        margin-left: 8px;
-      }
+.compose-from :deep(.el-select) { width: min(260px, 100%); min-width: 0; }
+.compose-from :deep(.el-select__wrapper) { padding: 0 8px 0 0; box-shadow: none; }
+.compose-label { color: var(--el-text-color-primary); font-weight: 600; }
+.compose-field :deep(.el-input__wrapper),
+.compose-field :deep(.el-input-tag) { box-shadow: none; padding-inline: 0; min-width: 0; }
+.compose-field:focus-within { box-shadow: inset 0 -1px var(--mail-shell-muted); }
 
-      .sender-name {
-        margin-left: 8px;
-        font-weight: bold;
-      }
+.recipient-tools { gap: 3px; }
+.recipient-tools button {
+  flex-shrink: 0;
+  padding: 3px 5px;
+  border-radius: 5px;
+  color: var(--mail-shell-muted);
+  cursor: pointer;
+}
+.recipient-tools button:hover { background: var(--mail-shell-hover); }
 
-      .send-email {
-        color: #999896;
-        margin-left: 5px;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-      }
+.button-item {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 53px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--mail-shell-line);
+}
 
+.send-actions { grid-column: 1; grid-row: 1; }
+.button-item .toolbar-group { grid-column: 2; grid-row: 1; }
+.discard-button { grid-column: 4; grid-row: 1; }
+.att-list {
+  grid-column: 3;
+  display: grid;
+  gap: 4px;
+  max-height: 66px;
+  overflow-y: auto;
+}
 
-      div {
-        display: flex;
-        align-items: center;
-      }
-    }
+.att-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 5px;
+  align-items: center;
+  padding: 2px 4px;
+  background: var(--mail-shell-rail);
+  border-radius: 5px;
+}
 
-    .container {
-      height: 100%;
-      display: grid;
-      grid-template-rows: auto auto 1fr auto;
-      gap: 15px;
+.att-filename { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.att-size { font-size: 11px; color: var(--mail-shell-muted); }
 
-      .item-title {
-      }
-
-      .button-item {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 8px;
-
-        .att-list {
-          display: grid;
-          gap: 5px;
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
-          max-height: 110px;
-          overflow-y: auto;
-          @media (max-width: 450px) {
-            grid-column: 1 / -1;
-            grid-row: 2;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
-          }
-
-          .att-item {
-            display: grid;
-            grid-template-columns: auto 1fr auto auto;
-            gap: 5px;
-            height: 32px;
-            font-size: 14px;
-            padding: 4px 5px;
-            background: var(--light-ill);
-            border-radius: 4px;
-            .att-filename {
-              white-space: nowrap;
-              text-overflow: ellipsis;
-              overflow: hidden;
-            }
-          }
-        }
-
-        @media (max-width: 450px) {
-          grid-template-columns: auto minmax(0, 1fr);
-
-          .att-list:empty {
-            display: none;
-          }
-
-          .send-actions {
-            justify-self: end;
-          }
-        }
-      }
-    }
+@media (max-width: 767px) {
+  .send { padding: 0; }
+  .write-box, .write-box.write-expanded {
+    width: 100%;
+    height: min(100%, 660px);
+    min-width: 0;
   }
-
+  .att-list:not(:empty) { grid-row: 2; grid-column: 1 / -1; }
 }
-
-.email-row {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-:deep(.el-dialog) {
-  width: 420px !important;
-  @media (max-width: 460px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-.contacts-bottom {
-  display: flex;
-  justify-content: end;
-  margin-top: 10px;
-}
-
-.toolbar-button.add-contact,
 .toolbar-button.remove-attachment {
   flex-basis: 26px;
   width: 26px;
   height: 26px;
-}
-
-.write-select {
-  position: absolute;
-  width: 300px;
-  left: 60px;
-  z-index: 0;
-  opacity: 0;
-  pointer-events: none;
 }
 
 :deep(.el-input-tag__suffix) {

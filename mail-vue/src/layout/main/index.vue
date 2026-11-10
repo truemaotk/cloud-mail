@@ -1,32 +1,30 @@
 <template>
-  <div :class="accountShow ? 'main-box-show' : 'main-box-hide'">
-    <div :class="accountShow ? 'block-show' : 'block-hide'" @click="uiStore.accountShow = false"></div>
-    <account id="mailbox-rail" :class="accountShow ? 'show' : 'hide'" :inert="!accountShow" />
-    <router-view class="main-view" v-slot="{ Component,route }">
-      <keep-alive :include="['email','all-email','send','sys-setting','star','user','role','analysis','reg-key','draft']">
-        <component :is="Component" :key="route.name"/>
-      </keep-alive>
+  <div class="main-box-hide" :class="{ 'workspace-main': folder }">
+    <router-view v-slot="{ Component,route }">
+      <Transition name="mail-page" mode="out-in">
+        <keep-alive :include="['sys-setting','user','role','analysis','reg-key']">
+          <MailWorkspace v-if="folder" key="mail-workspace" :folder="folder" />
+          <component v-else :is="Component" :key="route.name"/>
+        </keep-alive>
+      </Transition>
     </router-view>
   </div>
 </template>
 <script setup>
-import account from '@/layout/account/index.vue'
+import MailWorkspace from '@/views/mail-workspace/index.vue'
+import { workspaceFolder } from '@/utils/mail-workspace.js'
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
-import {computed, onBeforeUnmount, onMounted, watch} from "vue";
+import {computed, watch} from "vue";
 import { useRoute } from 'vue-router'
-import { hasPerm } from "@/perm/perm.js"
 
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
 const route = useRoute()
-let  innerWidth =  window.innerWidth
 
 let elNotification = null
 
-const accountShow = computed(() => {
-  return uiStore.accountShow && settingStore.settings.manyEmail === 0 && hasPerm('account:query')
-})
+const folder = computed(() => workspaceFolder(route))
 
 watch(() => uiStore.changeNotice, () => {
 
@@ -81,100 +79,20 @@ function showNotice(data) {
   })
 }
 
-onMounted(() => {
-  window.addEventListener('resize', handleResize)
-  handleResize()
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
-})
-
-const handleResize = () => {
-  if (['content','email','send'].includes(route.meta.name)) {
-    if (innerWidth !==  window.innerWidth) {
-      innerWidth = window.innerWidth;
-      uiStore.accountShow = window.innerWidth >= 767;
-    }
-  }
-}
-
 </script>
 <style lang="scss" scoped>
-
-.block-show {
-  position: fixed;
-  @media (max-width: 767px) {
-    position: absolute;
-    right: 0;
-    border: 0;
-    height: 100%;
-    width: 100%;
-    background: #000000;
-    opacity: 0.6;
-    z-index: 10;
-    transition: all 300ms;
-  }
-}
-
-.block-hide {
-  position: fixed;
-  pointer-events: none;
-  transition: all 300ms;
-}
-
-.show {
-  transition: all 100ms;
-  @media (max-width: 767px) {
-    position: fixed;
-    z-index: 100;
-    width: min(var(--mailbox-rail-width), calc(100vw - 24px));
-  }
-}
-
-.hide {
-  transition: all 100ms;
-  position: fixed;
-  transform: translateX(-100%);
-  opacity: 0;
-  @media (max-width: 1024px) {
-    width: min(var(--mailbox-rail-width), calc(100vw - 24px));
-    z-index: 100;
-  }
-}
-
-
-.main-box-show {
-  display: grid;
-  grid-template-columns: var(--mailbox-rail-width) minmax(0, 1fr);
-  height: calc(100% - var(--mail-shell-header));
-  @media (max-width: 767px) {
-    grid-template-columns: 1fr;
-  }
-}
-
 .main-box-hide {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   height: calc(100% - var(--mail-shell-header));
+  padding-inline: var(--mail-shell-gutter);
 }
 
+.mail-page-enter-active { transition: opacity 180ms ease-out; }
+.mail-page-leave-active { transition: opacity 95ms ease-in; }
+.mail-page-enter-from, .mail-page-leave-to { opacity: 0; }
 
-.main-view {
-  background: var(--el-bg-color);
-}
-
-
-.navigation {
-  height: 30px;
-  border-bottom: solid 1px var(--el-menu-border-color);
-  display: inline-flex;
-  justify-items: center;
-  align-items: center;
-  width: 100%;
-  .tag {
-    background: var(--el-bg-color);
-    margin-left: 5px;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .mail-page-enter-active, .mail-page-leave-active { transition: none; }
 }
 </style>

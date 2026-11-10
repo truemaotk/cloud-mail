@@ -15,8 +15,17 @@
         </div>
       </header>
 
-      <div v-if="!data" class="analysis-state" :aria-busy="loading">
-        <Loading v-if="loading" :size="26" />
+      <div v-if="!data" :class="{ 'analysis-state': !loading }" :aria-busy="loading">
+        <el-skeleton v-if="loading" animated>
+          <template #template>
+            <div class="analysis-metrics">
+              <el-skeleton-item v-for="card in 5" :key="card" variant="rect" class="analysis-placeholder" />
+            </div>
+            <div class="analysis-charts">
+              <el-skeleton-item v-for="card in 2" :key="card" variant="rect" class="analysis-placeholder is-chart" />
+            </div>
+          </template>
+        </el-skeleton>
         <p v-else role="alert">{{ t('analysisLoadFailed') }}</p>
       </div>
 
@@ -99,7 +108,6 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
-import Loading from '@/components/loading/index.vue'
 import echarts from '@/echarts/index.js'
 import { analysisEcharts } from '@/request/analysis.js'
 import { useUiStore } from '@/store/ui.js'
@@ -255,16 +263,26 @@ onBeforeUnmount(() => {
 .analysis-scroll {
   height: 100%;
   min-width: 0;
-  background: var(--mail-shell-rail);
+  margin-inline-end: calc(-1 * var(--mail-shell-gutter));
+  background: var(--el-bg-color);
+}
+
+.analysis-scroll :deep(.el-scrollbar__wrap) {
+  padding-inline-end: var(--mail-shell-gutter);
 }
 
 .analysis {
   container-type: inline-size;
   display: grid;
   gap: 16px;
-  max-width: 1550px;
-  margin-inline: auto;
-  padding: clamp(14px, 2vw, 27px);
+  padding-block: var(--mail-shell-gutter);
+}
+
+.analysis-placeholder { height: 112px; border-radius: var(--mail-radius-card); }
+.analysis-placeholder.is-chart { height: 244px; margin-top: 14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .analysis-metric, .analysis-card { animation: mail-content-in 180ms ease-out; }
 }
 
 .analysis-heading,

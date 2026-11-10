@@ -10,6 +10,7 @@ export const useEmailStore = defineStore('email', {
     state: () => ({
         deleteIds: 0,
         unreadByAccount: {},
+        workspaceRevision: 0,
         starScroll: null,
         emailScroll: null,
         cancelStarEmailId: 0,
@@ -25,6 +26,7 @@ export const useEmailStore = defineStore('email', {
         },
         sendScroll: null,
         detailMap: {},
+        adminSearch: { text: '', type: 'name' },
         searchParams: {
             text: '',
             type: 'subject',
@@ -60,6 +62,9 @@ export const useEmailStore = defineStore('email', {
                 ...params,
             }
         },
+        setAdminSearch(params) {
+            this.adminSearch = { text: params.text, type: params.type }
+        },
         fetchList(request) {
             return request(0).then(data => {
                 request(1).then(fullData => {
@@ -91,15 +96,16 @@ export const useEmailStore = defineStore('email', {
                 }
             }
         },
-        openMessage(email, mailbox) {
+        openMessage(email, mailbox, full = false) {
             const administrative = mailbox === 'all-mail'
+            const personal = administrative ? Boolean(email.personalFolder) : mailbox !== 'trash'
             this.contentData = {
-                email: this.toContentEmail(email),
+                email: full ? { ...email, content: sanitizeEmailHtml(email.content || '') } : this.toContentEmail(email),
                 mailbox,
                 viewerId: useUserStore().user.userId,
                 delType: administrative ? 'physics' : 'logic',
-                showStar: !administrative,
-                showReply: !administrative,
+                showStar: personal,
+                showReply: personal,
                 showUnread: mailbox === 'inbox',
             }
         },

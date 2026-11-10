@@ -1,496 +1,238 @@
 <template>
-  <div ref="searchRef" class="email-search">
-    <button type="button" class="search-placeholder" :aria-label="t('searchMail')" :aria-expanded="visible" @click="openSearch">
-      <NavigationIcon name="search" />
-      <span class="search-placeholder-text" :class="{ 'has-search-text': savedSearchSummary }" :title="savedSearchSummary">
-        {{ savedSearchSummary || t('searchMail') }}
-      </span>
-    </button>
-    <el-button
-      class="mobile-search-button"
-      size="default"
-      :aria-label="t('searchMail')"
-      :aria-expanded="visible"
-      @click="openSearch"
-    >
-      <el-icon :size="20">
-        <NavigationIcon name="search" />
-      </el-icon>
-    </el-button>
-    <Transition name="search-panel-fade" @after-enter="focusInputOnDesktop">
-      <div v-if="visible" class="search-panel-shell" @click.stop>
-        <el-card class="search-panel" shadow="always">
-          <div class="search-input">
-            <el-input
-              ref="inputRef"
-              v-model="searchText"
-              autocomplete="off"
-              :placeholder="searchPlaceholder"
-              @keyup.enter="handleSearch"
-            />
-          </div>
-          <div class="search-content">
-            <div class="search-content-title">{{ t('searchType') }}</div>
-            <div class="custom-style">
-              <el-segmented
-                v-model="searchType"
-                :options="searchOptions"
-                :props="{ label: 'label', value: 'type' }"
-              />
-            </div>
-            <div class="search-date-range">
-              <div class="search-date-field">
-                <div class="search-date-label">{{ t('searchDateFrom') }}</div>
-                <el-date-picker prefix-icon="MailCalendarIcon"
-                  v-model="startDate"
-                  type="date"
-                  :editable="false"
-                  value-format="YYYY-MM-DD"
-                  :placeholder="t('searchStartDate')"
-                />
-              </div>
-              <div class="search-date-field">
-                <div class="search-date-label">{{ t('searchDateTo') }}</div>
-                <el-date-picker prefix-icon="MailCalendarIcon"
-                  v-model="endDate"
-                  type="date"
-                  :editable="false"
-                  value-format="YYYY-MM-DD"
-                  :placeholder="t('searchEndDate')"
-                  :disabled-date="disableEndDate"
-                />
-              </div>
-            </div>
-          </div>
-          <div class="search-actions">
-            <el-button @click="handleReset">{{ t('reset') }}</el-button>
-            <el-button type="primary" @click="handleSearch">{{ t('search') }}</el-button>
-          </div>
-        </el-card>
-      </div>
+  <form ref="searchRef" class="email-search" role="search" @submit.prevent="applySearch">
+    <div class="search-bar">
+      <button class="search-icon" type="submit" :aria-label="t('search')">
+        <NavigationIcon name="search" :size="18" />
+      </button>
+      <input ref="inputRef" v-model="searchText" type="text" :aria-label="t('searchMail')"
+             :placeholder="t('searchMail')" autocomplete="off" />
+      <button v-if="searchText || appliedFilters" class="search-icon" type="button"
+              :aria-label="t('mailClearSearch')" :title="t('mailClearSearch')" @click="resetSearch">
+        <NavigationIcon name="close" :size="16" />
+      </button>
+      <kbd v-else-if="shortcut" class="search-shortcut" aria-hidden="true">/</kbd>
+      <button ref="filterButton" class="search-icon filter-button" type="button"
+              :aria-label="t('mailSearchFilters')" :title="t('mailSearchFilters')"
+              :aria-expanded="visible" aria-controls="mail-search-filters" @click="toggleFilters">
+        <NavigationIcon name="filter" :size="18" />
+        <span v-if="appliedFilters" class="filter-dot" aria-hidden="true" />
+      </button>
+    </div>
+    <Transition name="search-panel">
+      <section v-if="visible" id="mail-search-filters" class="search-filters" :aria-label="t('mailSearchFilters')">
+        <div class="search-filter-title">{{ t('searchType') }}</div>
+        <el-segmented v-model="searchType" :options="searchOptions" :props="{ label: 'label', value: 'type' }" />
+        <div v-if="!hideDates" class="search-dates">
+          <label>
+            <span>{{ t('searchDateFrom') }}</span>
+            <el-date-picker v-model="startDate" type="date" :editable="false" :teleported="false"
+                            value-format="YYYY-MM-DD" :placeholder="t('searchStartDate')" />
+          </label>
+          <label>
+            <span>{{ t('searchDateTo') }}</span>
+            <el-date-picker v-model="endDate" type="date" :editable="false" :teleported="false"
+                            value-format="YYYY-MM-DD" :placeholder="t('searchEndDate')" :disabled-date="disableEndDate" />
+          </label>
+        </div>
+        <div class="search-actions">
+          <el-button @click="resetSearch">{{ t('reset') }}</el-button>
+          <el-button type="primary" @click="applySearch">{{ t('search') }}</el-button>
+        </div>
+      </section>
     </Transition>
-  </div>
+  </form>
 </template>
 
 <script setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
-import {useI18n} from 'vue-i18n'
+import { useI18n } from 'vue-i18n'
 
-const {t} = useI18n()
-const emit = defineEmits(['search', 'reset'])
 const props = defineProps({
-  store: {
-    type: Object,
-    required: true,
-  },
-  searchOptions: {
-    type: Array,
-    required: true,
-  },
+  store: { type: Object, required: true },
+  searchOptions: { type: Array, required: true },
+  shortcut: Boolean,
+  hideDates: Boolean,
 })
-
+const emit = defineEmits(['search', 'reset'])
+const { t } = useI18n()
 const searchRef = ref(null)
 const inputRef = ref(null)
+const filterButton = ref(null)
 const searchText = ref('')
 const searchType = ref('subject')
 const startDate = ref('')
 const endDate = ref('')
 const visible = ref(false)
-const selectedSearchOption = computed(() =>
-  props.searchOptions.find(option => option.type === searchType.value)
-)
-const savedSearchSummary = computed(() => {
+const defaultType = computed(() => props.searchOptions[0]?.type || 'subject')
+const appliedFilters = computed(() => {
   const params = props.store.searchParams
-  const parts = []
-  const text = params.text?.trim()
-  const fieldKeys = {
-    subject: 'searchSummarySubject',
-    content: 'searchSummaryContent',
-    sender: 'searchSummarySender',
-    senderAddress: 'searchSummarySenderAddress',
-    recipientAddress: 'searchSummaryRecipientAddress',
-  }
-
-  if (text) {
-    parts.push(`${t(fieldKeys[params.type] || fieldKeys.subject)}:${text}`)
-  }
-  if (params.startDate && params.endDate) {
-    parts.push(`${formatSummaryDate(params.startDate)} ${t('searchSummaryRange')} ${formatSummaryDate(params.endDate)}`)
-  } else if (params.startDate) {
-    parts.push(`${t('searchSummaryAfter')}:${formatSummaryDate(params.startDate)}`)
-  } else if (params.endDate) {
-    parts.push(`${t('searchSummaryBefore')}:${formatSummaryDate(params.endDate)}`)
-  }
-  return parts.join('\u00a0\u00a0')
+  return !!(params.startDate || params.endDate || (params.text && params.type !== defaultType.value))
 })
-const searchPlaceholder = computed(() =>
-  t('searchMailBy', {field: selectedSearchOption.value?.label || t('titleDesc')})
-)
 
-watch(
-  () => props.searchOptions,
-  options => {
-    if (!options.some(option => option.type === searchType.value)) {
-      searchType.value = options[0]?.type || 'subject'
-    }
-  },
-  {immediate: true}
-)
+function restoreFilters() {
+  const params = props.store.searchParams
+  searchType.value = props.searchOptions.some(option => option.type === params.type) ? params.type : defaultType.value
+  startDate.value = localDate(params.startDate)
+  endDate.value = localDate(params.endDate)
+}
+
+watch(() => [props.store.searchParams, props.searchOptions], () => {
+  searchText.value = props.store.searchParams.text || ''
+  restoreFilters()
+  visible.value = false
+}, { immediate: true })
 
 watch(startDate, value => {
-  if (value && endDate.value && endDate.value < value) {
-    endDate.value = ''
-  }
+  if (value && endDate.value && endDate.value < value) endDate.value = ''
 })
 
-function openSearch() {
-  if (visible.value) {
-    closeSearch()
-    return
-  }
-
-  restoreSavedSearch()
-  visible.value = true
+function toggleFilters() {
+  if (visible.value) closeFilters()
+  else visible.value = true
 }
 
-function focusInput() {
-  inputRef.value?.focus()
-}
-
-function focusInputOnDesktop() {
-  if (!window.matchMedia('(max-width: 1024px)').matches) {
-    focusInput()
-  }
+function closeFilters() {
+  visible.value = false
+  restoreFilters()
 }
 
 function disableEndDate(date) {
-  if (!startDate.value) return false
-
-  const start = new Date(`${startDate.value}T00:00:00`)
-  return date < start
+  return !!startDate.value && date < new Date(startDate.value + 'T00:00:00')
 }
 
-function closeSearch() {
-  visible.value = false
-  restoreSavedSearch()
-}
-
-function restoreSavedSearch() {
-  const params = props.store.searchParams
-  searchText.value = params.text || ''
-  searchType.value = props.searchOptions.some(option => option.type === params.type)
-    ? params.type
-    : props.searchOptions[0]?.type || 'subject'
-  startDate.value = toLocalSearchDate(params.startDate)
-  endDate.value = toLocalSearchDate(params.endDate)
-}
-
-function toLocalSearchDate(dateValue) {
-  if (!dateValue) return ''
-
-  const date = new Date(`${dateValue.replace(' ', 'T')}Z`)
-  const year = date.getFullYear()
+function localDate(value) {
+  if (!value) return ''
+  const date = new Date(value.replace(' ', 'T') + 'Z')
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return [date.getFullYear(), month, day].join('-')
 }
 
-function formatSummaryDate(dateValue) {
-  return toLocalSearchDate(dateValue)
+function searchDate(value, endOfDay = false) {
+  if (!value) return ''
+  const time = endOfDay ? 'T23:59:59' : 'T00:00:00'
+  return new Date(value + time).toISOString().slice(0, 19).replace('T', ' ')
 }
 
-function handleDocumentKeydown(event) {
-  if (event.key === 'Escape' && visible.value) {
-    closeSearch()
-  }
-}
-
-function handleDocumentClick(event) {
-  const target = event.target
-  const isDatePickerPopup = target?.closest?.(
-    '.el-picker__popper, .el-picker-panel'
-  )
-
-  if (
-    !visible.value
-    || searchRef.value?.contains(target)
-    || isDatePickerPopup
-  ) {
-    return
-  }
-
-  event.preventDefault()
-  event.stopPropagation()
-  closeSearch()
-}
-
-function formatSearchDate(dateValue, endOfDay = false) {
-  if (!dateValue) return ''
-
-  const [year, month, day] = dateValue.split('-').map(Number)
-  const localDate = new Date(
-    year,
-    month - 1,
-    day,
-    endOfDay ? 23 : 0,
-    endOfDay ? 59 : 0,
-    endOfDay ? 59 : 0,
-  )
-
-  return localDate.toISOString().slice(0, 19).replace('T', ' ')
-}
-
-function handleSearch() {
+function applySearch() {
   props.store.setSearchParams({
     text: searchText.value.trim(),
     type: searchType.value,
-    startDate: formatSearchDate(startDate.value),
-    endDate: formatSearchDate(endDate.value, true),
+    startDate: searchDate(startDate.value),
+    endDate: searchDate(endDate.value, true),
   })
-  emit('search', searchText.value.trim(), searchType.value)
-  closeSearch()
+  visible.value = false
+  emit('search')
 }
 
-function handleReset() {
-  searchText.value = ''
-  searchType.value = 'subject'
-  startDate.value = ''
-  endDate.value = ''
-  props.store.setSearchParams({
-    text: '',
-    type: 'subject',
-    startDate: '',
-    endDate: '',
-  })
+function resetSearch() {
+  props.store.setSearchParams({ text: '', type: defaultType.value, startDate: '', endDate: '' })
+  visible.value = false
   emit('reset')
-  closeSearch()
+  inputRef.value?.focus()
+}
+
+function onDocumentPointer(event) {
+  if (visible.value && !searchRef.value?.contains(event.target)) closeFilters()
+}
+
+function onDocumentKey(event) {
+  if (event.key === 'Escape' && visible.value && !event.target?.closest?.('.el-picker-panel')) {
+    event.preventDefault()
+    event.stopPropagation()
+    closeFilters()
+    filterButton.value?.focus()
+    return
+  }
+  const shortcut = (event.key === '/' && !event.ctrlKey && !event.metaKey)
+    || (event.key === 'k' && (event.ctrlKey || event.metaKey))
+  if (props.shortcut && shortcut && !event.defaultPrevented
+      && !event.target?.closest?.('input, textarea, select, [contenteditable], .write-box')) {
+    event.preventDefault()
+    inputRef.value?.focus()
+  }
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleDocumentClick, true)
-  document.addEventListener('keydown', handleDocumentKeydown, true)
+  document.addEventListener('pointerdown', onDocumentPointer)
+  document.addEventListener('keydown', onDocumentKey, true)
 })
-
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick, true)
-  document.removeEventListener('keydown', handleDocumentKeydown, true)
+  document.removeEventListener('pointerdown', onDocumentPointer)
+  document.removeEventListener('keydown', onDocumentKey, true)
 })
 </script>
 
-<style lang="scss" scoped>
-.email-search {
-  position: absolute;
-  left: min(195px, 29%);
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: min(430px, calc(100% - min(195px, 29%) - 16px));
-  height: 36px;
-}
-
-@media (min-width: 768px) {
-  .email-search.account-show {
-    left: calc(var(--mailbox-rail-width) + 16px);
-    width: min(430px, calc(100% - var(--mailbox-rail-width) - 32px));
-  }
-}
-
-.search-placeholder {
-  width: 100%;
-  height: 36px;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: 8px;
+<style scoped>
+.email-search { position: relative; z-index: 15; flex: 1 1 650px; min-width: 0; max-width: 790px; }
+.search-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  background: var(--mail-shell-rail);
-  color: var(--mail-shell-muted);
-  text-align: left;
-  white-space: nowrap;
-  cursor: text;
-  position: relative;
-  z-index: 0;
-}
-
-.search-placeholder:hover {
+  gap: 5px;
+  height: 42px;
+  padding: 0 6px;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: var(--mail-radius-control);
   background: var(--mail-shell-hover);
 }
-
-.search-placeholder:focus-visible {
-  outline: 2px solid var(--mail-shell-muted);
-  outline-offset: -2px;
-}
-
-.search-placeholder-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 13px;
-}
-
-.search-placeholder-text.has-search-text {
-  color: var(--el-text-color-primary);
-}
-
-.mobile-search-button {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .email-search {
-    position: static;
-    transform: none;
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    margin-left: auto;
-  }
-
-  .search-placeholder {
-    display: none;
-  }
-
-  .mobile-search-button {
-    display: inline-flex;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    --el-button-bg-color: transparent;
-    --el-button-border-color: transparent;
-    --el-button-hover-bg-color: transparent;
-    --el-button-hover-border-color: transparent;
-    --el-button-active-bg-color: transparent;
-    --el-button-active-border-color: transparent;
-    --el-button-outline-color: transparent;
-  }
-
-  .email-search .search-panel-shell {
-    top: calc(100% + 8px);
-    left: 50%;
-    right: auto;
-    width: min(450px, calc(100vw - 30px));
-    translate: -50% 0;
-  }
-}
-
-.search-panel-shell {
-  position: absolute;
-  top: -4px;
-  left: 0;
-  z-index: 1001;
-  width: 100%;
-  background: var(--el-bg-color-overlay);
-}
-
-.search-panel {
-  width: 100%;
-  height: auto;
-  min-height: 0;
-  box-sizing: border-box;
-  --el-card-bg-color: var(--el-bg-color-overlay);
-  background-color: var(--el-card-bg-color) !important;
-  border-radius: 6px !important;
-  border: 1px solid var(--el-border-color) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16) !important;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.search-panel :deep(.el-card__body) {
-  position: relative;
-  z-index: 1;
-  padding: 3px;
-  background-color: var(--el-card-bg-color) !important;
-}
-
-.search-panel-shell {
-  box-sizing: border-box;
-}
-
-.search-panel-fade-enter-active,
-.search-panel-fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-.search-panel-fade-enter-from,
-.search-panel-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
-.search-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 25px;
-  padding-bottom: 15px;
-  padding-right: 15px;
-}
-
-.search-content {
-  padding: 20px 15px 0;
-}
-
-.search-content-title {
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 20px;
-  color: var(--el-text-color-primary);
-  width: 100%;
-  text-align: left !important;
-}
-
-.custom-style {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: 8px;
-}
-
-.custom-style .el-segmented {
-  --el-border-radius-base: 6px;
-}
-
-.search-date-range {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.search-date-field {
+.search-bar:focus-within { border-color: var(--mail-shell-muted); background: var(--el-bg-color); }
+.search-bar input {
   flex: 1;
   min-width: 0;
-}
-
-.search-date-label {
-  margin-bottom: 4px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 20px;
+  background: transparent;
   color: var(--el-text-color-primary);
-  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
 }
-
-.search-date-field :deep(.el-date-editor) {
-  width: 100%;
+.search-icon {
+  position: relative;
+  display: grid;
+  flex: 0 0 31px;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--mail-shell-muted);
+  cursor: pointer;
 }
-
-.search-input {
-  --el-input-bg-color: var(--el-bg-color-overlay);
-  margin: 4px -3px 0;
-  padding: 0 8px 6px;
-  border-bottom: solid 1px var(--el-border-color);
+.search-icon:hover, .filter-button[aria-expanded='true'] { background: var(--mail-shell-active); color: var(--el-text-color-primary); }
+.search-shortcut {
+  padding: 0 6px;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: 4px;
+  background: var(--el-bg-color);
+  color: var(--mail-shell-muted);
+  font: inherit;
+  font-size: 12px;
 }
-
-.search-input :deep(.el-input__wrapper),
-.search-input :deep(.el-input__wrapper.is-focus) {
-  box-shadow: none !important;
+.filter-dot { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--mail-shell-marker); }
+.search-filters {
+  position: absolute;
+  inset-block-start: calc(100% + 7px);
+  inset-inline-end: 0;
+  width: min(440px, calc(100vw - 24px));
+  padding: 14px;
+  border: 1px solid var(--mail-shell-line);
+  border-radius: var(--mail-radius-card);
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
 }
-
-.search-input :deep(.el-input__inner::placeholder) {
-  font-size: 15px;
+.search-filter-title { margin-bottom: 7px; font-size: 13px; font-weight: 600; }
+.search-filters :deep(.el-segmented) { max-width: 100%; }
+.search-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.search-dates label { display: grid; gap: 4px; min-width: 0; font-size: 12px; }
+.search-dates :deep(.el-date-editor) { width: 100%; }
+.search-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+.search-panel-enter-active, .search-panel-leave-active { transition: opacity 140ms ease, translate 140ms ease; }
+.search-panel-enter-from, .search-panel-leave-to { opacity: 0; translate: 0 -4px; }
+@media (max-width: 767px) {
+  .search-bar { height: 36px; }
+  .search-shortcut { display: none; }
+  .search-filters { width: min(440px, calc(100vw - 20px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .search-panel-enter-active, .search-panel-leave-active { transition: none; }
 }
 </style>

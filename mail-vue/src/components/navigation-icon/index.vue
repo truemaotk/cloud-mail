@@ -11,7 +11,8 @@ import {
   ArrowDownWideNarrow, ArrowUpNarrowWide, Eraser, Trash2, ArrowLeft, Reply, Forward, MailOpen,
   PanelLeft, ChevronRight, MailX, MailCheck, CircleCheck, CircleX, CircleAlert, Clock, Clipboard,
   Ban, Mailbox, Image, GitBranch, Coffee, BookOpen, Eye, Download, LoaderCircle, FileArchive,
-  FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, File, ArrowUpRight
+  FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, File, ArrowUpRight,
+  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus
 } from '@lucide/vue'
 
 defineProps({
@@ -85,5 +86,12 @@ const icons = {
   'file-text': FileText,
   file: File,
   external: ArrowUpRight,
+  archive: Archive,
+  restore: ArchiveRestore,
+  spam: ShieldAlert,
+  filter: SlidersHorizontal,
+  maximize: Maximize2,
+  minimize: Minimize2,
+  minus: Minus,
 }
 </script>

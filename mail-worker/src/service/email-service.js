@@ -26,20 +26,25 @@ import telegramService from './telegram-service';
 import webhookService from './webhook-service';
 import chatBotService from './chat-bot-service';
 import forwardMime from '../utils/forward-mime';
+import { ensureMailboxMessageState, inNormalFolder, mailboxMessageState } from '../entity/mailbox-message-state';
+import verifyUtils from '../utils/verify-utils';
 
 const emailService = {
 
 	async unreadCounts(c, userId) {
+		await ensureMailboxMessageState(c.env.db);
 		return orm(c)
 			.select({ accountId: email.accountId, unread: count() })
 			.from(email)
 			.innerJoin(account, eq(account.accountId, email.accountId))
+			.leftJoin(mailboxMessageState, eq(mailboxMessageState.emailId, email.emailId))
 			.where(and(
 				eq(email.userId, userId),
 				eq(account.userId, userId),
 				eq(email.type, emailConst.type.RECEIVE),
 				eq(email.unread, emailConst.unread.UNREAD),
 				eq(email.isDel, isDel.NORMAL),
+				inNormalFolder(),
 				eq(account.isDel, isDel.NORMAL)
 			))
 			.groupBy(email.accountId)
@@ -220,11 +225,13 @@ const emailService = {
 		searchType,
 		startDate,
 		endDate,
+		deleted = false,
 	}) {
 		const conditions = [
 			eq(email.userId, userId),
-			eq(email.type, type),
-			eq(email.isDel, isDel.NORMAL),
+			eq(account.userId, userId),
+			type === undefined ? undefined : eq(email.type, type),
+			eq(email.isDel, deleted ? isDel.DELETE : isDel.NORMAL),
 			eq(account.isDel, isDel.NORMAL),
 		];
 		if (!allReceive) {
@@ -362,6 +369,25 @@ const emailService = {
 			subject, //邮件标题
 			attachments = [] //附件
 		} = params;
+		const separate = params.manyType === 'divide';
+		const seen = new Set(receiveEmail.map(address => address.toLowerCase()));
+		function normalizeCopies(values = []) {
+			if (!Array.isArray(values) || values.some(address => typeof address !== 'string' || !verifyUtils.isEmail(address))) {
+				throw new BizError(t('workspaceInvalidCopyAddress'), 400);
+			}
+			return values.filter(address => {
+				const key = address.toLowerCase();
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			});
+		}
+		const cc = normalizeCopies(params.cc);
+		const bcc = normalizeCopies(params.bcc);
+		const envelopeRecipients = [...receiveEmail, ...cc, ...bcc];
+		if ((cc.length || bcc.length) && (separate || envelopeRecipients.length > 50)) {
+			throw new BizError(t('workspaceCopyLimit'), 400);
+		}
 
 		const { resendTokens, r2Domain, send, domainList } = await settingService.query(c);
 
@@ -376,7 +402,7 @@ const emailService = {
 		const roleRow = await roleService.selectById(c, userRow.type);
 
 		//判断接收方是不是全部为站内邮箱
-		const allInternal = receiveEmail.every(email => {
+		const allInternal = envelopeRecipients.every(email => {
 			const domain = '@' + emailUtils.getDomain(email);
 			return domainList.includes(domain);
 		});
@@ -403,7 +429,7 @@ const emailService = {
 				if (roleRow.sendType === 'count') throw new BizError(t('totalSendLimit'), 403);
 			}
 
-			if (userRow.sendCount + receiveEmail.length > roleRow.sendCount) {
+			if (userRow.sendCount + envelopeRecipients.length > roleRow.sendCount) {
 				if (roleRow.sendType === 'day') throw new BizError(t('daySendLack'), 403);
 				if (roleRow.sendType === 'count') throw new BizError(t('totalSendLack'), 403);
 			}
@@ -451,7 +477,7 @@ const emailService = {
 
 			emailRow = await this.selectById(c, emailId);
 
-			if (!emailRow) {
+			if (!emailRow || emailRow.userId !== userId) {
 				throw new BizError(t('notExistEmailReply'));
 			}
 
@@ -461,6 +487,7 @@ const emailService = {
 			name,
 			accountEmail: accountRow.email,
 			receiveEmail,
+			cc, bcc,
 			subject,
 			text,
 			html,
@@ -476,12 +503,11 @@ const emailService = {
 			throw new BizError(t('attLimit'));
 		}
 
-		const separate = params.manyType === 'divide';
 		// sendParams 用于渠道请求，saveParams 保留保存记录所需的账号、权限和附件数据。
 		const context = {
 			separate, allInternal, useCloudflareEmail, resendToken, sendParams,
 			saveParams: {
-				accountId, userId, name, subject, text, html,
+				accountId, userId, name, subject, text, html, cc, bcc,
 				sendEmail: accountRow.email,
 				messageId: emailRow.messageId,
 				sendType, useCloudflareEmail, roleRow, r2Domain,
@@ -535,7 +561,8 @@ const emailService = {
 			: [sendParams.receiveEmail];
 		for (const receiveEmail of recipientGroups) {
 			const emailResult = await this.saveSentEmail(c, { ...saveParams, receiveEmail });
-			const emailRowList = await this.HandleOnSiteEmail(c, receiveEmail, emailResult, emailResult.attList);
+			const envelopeRecipients = [...receiveEmail, ...sendParams.cc, ...sendParams.bcc];
+			const emailRowList = await this.HandleOnSiteEmail(c, envelopeRecipients, emailResult, emailResult.attList);
 			await this.forwardOnSiteEmail(c, emailRowList, { sendParams: { ...sendParams, receiveEmail } });
 			yield { emails: [emailResult] };
 		}
@@ -606,7 +633,7 @@ const emailService = {
 		const {
 			accountId, userId, name, subject, text, html, sendEmail, receiveEmail,
 			providerId, messageId, sendType, useCloudflareEmail,
-			roleRow, r2Domain, attachments
+			roleRow, r2Domain, attachments, cc = [], bcc = []
 		} = params;
 		const imageDataList = params.imageDataList.map(item => ({
 			...item, contentId: `<${item.contentId.replace(/^<|>$/g, '')}>`
@@ -617,14 +644,18 @@ const emailService = {
 			status: useCloudflareEmail ? emailConst.status.DELIVERED : emailConst.status.SENT,
 			type: emailConst.type.SEND,
 			resendEmailId: providerId,
-			recipient: JSON.stringify(receiveEmail.map(address => ({ address, name: '' })))
+			recipient: JSON.stringify(receiveEmail.map(address => ({ address, name: '' }))),
+			toEmail: receiveEmail[0] || '',
+			cc: JSON.stringify(cc.map(address => ({ address, name: '' }))),
+			bcc: JSON.stringify(bcc.map(address => ({ address, name: '' })))
 		};
 		if (sendType === 'reply') {
 			emailData.inReplyTo = messageId;
 			emailData.relation = messageId;
 		}
+		const recipientCount = receiveEmail.length + cc.length + bcc.length;
 		if (roleRow.sendCount && roleRow.sendType !== 'internal') {
-			await userService.incrUserSendCount(c, receiveEmail.length, userId);
+			await userService.incrUserSendCount(c, recipientCount, userId);
 		}
 
 		const emailResult = await orm(c).insert(email).values(emailData).returning().get();
@@ -645,9 +676,9 @@ const emailService = {
 
 		//记录每天发件次数统计
 		if (!daySendTotal) {
-			await c.env.kv.put(kvConst.SEND_DAY_COUNT + dateStr, JSON.stringify(receiveEmail.length), { expirationTtl: 60 * 60 * 24 });
+			await c.env.kv.put(kvConst.SEND_DAY_COUNT + dateStr, JSON.stringify(recipientCount), { expirationTtl: 60 * 60 * 24 });
 		} else  {
-			daySendTotal = Number(daySendTotal) + receiveEmail.length
+			daySendTotal = Number(daySendTotal) + recipientCount
 			await c.env.kv.put(kvConst.SEND_DAY_COUNT + dateStr, JSON.stringify(daySendTotal), { expirationTtl: 60 * 60 * 24 });
 		}
 
@@ -678,6 +709,8 @@ const emailService = {
 		const sendForm = {
 			from: { email: params.accountEmail, name: params.name },
 			to: [...params.receiveEmail],
+			...(params.cc?.length ? { cc: params.cc } : {}),
+			...(params.bcc?.length ? { bcc: params.bcc } : {}),
 			subject: params.subject
 		};
 
@@ -716,6 +749,8 @@ const emailService = {
 		const sendForm = {
 			from: `${params.name} <${params.accountEmail}>`,
 			to: [...params.receiveEmail],
+			...(params.cc?.length ? { cc: params.cc } : {}),
+			...(params.bcc?.length ? { bcc: params.bcc } : {}),
 			subject: params.subject,
 			text: params.text,
 			html: params.html,
@@ -879,6 +914,7 @@ const emailService = {
 
 			//把发件人邮件改成收件
 			const emailValues = {...sendEmailData}
+			emailValues.bcc = '[]';
 			emailValues.status = emailConst.status.RECEIVE;
 			emailValues.type = emailConst.type.RECEIVE;
 			emailValues.toEmail = email;
@@ -1156,6 +1192,8 @@ const emailService = {
 	async allList(c, params) {
 
 		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full } = params;
+		const requestedOffset = Number(params.offset);
+		const offset = Number.isSafeInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0;
 
 		size = Number(size);
 		emailId = Number(emailId) || 0;
@@ -1205,7 +1243,7 @@ const emailService = {
 			query.orderBy(desc(email.emailId));
 		}
 
-		const listQuery = query.limit(size).all();
+		const listQuery = query.limit(size).offset(offset).all();
 		const totalQuery = queryCount.get();
 		const latestEmailQuery = orm(c).select({
 			emailId: email.emailId,
@@ -1232,6 +1270,19 @@ const emailService = {
 		}
 
 		return { list: list, total: totalRow.total, latestEmail };
+	},
+
+	async allEmailDetail(c, params) {
+		const emailId = Number(params.emailId);
+		if (!Number.isSafeInteger(emailId) || emailId < 1) return null;
+		const item = await orm(c).select({ ...emailListColumns, userEmail: user.email })
+			.from(email)
+			.leftJoin(user, eq(email.userId, user.userId))
+			.where(eq(email.emailId, emailId))
+			.get();
+		if (!item) return null;
+		await this.emailAddAtt(c, [item]);
+		return item;
 	},
 
 	async allEmailLatest(c, params) {
@@ -1400,8 +1451,9 @@ const emailService = {
 	},
 
 	async read(c, params, userId) {
-		const { emailIds } = params;
-		await orm(c).update(email).set({ unread: emailConst.unread.READ }).where(and(eq(email.userId, userId), inArray(email.emailId, emailIds)));
+		const { emailIds, unread } = params;
+		await orm(c).update(email).set({ unread: unread === true ? emailConst.unread.UNREAD : emailConst.unread.READ })
+			.where(and(eq(email.userId, userId), inArray(email.emailId, emailIds)));
 	}
 };
 

@@ -1,46 +1,56 @@
 <template>
-  <div class="account-box">
+  <div class="account-box" :class="{ 'account-compact': compact }">
     <div class="head-opt">
       <h2>{{ $t('account') }}</h2>
-      <ToolbarButton v-perm="'account:add'" icon="add" :label="$t('addAccount')" @click="add" />
-      <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
+      <ToolbarButton v-if="!compact" v-perm="'account:add'" icon="add" :label="$t('addAccount')" @click="add" />
+      <ToolbarButton icon="refresh" :label="$t('refreshMailboxes')" :busy="refreshing" @click="refresh" />
     </div>
     <el-scrollbar class="scrollbar" ref="scrollbarRef">
       <div v-infinite-scroll="getAccountList" :infinite-scroll-distance="600" :infinite-scroll-immediate="false">
         <el-card shadow="never" class="item" :class="itemBg(item.accountId)" v-for="(item, index) in accounts" :key="item.accountId"
-                 @click="changeAccount(item)">
+                 @click="selectAccount(item)">
           <button class="account" type="button"
                   :aria-pressed="accountStore.currentAccountId === item.accountId"
-                  @click.stop="changeAccount(item)">
+                  @click.stop="selectAccount(item)">
+            <NavigationIcon v-if="compact" :name="accountStore.currentAccountId === item.accountId ? 'mail-delivered' : 'mail'" :size="15" />
             <span class="account-address" :title="item.email">{{ item.email }}</span>
             <UnreadBadge :count="emailStore.unreadByAccount[item.accountId]" />
           </button>
           <div class="account-actions">
             <button
+              v-if="!compact"
               type="button"
               class="account-action account-receive"
               :aria-pressed="!!item.allReceive"
               :title="$t('receiveAllMail')"
               :aria-label="$t('receiveAllMail')"
+              :disabled="changingReceive"
               @click.stop="setAllReceive(item)"
             >
-              <NavigationIcon :name="item.allReceive ? 'folder' : 'mail'" />
+              <NavigationIcon name="list" />
             </button>
-            <button type="button" class="account-action" :title="$t('copy')" :aria-label="$t('copy')" @click.stop="copyAccount(item.email)">
+            <button v-if="!compact" type="button" class="account-action" :title="$t('copy')" :aria-label="$t('copy')" @click.stop="copyAccount(item.email)">
               <NavigationIcon name="copy" />
             </button>
             <el-dropdown
-              v-if="!showNullSetting(item)"
+              v-if="compact ? pickerOpen : !showNullSetting(item)"
               trigger="click"
               placement="bottom-end"
+              :append-to="compact ? '#sidebar-mailbox-picker' : undefined"
               :show-arrow="false"
               :offset="7"
             >
               <button type="button" class="account-action" :title="$t('mailboxSettings')" :aria-label="$t('mailboxSettings')" @click.stop>
-                <NavigationIcon name="settings" />
+                <NavigationIcon :name="compact ? 'more' : 'settings'" />
               </button>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <el-dropdown-item v-if="compact" :disabled="changingReceive" @click="setAllReceive(item)">
+                    <NavigationIcon :name="item.allReceive ? 'mail-delivered' : 'list'" />{{ $t('receiveAllMail') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="compact" @click="copyAccount(item.email)">
+                    <NavigationIcon name="copy" />{{ $t('copy') }}
+                  </el-dropdown-item>
                   <el-dropdown-item v-if="hasPerm('email:send')" @click="openSetName(item)">
                     <NavigationIcon name="compose" />{{ $t('rename') }}
                   </el-dropdown-item>
@@ -95,7 +105,14 @@
       </div>
 
     </el-scrollbar>
-    <el-dialog close-icon="MailCloseIcon" v-model="showAdd" :title="$t('addAccount')">
+    <div v-if="compact && hasPerm('account:add')" class="mailbox-picker-footer">
+      <button type="button" @click="add">
+        <NavigationIcon name="add" :size="16" />
+        {{ $t('addAccount') }}
+      </button>
+    </div>
+    <el-dialog close-icon="MailCloseIcon" v-model="showAdd" class="mailbox-form-dialog" :title="$t('addAccount')"
+               width="min(400px, calc(100vw - 32px))" align-center append-to-body @opened="addRef?.focus()">
       <div class="container">
         <el-input
           ref="addRef"
@@ -120,9 +137,6 @@
             <span v-else class="mail-address-domain" :title="addForm.suffix">{{ addForm.suffix }}</span>
           </template>
         </el-input>
-        <el-button class="btn" type="primary" @click="submit" :loading="addLoading"
-        >{{ $t('add') }}
-        </el-button>
       </div>
       <div
           ref="turnstileContainer"
@@ -135,15 +149,21 @@
       >
         <span style="font-size: 12px;color: #F56C6C" v-if="botJsError">{{ $t('verifyModuleFailed', {action: $t('add')}) }}</span>
       </div>
+      <template #footer>
+        <el-button @click="showAdd = false">{{ $t('cancel') }}</el-button>
+        <el-button type="primary" :loading="addLoading" @click="submit">{{ $t('add') }}</el-button>
+      </template>
     </el-dialog>
-    <el-dialog close-icon="MailCloseIcon" v-model="setNameShow" :title="$t('changeUserName')">
+    <el-dialog close-icon="MailCloseIcon" v-model="setNameShow" class="mailbox-form-dialog" :title="$t('changeUserName')"
+               width="min(400px, calc(100vw - 32px))" align-center append-to-body>
       <div class="container">
         <el-input v-model="accountName" type="text" :placeholder="$t('username')" autocomplete="off" @keyup.enter="setName">
         </el-input>
-        <el-button class="btn" type="primary" @click="setName" :loading="setNameLoading"
-        >{{ $t('save') }}
-        </el-button>
       </div>
+      <template #footer>
+        <el-button @click="setNameShow = false">{{ $t('cancel') }}</el-button>
+        <el-button type="primary" :loading="setNameLoading" @click="setName">{{ $t('save') }}</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -172,6 +192,8 @@ import {AccountAllReceiveEnum} from "@/enums/account-enum.js";
 import {reloadTurnstileScript} from "@/utils/turnstile-script.js";
 
 const {t} = useI18n();
+defineProps({ compact: Boolean, pickerOpen: Boolean })
+const emit = defineEmits(['select', 'dialog-open'])
 const userStore = useUserStore();
 const accountStore = useAccountStore();
 const settingStore = useSettingStore();
@@ -180,8 +202,11 @@ const showAdd = ref(false)
 const addLoading = ref(false);
 const domainList = computed(() => settingStore.domainList)
 const accounts = reactive([])
+accountStore.mailboxes = accounts
 const noLoading = ref(false)
 const loading = ref(false)
+const refreshing = ref(false)
+const changingReceive = ref(false)
 const followLoading = ref(false);
 const verifyShow = ref(false)
 const setNameShow = ref(false)
@@ -212,7 +237,8 @@ if (hasPerm('account:query')) {
 }
 
 watch(() => accountStore.changeUserAccountName, () => {
-  accounts[0].name = accountStore.changeUserAccountName
+  const primary = accounts.find(item => item.accountId === userStore.user.account.accountId)
+  if (primary) primary.name = accountStore.changeUserAccountName
 })
 
 watch(domainList, (list) => {
@@ -308,12 +334,15 @@ function setName() {
 }
 
 function openSetName(accountItem) {
+  emit('dialog-open')
   accountName.value = accountItem.name
   account = accountItem
   setNameShow.value = true
 }
 
 function setAllReceive(account) {
+  if (changingReceive.value) return
+  changingReceive.value = true
   let allReceiveAccount = accounts.find(account => account.allReceive === AccountAllReceiveEnum.ENABLED);
   if (allReceiveAccount && allReceiveAccount.accountId !== account.accountId) allReceiveAccount.allReceive = AccountAllReceiveEnum.DISABLED;
   account.allReceive = account.allReceive === AccountAllReceiveEnum.DISABLED ? AccountAllReceiveEnum.ENABLED : AccountAllReceiveEnum.DISABLED;
@@ -329,9 +358,8 @@ function setAllReceive(account) {
         plain: true,
       })
     }
-    emailStore.emailScroll?.refreshList();
-    emailStore.sendScroll?.refreshList();
-  })
+    emailStore.workspaceRevision++
+  }).finally(() => { changingReceive.value = false })
 }
 
 
@@ -355,6 +383,7 @@ function remove(account) {
       emailStore.refreshUnreadCounts()
       const index = accounts.findIndex(item => item.accountId === account.accountId);
       accounts.splice(index, 1);
+      if (account.accountId === accountStore.currentAccountId) changeAccount(userStore.user.account)
       if (accounts.length < queryParams.size) {
         getAccountList()
       }
@@ -367,20 +396,24 @@ function remove(account) {
   });
 }
 
-function refresh() {
-  if (loading.value) {
-    return
+async function refresh() {
+  if (refreshing.value || loading.value || followLoading.value) return
+  refreshing.value = true
+  try {
+    const [list] = await Promise.all([
+      accountList(0, queryParams.size, null),
+      emailStore.refreshUnreadCounts(),
+      sleep(300),
+    ])
+    accounts.splice(0, accounts.length, ...list)
+    noLoading.value = list.length < queryParams.size
+    const selected = list.find(item => item.accountId === accountStore.currentAccountId)
+    if (selected) changeAccount(selected)
+  } catch {
+    // Keep the previous mailbox list when the request fails.
+  } finally {
+    refreshing.value = false
   }
-  emailStore.refreshUnreadCounts()
-  loading.value = false
-  followLoading.value = false
-  noLoading.value = false
-  queryParams.accountId = 0
-  queryParams.lastSort = null
-  getSkeletonRows();
-  scrollbarRef.value.setScrollTop(0)
-  accounts.splice(0, accounts.length)
-  getAccountList()
 }
 
 function changeAccount(account) {
@@ -388,11 +421,14 @@ function changeAccount(account) {
   accountStore.currentAccount = account
 }
 
+function selectAccount(account) {
+  changeAccount(account)
+  emit('select')
+}
+
 function add() {
+  emit('dialog-open')
   showAdd.value = true
-  setTimeout(() => {
-    addRef.value.focus()
-  }, 100)
 }
 
 function setAsTop(account, index) {
@@ -429,7 +465,7 @@ async function copyAccount(account) {
 
 function getAccountList() {
 
-  if (loading.value || followLoading.value || noLoading.value) return;
+  if (loading.value || refreshing.value || followLoading.value || noLoading.value) return;
 
   if (accounts.length === 0) {
     loading.value = true
@@ -453,9 +489,8 @@ function getAccountList() {
     if (list.length < queryParams.size) {
       noLoading.value = true
     }
-    if (accounts.length === 0) {
-      accountStore.currentAccount = list[0]
-    }
+    const selected = list.find(item => item.accountId === accountStore.currentAccountId)
+    if (selected) changeAccount(selected)
 
     accounts.push(...list)
 
@@ -635,11 +670,6 @@ path[fill="#ffdda1"] {
 
   }
 
-  .btn {
-    width: 100%;
-    margin-top: 15px;
-  }
-
   .item {
     position: relative;
     background-color: var(--el-bg-color);
@@ -720,6 +750,7 @@ path[fill="#ffdda1"] {
 
   .item-choose {
     background: var(--mail-shell-active);
+    &:hover { background: var(--mail-shell-active); }
 
     &::before {
       position: absolute;
@@ -732,13 +763,82 @@ path[fill="#ffdda1"] {
   }
 }
 
-:deep(.el-dialog) {
-  width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
+.account-box.account-compact {
+  height: auto;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+
+  .head-opt {
+    height: 34px;
+    padding-inline: 8px 2px;
+    border: 0;
+    color: var(--mail-shell-muted);
   }
+
+  .scrollbar {
+    max-height: min(235px, 42dvh);
+    height: auto;
+  }
+
+  .item {
+    margin: 0 0 2px;
+    padding: 2px 4px 2px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    &:hover { background: var(--mail-shell-hover); }
+  }
+
+  .item-choose {
+    background: var(--mail-shell-active);
+    &::before { display: none; }
+  }
+
+  .item :deep(.el-card__body) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .item .account {
+    grid-template-columns: 15px minmax(0, 1fr) auto;
+    min-height: 32px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: start;
+  }
+
+  .account-actions, .account-skeleton-actions {
+    gap: 0;
+    margin: 0;
+  }
+
+  .account-action {
+    width: 27px;
+    height: 26px;
+    svg { width: 16px; height: 16px; }
+  }
+}
+
+.mailbox-picker-footer {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--mail-shell-line);
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 34px;
+    padding-inline: 8px;
+    border-radius: var(--mail-radius-control);
+    color: var(--el-text-color-primary);
+    cursor: pointer;
+  }
+
+  button:hover { background: var(--mail-shell-active); }
 }
 
 :deep(.el-pagination .el-select) {

@@ -1,4 +1,10 @@
 const zh = {
+	workspaceInvalidAction: '邮件操作无效。',
+	workspaceInvalidTime: '请选择未来的提醒时间。',
+	workspaceInvalidCopyAddress: '抄送或密送地址格式不正确。',
+	workspaceCopyLimit: '抄送和密送仅支持一起发送，收件地址总数最多 50 个。',
+	workspaceMissingMailbox: '找不到这个邮箱。',
+	workspaceMissingMessage: '这封邮件已不在当前目录。',
 	chatBotInvalid: '请填写对应平台的机器人 Webhook 地址，并检查配置。',
 	chatBotTestMessage: 'mail · 新邮件通知测试\n机器人已收到测试消息。',
 	chatBotTestFailed: '机器人未接受测试消息（{{code}}），请检查地址和机器人安全设置。',

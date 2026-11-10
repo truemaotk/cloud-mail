@@ -3,9 +3,9 @@
     <el-aside
         id="mail-sidebar"
         class="aside"
-        :inert="!uiStore.asideShow"
+        :inert="isMobile && !uiStore.asideShow"
         :class="uiStore.asideShow ? 'aside-show' : 'el-aside-hide'">
-      <Aside />
+      <Aside :compact="!isMobile && !uiStore.asideShow" />
     </el-aside>
     <div
         :class="(uiStore.asideShow && isMobile)? 'overlay-show':'overlay-hide'"
@@ -19,8 +19,8 @@
         <Main />
       </el-main>
     </el-container>
+    <writer ref="writerRef" />
   </el-container>
-  <writer ref="writerRef" />
 </template>
 
 <script setup>
@@ -32,10 +32,13 @@ import {useUiStore} from "@/store/ui.js";
 import { useEmailStore } from '@/store/email.js'
 import { useSettingStore } from '@/store/setting.js'
 import writer from '@/layout/write/index.vue'
+import { userDraftStore } from '@/store/draft.js'
+import db from '@/db/db.js'
 
 const uiStore = useUiStore();
 const emailStore = useEmailStore()
 const settingStore = useSettingStore()
+const drafts = userDraftStore()
 const writerRef = ref({})
 const isMobile = ref(window.innerWidth < 1025)
 let unreadTimer
@@ -45,6 +48,16 @@ function refreshUnreadCounts() {
 }
 
 watch(() => emailStore.deleteIds, refreshUnreadCounts)
+watch(() => [db.value, drafts.refreshList], async ([database], _, onCleanup) => {
+  let active = true
+  onCleanup(() => { active = false })
+  try {
+    const count = await database.draft.count()
+    if (active) drafts.count = count
+  } catch {
+    if (active) drafts.count = 0
+  }
+}, { immediate: true })
 const handleResize = () => {
   const nextIsMobile = window.innerWidth < 1025
   if (isMobile.value !== nextIsMobile) {
@@ -96,7 +109,7 @@ onBeforeUnmount(() => {
 }
 
 .el-aside {
-  width: auto;
+  width: min(var(--mail-sidebar-width), calc(100vw - 24px));
   border-inline-end: 1px solid var(--mail-shell-line);
   transition: transform 180ms ease;
 }
@@ -106,19 +119,19 @@ onBeforeUnmount(() => {
     position: relative;
     flex: none;
     width: var(--mail-sidebar-width);
-    overflow: hidden;
+    overflow: visible;
     transform: none;
     transition: width 190ms cubic-bezier(.2, .7, .3, 1);
   }
 
   .el-aside-hide {
-    width: 0;
-    border-inline-end: 0;
+    width: var(--mail-sidebar-compact-width);
   }
 }
 
 .layout {
-  --mail-sidebar-width: 228px;
+  --mail-sidebar-width: 244px;
+  --mail-sidebar-compact-width: 64px;
   --mail-shell-sidebar: #f5f5f5;
   --mail-shell-rail: #fafafa;
   --mail-shell-line: #e6e6e6;
@@ -131,10 +144,11 @@ onBeforeUnmount(() => {
   --mail-shell-action: var(--el-color-primary);
   --mail-shell-action-hover: #414141;
   --mail-shell-action-text: var(--mail-primary-text);
-  --mail-shell-header: 60px;
+  --mail-shell-header: 64px;
   --mail-shell-toolbar: 44px;
   --mail-shell-gutter: 16px;
   --mail-shell-control: 32px;
+  --workspace-toolbar: 56px;
   --mailbox-rail-width: 244px;
   height: 100%;
   position: fixed;
@@ -177,7 +191,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 767px) {
   .layout {
-    --mail-shell-header: 52px;
+    --mail-shell-header: 54px;
     --mail-shell-gutter: 10px;
   }
 }

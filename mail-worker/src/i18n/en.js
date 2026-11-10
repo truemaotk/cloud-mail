@@ -1,4 +1,10 @@
 const en = {
+	workspaceInvalidAction: 'Invalid mail action.',
+	workspaceInvalidTime: 'Choose a time in the future.',
+	workspaceInvalidCopyAddress: 'Enter valid Cc and Bcc addresses.',
+	workspaceCopyLimit: 'Use a single send with Cc and Bcc. A message supports up to 50 recipients.',
+	workspaceMissingMailbox: 'This mailbox could not be found.',
+	workspaceMissingMessage: 'This message is no longer in this folder.',
 	chatBotInvalid: 'Enter a valid webhook URL for this chat bot and check the settings.',
 	chatBotTestMessage: 'mail · New email notification test',
 	chatBotTestFailed: 'The bot rejected the test ({{code}}). Check its URL and security settings.',

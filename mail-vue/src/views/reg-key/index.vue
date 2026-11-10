@@ -1,7 +1,10 @@
 <template>
   <div class="reg-key">
     <div class="mail-toolbar">
-      <ToolbarButton icon="add" :label="$t('addRegKey')" @click="openAdd" />
+      <el-button type="primary" @click="openAdd">
+        <template #icon><NavigationIcon name="add" :size="16" /></template>
+        {{ $t('addRegKey') }}
+      </el-button>
       <div class="toolbar-group">
         <el-input
             v-model="params.code"
@@ -23,9 +26,10 @@
 
     <el-scrollbar class="scrollbar">
       <div  class="loading" :class="regKeyLoading ? 'loading-show' : 'loading-hide'" :style="regKeyFirst ? 'background: transparent' : ''">
-        <loading/>
+        <el-skeleton v-if="regKeyFirst" class="page-skeleton" :rows="6" animated />
+        <loading v-else />
       </div>
-      <div class="code-box">
+      <div v-if="regKeyData.length" class="code-box">
         <div class="code-item" v-for="item in regKeyData" :key="item.regKeyId">
           <div class="code-info">
             <div class="info-left">
@@ -66,10 +70,13 @@
           </div>
         </div>
       </div>
-      <div class="empty" v-if="regKeyData.length === 0">
-        <el-empty v-if="!regKeyFirst" :image-size="52" :description="$t('noCodeFound')">
+      <div v-else-if="!regKeyLoading && !regKeyFirst" class="empty">
+        <el-empty :image-size="52">
           <template #image>
             <span class="mail-empty-icon"><NavigationIcon name="key" :size="25" /></span>
+          </template>
+          <template #description>
+            <p class="empty-title">{{ $t('noCodeFound') }}</p>
           </template>
         </el-empty>
       </div>
@@ -419,7 +426,7 @@ function openAdd() {
 .scrollbar {
   min-height: 0;
   position: relative;
-  background: var(--settings-page-background);
+  background: var(--el-bg-color);
 
   .code-box {
     padding: 15px 15px 25px 15px;
@@ -429,7 +436,7 @@ function openAdd() {
 
     .code-item {
       background: var(--el-bg-color);
-      border-radius: 8px;
+      border-radius: var(--mail-radius-card);
       border: 1px solid var(--el-border-color);
       transition: all 200ms;
       padding: 15px;
@@ -450,7 +457,7 @@ function openAdd() {
               align-items: center;
               gap: 7px;
               padding: 4px 7px;
-              border-radius: 5px;
+              border-radius: var(--mail-radius-control);
               background: var(--mail-shell-rail);
               color: var(--el-text-color-primary);
               font: 600 14px monospace;
@@ -487,7 +494,13 @@ function openAdd() {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  min-height: min(340px, 55dvh);
+}
+
+.empty-title {
+  color: var(--el-text-color-secondary);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 :deep(.history-list.el-dialog) {

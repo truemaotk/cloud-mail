@@ -1,16 +1,18 @@
 <template>
-  <div class="account-menu">
+  <div class="account-menu" :class="{ 'is-compact': compact }">
     <el-tooltip
       v-model:visible="open"
       trigger="click"
       role="dialog"
       :aria-label="$t('profileMenu')"
-      :placement="isNarrow ? 'top-start' : 'right-end'"
-      :offset="0"
+      :placement="compact ? 'right-end' : 'top-start'"
+      :fallback-placements="[]"
+      :offset="compact ? 10 : -1"
       :show-arrow="false"
+      :teleported="false"
       :persistent="false"
       popper-class="mail-profile-popper"
-      :popper-style="isNarrow && triggerWidth ? { width: triggerWidth + 'px' } : undefined"
+      :popper-style="compact ? { width: '216px' } : triggerWidth ? { width: triggerWidth + 'px' } : undefined"
       effect="light"
       @show="focusPanelFromKeyboard"
     >
@@ -19,6 +21,7 @@
         type="button"
         class="profile-trigger"
         :aria-label="$t('profileMenu')"
+        :data-rail-label="compact ? $t('profileMenu') : undefined"
         :aria-expanded="open"
         :aria-controls="open ? 'sidebar-profile' : undefined"
         aria-haspopup="dialog"
@@ -61,18 +64,19 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useElementSize, useMediaQuery } from '@vueuse/core'
+import { useElementSize } from '@vueuse/core'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import router from '@/router'
 import { logout } from '@/request/login.js'
 import { useUiStore } from '@/store/ui.js'
 import { useUserStore } from '@/store/user.js'
 
+defineProps({ compact: Boolean })
+
 const { t } = useI18n()
 const uiStore = useUiStore()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
-const isNarrow = useMediaQuery('(max-width: 560px)')
 const trigger = ref(null)
 const { width: triggerWidth } = useElementSize(trigger, undefined, { box: 'border-box' })
 const copyButton = ref(null)
@@ -80,8 +84,8 @@ const open = ref(false)
 const logoutLoading = ref(false)
 let keyboardOpening = false
 
-watch(() => uiStore.asideShow, (shown) => {
-  if (!shown) open.value = false
+watch(() => uiStore.asideShow, () => {
+  open.value = false
 })
 
 function closeFromKeyboard(event) {
@@ -122,18 +126,40 @@ function clickLogout() {
 
 <style scoped>
 .account-menu {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
   margin: 8px 12px 12px;
 }
 
+.account-menu :deep(.mail-profile-popper) {
+  max-width: calc(100vw - 24px);
+  padding: 0;
+  border-color: var(--mail-shell-line);
+  border-radius: var(--mail-radius-card) var(--mail-radius-card) 0 0;
+  background: var(--mail-shell-sidebar);
+  box-shadow: 0 -5px 15px rgb(0 0 0 / 8%);
+}
+
+.account-menu.is-compact { margin-inline: 8px; }
+.is-compact :deep(.mail-profile-popper) { border-radius: var(--mail-radius-card); }
+.is-compact .profile-trigger {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 5px 0;
+}
+.is-compact :is(.profile-identity, .profile-chevron) { display: none; }
+
 .profile-trigger {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) var(--rail-trailing-width);
   align-items: center;
   gap: 8px;
   width: 100%;
   min-height: 50px;
   padding: 7px 8px;
+  padding-inline-end: calc(var(--rail-trailing-inset) - 1px);
+  border: 1px solid transparent;
   border-radius: var(--mail-radius-card);
   background: var(--mail-shell-hover);
   color: var(--el-text-color-primary);
@@ -148,8 +174,12 @@ function clickLogout() {
 }
 
 .profile-trigger[aria-expanded='true'] {
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
+  border-color: var(--mail-shell-line);
+  background: var(--mail-shell-hover);
+}
+
+.account-menu:not(.is-compact) .profile-trigger[aria-expanded='true'] {
+  border-radius: 0 0 var(--mail-radius-card) var(--mail-radius-card);
 }
 
 .profile-avatar {
@@ -188,17 +218,12 @@ function clickLogout() {
 }
 
 .profile-chevron {
+  justify-self: center;
   transition: transform 150ms ease;
 }
 
-@media (max-width: 560px) {
-  .profile-trigger[aria-expanded='true'] {
-    border-radius: 0 0 var(--mail-radius-card) var(--mail-radius-card);
-  }
-
-  .profile-trigger[aria-expanded='true'] .profile-chevron {
-    transform: rotate(-90deg);
-  }
+.profile-trigger[aria-expanded='true'] .profile-chevron {
+  transform: rotate(-90deg);
 }
 
 .profile-panel {
@@ -238,7 +263,7 @@ function clickLogout() {
 }
 
 .profile-action:hover:not(:disabled) {
-  background: var(--el-fill-color);
+  background: var(--mail-shell-active);
 }
 
 .profile-action:disabled {

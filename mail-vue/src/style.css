@@ -118,9 +118,11 @@ button, input, select, textarea {
 
 html:root {
     --mail-radius-control: 8px;
-    --mail-radius-card: 11px;
-    --mail-radius-menu: 12px;
-    --mail-radius-dialog: 14px;
+    --mail-radius-close: 6px;
+    --mail-radius-card: 12px;
+    --mail-radius-menu: 14px;
+    --mail-radius-dialog: 16px;
+    --mail-radius-surface: 18px;
     --el-border-radius-base: var(--mail-radius-control);
     --mail-primary-text: #fff;
     --mail-primary-tint: #fff;
@@ -238,6 +240,87 @@ html:root.dark {
     border-radius: var(--mail-radius-dialog);
 }
 
+.el-dialog.mailbox-form-dialog {
+    aspect-ratio: 1.618;
+    display: flex;
+    flex-direction: column;
+}
+
+.mailbox-form-dialog .el-dialog__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+:is(.mail-window-close, .el-dialog__headerbtn, .el-drawer__close-btn, .el-message-box__headerbtn,
+    .el-image-viewer__close, .tox .tox-dialog__header .tox-button--icon) {
+    display: grid;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    min-width: 0;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: var(--mail-radius-close);
+    background: transparent;
+    color: var(--mail-close-color, var(--el-text-color-secondary));
+    cursor: pointer;
+}
+
+:is(.el-dialog .el-dialog__headerbtn, .el-message-box .el-message-box__headerbtn) {
+    top: 10px;
+    right: 10px;
+}
+
+:is(.mail-window-close, .el-dialog__headerbtn, .el-drawer__close-btn, .el-message-box__headerbtn,
+    .el-image-viewer__close, .tox .tox-dialog__header .tox-button--icon)::before {
+    width: 16px;
+    height: 16px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='m18 6-12 12M6 6l12 12'/%3E%3C/svg%3E") center / contain no-repeat;
+    pointer-events: none;
+    content: '';
+}
+
+:is(.mail-window-close, .el-dialog__headerbtn, .el-drawer__close-btn, .el-message-box__headerbtn,
+    .el-image-viewer__close, .tox .tox-dialog__header .tox-button--icon) > :is(.el-icon, .tox-icon, svg) {
+    display: none;
+}
+
+:is(.mail-window-close, .el-dialog__headerbtn, .el-drawer__close-btn, .el-message-box__headerbtn,
+    .el-image-viewer__close, .tox .tox-dialog__header .tox-button--icon):is(:hover, :focus-visible) {
+    background: var(--mail-shell-hover, var(--el-fill-color));
+    color: var(--mail-close-hover-color, var(--el-text-color-primary));
+}
+
+:is(.mail-window-close, .el-dialog__headerbtn, .el-drawer__close-btn, .el-message-box__headerbtn,
+    .el-image-viewer__close, .tox .tox-dialog__header .tox-button--icon):focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+
+.el-image-viewer__close {
+    --mail-close-color: #fff;
+    --mail-close-hover-color: #fff;
+    --mail-shell-hover: rgb(255 255 255 / 15%);
+}
+
+@keyframes mail-content-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.page-skeleton {
+    align-self: flex-start;
+    padding: var(--mail-shell-gutter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .el-skeleton.is-animated .el-skeleton__item { animation: none; }
+}
+
 .mail-empty-icon {
     display: inline-grid;
     width: 52px;
@@ -252,10 +335,11 @@ html:root.dark {
 .el-empty__image .mail-empty-icon svg {
     width: 25px;
     height: 25px;
+    color: inherit;
     fill: none;
 }
 
-.el-popper:is(.el-dropdown__popper, .el-select__popper, .el-picker__popper, .mail-profile-popper, .mail-envelope-popover) {
+.el-popper:is(.el-dropdown__popper, .el-select__popper, .el-picker__popper, .mail-envelope-popover) {
     border-radius: var(--mail-radius-menu);
     --el-dropdown-menuItem-hover-fill: var(--el-fill-color);
     --el-dropdown-menuItem-hover-color: var(--el-text-color-primary);
@@ -264,24 +348,6 @@ html:root.dark {
 .el-popper.mail-envelope-popover {
     width: min(360px, calc(100vw - 32px));
     padding: 12px 14px;
-}
-
-.el-popper.mail-profile-popper {
-    width: 216px;
-    max-width: calc(100vw - 24px);
-    padding: 0;
-    border-color: var(--el-border-color-light);
-    background: var(--el-bg-color-overlay);
-    box-shadow: 0 6px 20px rgb(0 0 0 / 10%);
-}
-
-.mail-profile-popper[data-popper-placement='right-end'] {
-    border-end-start-radius: 0;
-}
-
-.mail-profile-popper[data-popper-placement^='top'] {
-    border-end-start-radius: 0;
-    border-end-end-radius: 0;
 }
 
 .el-dropdown__popper .el-dropdown-menu,
