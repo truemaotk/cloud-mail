@@ -6,6 +6,7 @@
 		"dev": "wrangler dev --config wrangler-dev.toml",
 		"test": "vitest run",
 		"deploy:test": "wrangler deploy --config wrangler-test.toml",
+		"deploy:production": "node scripts/prepare-production-config.mjs && wrangler deploy --config .wrangler/production/wrangler.json",
 		"deploy": "wrangler deploy",
 		"start": "wrangler dev"
 	},

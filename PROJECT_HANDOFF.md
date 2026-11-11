@@ -126,12 +126,12 @@ pnpm --dir mail-worker test          # 本地 vitest，当前 11 项全部通过
 > 生产配置修改、资源迁移、正式部署都要先得到项目负责人明确同意。不要动现有生产资源和 secret。
 
 1. **核对现有资源。** Cloudflare 控制台 → Workers & Pages → 目标 Worker → Settings：确认 Worker 名、自定义域名、绑定的 D1/KV/R2、Email Routing、现有仓库与生产分支。**先备份生产 D1。** 仓库里的 `mail-worker/wrangler.toml` 只是通用模板，`db`、`kv` 等没有生产值，直接部署会构建成功但运行时报错。
-2. **准备生产配置。** 复制为 `mail-worker/wrangler.production.toml`：`name` 与生产 Worker 完全一致；填现有 `db`（D1）、`kv`，按现状保留 `r2`、`ai`、`forward`、`email` 绑定和自定义域名；保留 `main = "src/index.js"`、`assets` 目录 `./dist`、SPA 回退、`run_worker_first = true`、原有定时任务和每分钟机器人重试 `* * * * *`；`domain` 为域名数组，`admin` 为管理员邮箱；保留 `keep_vars = true`。`jwt_secret` 用 Worker 运行时 Secret，**保留原值**，否则现有登录会话全部失效。真实密钥、`.dev.vars`、本地数据库、`dist` 都不进 GitHub。
-3. **配置 Workers Builds。** Root directory：`mail-worker`。Build variables：`NODE_VERSION=24.18.0`、`PNPM_VERSION=11.25.0`。Build command：
+2. **准备生产构建变量。** 在 `cloud-mail` 的 Settings → Builds → Build variables and secrets 里设置 `D1_DATABASE_ID`、`KV_NAMESPACE_ID` 和 `R2_BUCKET_NAME`，分别填现有 `cloud-mail-d1`、`cloud-mail-kv` 和 `cloud-mail-r2` 的 ID 或桶名。生产脚本将配置生成到 Git 忽略的 `.wrangler/production/wrangler.json`。R2 的运行时绑定名是 `r2`，控制台里原先的 `R2_BUCKET_NAME` 是旧绑定名。Workers AI 使用 `ai`，Workers.dev 和版本预览保持启用。自定义域名和 Email Routing 在控制台管理。`domain`、`admin` 和原有 `jwt_secret` 继续使用 Worker 的运行时配置。`keep_vars = true` 会保留控制台的环境变量。
+3. **配置 Workers Builds。** Root directory 填 `mail-worker`。Build variables 加上 `NODE_VERSION=24.18.0` 和 `PNPM_VERSION=11.25.0`。Build command 填以下命令。
    ```sh
    pnpm install --frozen-lockfile && pnpm --dir ../mail-vue install --frozen-lockfile && pnpm --dir ../mail-vue run build
    ```
-   Deploy command：`pnpm exec wrangler deploy --config wrangler.production.toml`（并删除生产配置里重复的 `[build]` 段）。监听范围保持全仓库，或至少包含 `mail-vue/**` 和 `mail-worker/**`。仓库自带的 `.github/workflows/deploy-cloudflare.yml` 是另一条发布路径，用 Git 集成时不要让两者同时部署同一个 Worker。
+   Deploy command 填 `pnpm run deploy:production`。监听范围保持全仓库，或至少包含 `mail-vue/**` 和 `mail-worker/**`。这条命令仅用于 `cloud-mail` 的生产构建，预览分支使用原有的隔离配置。更新 Workbox 依赖后，首次构建前在 Build → Build cache 点 Clear Cache。仓库自带的 `.github/workflows/deploy-cloudflare.yml` 是独立的发布路径。
 4. **先预览，再生产。** 以 `mail-ui-release` 为基线，用独立预览 Worker 或 Workers Previews + 独立测试绑定，确认安装、构建、登录、收发信。生产分支一推送就会触发生产部署，发布前再核对一次分支和提交 SHA，并准备好回滚（保留上一版本部署，可在控制台一键回滚）。
 5. **初始化与线上验收。** 空 D1 先访问 `/api/init/<jwt_secret>` 初始化（不要把带值的 URL 写进任何文档或日志）；已有 D1 先备份，新表有按需创建逻辑（`mailbox_message_state` 等）。确认 Email Routing 规则指向该 Worker，然后用一封真实邮件验证：入站、发信、附件、星标/归档/回收站、飞书/企业微信通知。页面能打开或机器人「发送测试」成功，不代表入站触发器已经接通。
 6. **上线后 UI 验收。** 按第 2 节的方法在生产域名上抽查：登录/注册切换、三栏布局、配色切换、分析页一屏、admin 账号不可删除。
