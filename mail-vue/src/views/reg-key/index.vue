@@ -20,7 +20,7 @@
       </div>
       <div class="toolbar-group">
         <ToolbarButton icon="search" :label="$t('search')" @click="search" />
-        <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
+        <ToolbarButton icon="refresh" :label="$t('refreshMail')" :busy="regKeyLoading" @click="refresh" />
         <ToolbarButton icon="clear" :label="$t('clearUnusedCodes')" @click="clearNotUse" />
       </div>
     </div>
@@ -85,7 +85,7 @@
     </div>
     <el-dialog close-icon="MailCloseIcon" v-model="showAdd" :title="$t('addRegKey')">
       <div class="container">
-        <el-input v-model="addForm.code" type="password" autocomplete="new-password"
+        <el-input v-model="addForm.code" type="password" autocomplete="off"
                   :aria-label="$t('regKey')" :placeholder="$t('regKey')" @keyup.enter="submit">
           <template #suffix>
             <ToolbarButton class="gen-code" icon="refresh" :label="$t('generateRegKey')" @click.stop="genCode" />
@@ -267,6 +267,7 @@ function formatExpireTime(expireTime) {
 }
 
 function refresh() {
+  if (regKeyLoading.value) return
   params.code = null
   getList(true)
 }
@@ -282,6 +283,9 @@ function getList(showLoading = false) {
   regKeyList(params).then(list => {
     regKeyData.length = 0
     regKeyData.push(...list)
+  }).catch(() => {
+    // The request handler reports the error; leave existing results available.
+  }).finally(() => {
     regKeyLoading.value = false
     setTimeout(() => {
       regKeyFirst.value = false

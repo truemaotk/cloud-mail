@@ -66,12 +66,12 @@
         </el-popover>
       </template>
       <div class="dialog-box">
-        <el-input class="dialog-input" v-model="form.name" type="text" :maxlength="12" :placeholder="$t('roleName')"
+        <el-input class="dialog-input" v-model="form.name" type="text" :maxlength="12" :aria-label="$t('roleName')" :placeholder="$t('roleName')"
                   autocomplete="off" @keyup.enter="roleFormClick"/>
         <el-input class="dialog-input" v-model="form.description" :maxlength="30" type="text"
-                  :placeholder="$t('description')" autocomplete="off" @keyup.enter="roleFormClick"/>
+                  :aria-label="$t('description')" :placeholder="$t('description')" autocomplete="off" @keyup.enter="roleFormClick"/>
         <el-input-tag class="dialog-input" tag-type="warning" v-model="form.banEmail"
-                      @add-tag="banEmailAddTag" type="text" :placeholder="$t('emailInterception')" autocomplete="off"/>
+                      @add-tag="banEmailAddTag" type="text" :aria-label="$t('emailInterception')" :placeholder="$t('emailInterception')" autocomplete="off"/>
         <el-select suffix-icon="MailChevronDown"
             class="dialog-input"
             v-model="form.availDomain"
@@ -82,6 +82,7 @@
             :reserve-keyword="false"
             tag-type="success"
             :placeholder="$t('availableDomains')"
+            :aria-label="$t('availableDomains')"
             @change="availDomainChange"
         >
           <el-option
@@ -92,18 +93,17 @@
           />
         </el-select>
         <div class="dialog-input">
-          <el-input-number :placeholder="$t('order')" :min="0" :max="9999" v-model.number="form.sort"
+          <el-input-number :aria-label="$t('order')" :placeholder="$t('order')" :min="0" :max="9999" v-model.number="form.sort"
                            controls-position="right" autocomplete="off"/>
         </div>
-        <el-radio-group v-model="expand" size="small" @change="expandChange" class="perm-expand">
-          <el-radio-button :label="$t('expand')" :value="true"/>
-          <el-radio-button :label="$t('collapse')" :value="false"/>
-        </el-radio-group>
+        <el-segmented v-model="expand" size="small" @change="expandChange" class="perm-expand"
+                      :options="[{ label: $t('expand'), value: true }, { label: $t('collapse'), value: false }]" />
         <el-tree
             class="permission-tree"
             icon="MailChevronRight"
-            :expand-on-click-node="false"
+            :expand-on-click-node="true"
             :check-on-click-node="false"
+            :check-on-click-leaf="false"
             ref="tree"
             :data="treeList"
             show-checkbox
@@ -118,9 +118,9 @@
               <span>{{ node.label }}</span>
               <span class="send-num" v-if="data.permKey === 'email:send'" @click.stop>
                 <el-input-number v-if="form.sendType === 'day' || form.sendType === 'count'" v-model="form.sendCount" controls-position="right" :min="0" :max="99999" size="small"
-                                 :placeholder="$t('total')">
+                                 :aria-label="node.label + ' · ' + $t('total')" :placeholder="$t('total')">
                 </el-input-number>
-                  <el-select suffix-icon="MailChevronDown" v-model="form.sendType" placeholder="Select" size="small"
+                  <el-select suffix-icon="MailChevronDown" v-model="form.sendType" :aria-label="node.label" placeholder="Select" size="small"
                              :style="`width: ${ locale === 'zh' ? 65 : 85 }px;margin-left: 5px;`">
                     <el-option :label="$t('total')" value="count"/>
                     <el-option :label="$t('daily')" value="day"/>
@@ -130,7 +130,7 @@
               </span>
               <span class="send-num" v-if="data.permKey === 'account:add'" @click.stop>
                 <el-input-number v-model="form.accountCount" controls-position="right" :min="0" :max="99999"
-                                 size="small" :placeholder="$t('total')">
+                                 size="small" :aria-label="node.label + ' · ' + $t('total')" :placeholder="$t('total')">
                 </el-input-number>
               </span>
             </div>
@@ -417,7 +417,9 @@ window.onresize = () => {
 }
 
 .send-num {
-  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
 
   .el-input-number {
     width: 95px;
@@ -501,12 +503,22 @@ window.onresize = () => {
 /* 展开图标放到右侧，所有层级的箭头在右边对齐成一列 */
 :deep(.permission-tree .el-tree-node__content) {
   display: flex;
+  height: auto;
+  min-height: var(--el-tree-node-content-height);
   gap: 4px;
   margin-block: 1px;
   padding-inline-end: 6px;
 }
 :deep(.permission-tree .el-tree-node__content > .el-checkbox) { margin: 0 6px 0 8px; }
-:deep(.permission-tree .el-tree-node__content > div) { flex: 1 1 auto; min-width: 0; }
+:deep(.permission-tree .el-tree-node__content > div) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-block: 4px;
+}
 :deep(.permission-tree .el-tree-node__expand-icon) {
   order: 99;
   flex: none;
@@ -517,15 +529,58 @@ window.onresize = () => {
   border-radius: 6px;
   font-size: 14px;
   color: var(--mac-text-3);
+  transition: transform 400ms cubic-bezier(.25, .1, .25, 1);
 }
-:deep(.permission-tree .el-tree-node__expand-icon:not(.is-leaf):hover) { background: var(--mac-hover); color: var(--mac-text); }
-:deep(.permission-tree .el-tree-node__children .el-tree-node__content) { padding-inline-start: 22px !important; }
+:deep(.permission-tree .el-tree-node__expand-icon:not(.is-leaf):hover) { color: var(--mac-text); }
+:deep(.permission-tree .el-tree-node__expand-icon.is-leaf) { display: none; }
+:deep(.permission-tree .el-tree-node__children .el-tree-node__content) {
+  position: relative;
+  margin-inline-start: 22px;
+  padding-inline-start: 0 !important;
+}
+/* Pointer focus is not a checked permission. Keep the focus ring inside the
+   indented row for keyboard use; never outline the whole parent subtree. */
+:deep(.permission-tree .el-tree-node) { outline: none; }
+:deep(.permission-tree .el-tree-node:focus:not(:focus-visible) > .el-tree-node__content:not(:hover)) { background: transparent; }
+:deep(.permission-tree .el-tree-node:focus-visible > .el-tree-node__content) {
+  box-shadow: none;
+  outline: 2px solid var(--mac-focus);
+  outline-offset: -2px;
+}
+:deep(.permission-tree .el-tree-node__content:hover) {
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--mac-surface) 46%, transparent), color-mix(in srgb, var(--mac-surface) 24%, transparent));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%), inset 0 0 0 1px color-mix(in srgb, var(--mac-accent) 7%, transparent);
+}
+:deep(.permission-tree .el-collapse-transition-enter-active),
+:deep(.permission-tree .el-collapse-transition-leave-active) {
+  transition: max-height var(--mac-slide-duration) var(--mac-slide-ease), padding var(--mac-slide-duration) var(--mac-slide-ease), opacity var(--mac-slide-duration) ease;
+}
+:deep(.permission-tree .el-collapse-transition-enter-from),
+:deep(.permission-tree .el-collapse-transition-leave-to) { opacity: 0; }
 :deep(.permission-tree .el-tree-node__children) { position: relative; }
+:deep(.permission-tree .el-tree-node__children > .el-tree-node > .el-tree-node__content::before) {
+  position: absolute;
+  inset-block: 7px;
+  inset-inline-start: -7.5px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--mac-accent-ink);
+  content: '';
+  opacity: 0;
+  transform: scaleY(.3);
+  transition: opacity var(--mac-dur-2) ease, transform var(--mac-dur-3) var(--mac-spring);
+  pointer-events: none;
+}
+:deep(.permission-tree .el-tree-node__children > .el-tree-node:is(.is-current, .is-checked) > .el-tree-node__content::before) {
+  opacity: 1;
+  transform: none;
+}
 :deep(.permission-tree .el-tree-node__children::before) {
   position: absolute;
   inset-block: 2px;
   inset-inline-start: 15.5px;
   width: 1px;
+  border-radius: 1px;
   background: var(--mac-line-strong);
   content: '';
 }

@@ -9,14 +9,14 @@
           <div class="setting-item">
             <div><span>{{ $t('websiteReg') }}</span></div>
             <div>
-              <el-switch @change="changeField('register', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('websiteReg')" @change="changeField('register', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.register"/>
             </div>
           </div>
           <div class="setting-item">
             <div><span>{{ $t('loginDomain') }}</span></div>
             <div>
-              <el-switch @change="changeField('loginDomain', $event)" :before-change="beforeChange" :active-value="1" :inactive-value="0"
+              <el-switch :aria-label="$t('loginDomain')" @change="changeField('loginDomain', $event)" :before-change="beforeChange" :active-value="1" :inactive-value="0"
                          :model-value="setting.loginDomain"/>
             </div>
           </div>
@@ -41,31 +41,31 @@
           <div class="setting-item">
             <div><span>{{ $t('addAccount') }}</span></div>
             <div>
-              <el-switch @change="changeField('addEmail', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('addAccount')" @change="changeField('addEmail', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.addEmail"/>
             </div>
           </div>
           <div class="setting-item">
             <div>
               <span>{{ $t('multipleEmail') }}</span>
-              <el-tooltip effect="dark" :content="$t('multipleEmailDesc')">
+              <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('multipleEmailDesc')">
                 <NavigationIcon name="info" class="warning" />
               </el-tooltip>
             </div>
             <div>
-              <el-switch @change="changeField('manyEmail', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('multipleEmail')" @change="changeField('manyEmail', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.manyEmail"/>
             </div>
           </div>
           <div class="setting-item">
             <div>
               <span>{{ $t('syncDelete') }}</span>
-              <el-tooltip effect="dark" :content="$t('syncDeleteDesc')">
+              <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('syncDeleteDesc')">
                 <NavigationIcon name="info" class="warning" />
               </el-tooltip>
             </div>
             <div>
-              <el-switch @change="changeField('syncDelete', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('syncDelete')" @change="changeField('syncDelete', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.syncDelete"/>
             </div>
           </div>
@@ -86,7 +86,7 @@
         <div class="card-content">
           <div class="setting-item">
             <div><span>{{ $t('appName') }}</span></div>
-            <div>mail</div>
+            <div>Mail</div>
           </div>
           <div class="setting-item">
             <div class="title-item"><span>{{ $t('loginBoxOpacity') }}</span></div>
@@ -127,14 +127,14 @@
           <div class="setting-item">
             <div><span>{{ $t('receiveEmail') }}</span></div>
             <div>
-              <el-switch @change="changeField('receive', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('receiveEmail')" @change="changeField('receive', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.receive"/>
             </div>
           </div>
           <div class="setting-item">
             <div>
               <span>{{ $t('autoRefresh') }}</span>
-              <el-tooltip effect="dark" :content="$t('autoRefreshDesc')">
+              <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('autoRefreshDesc')">
                 <NavigationIcon name="info" class="warning" />
               </el-tooltip>
             </div>
@@ -157,19 +157,36 @@
           <div class="setting-item">
             <div><span>{{ $t('sendEmail') }}</span></div>
             <div>
-              <el-switch @change="changeField('send', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('sendEmail')" @change="changeField('send', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.send"/>
+            </div>
+          </div>
+          <div class="setting-item daily-quota">
+            <div>
+              <label for="daily-send-limit">{{ $t('dailySendLimit') }}</label>
+              <span id="daily-send-limit-note">{{ $t('dailySendLimitNote') }}</span>
+            </div>
+            <div>
+              <form v-if="settingReady" @submit.prevent="saveDailyQuota">
+                <el-input-number id="daily-send-limit" v-model="dailyQuotaInput" :min="1" :max="99999"
+                                 :precision="0" controls-position="right" size="small"
+                                 :disabled="dailyQuotaSaving" />
+                <el-button class="opt-button" native-type="submit" size="small" :loading="dailyQuotaSaving"
+                           :disabled="!settingReady || !Number.isInteger(dailyQuotaInput) || dailyQuotaInput === setting.dailySendLimit">
+                  {{ $t('save') }}
+                </el-button>
+              </form>
             </div>
           </div>
           <div class="setting-item">
             <div>
               <span>{{ $t('noRecipientTitle') }}</span>
-              <el-tooltip effect="dark" :content="$t('noRecipientDesc')">
+              <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('noRecipientDesc')">
                 <NavigationIcon name="info" class="warning" />
               </el-tooltip>
             </div>
             <div>
-              <el-switch @change="changeField('noRecipient', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('noRecipientTitle')" @change="changeField('noRecipient', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.noRecipient"/>
             </div>
           </div>
@@ -193,7 +210,7 @@
           <div class="setting-item">
             <div>
               <span>{{ $t('autoClean') }}</span>
-              <el-tooltip effect="dark" :content="$t('autoCleanDesc')">
+              <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('autoCleanDesc')">
                 <NavigationIcon name="info" class="warning" />
               </el-tooltip>
             </div>
@@ -348,7 +365,7 @@
           <div class="setting-item">
             <div><span>{{ $t('codeRecognition') }}</span></div>
             <div>
-              <el-switch @change="changeField('aiCode', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+              <el-switch :aria-label="$t('codeRecognition')" @change="changeField('aiCode', $event)" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                          :model-value="setting.aiCode"/>
             </div>
           </div>
@@ -434,7 +451,7 @@
         <template #header>
           <span style="font-size: 18px">
             {{ $t('backgroundTitle') }}
-            <el-tooltip>
+            <el-tooltip :show-after="0" :hide-after="0">
               <template #content>
                 <span>{{ $t('backgroundWarning') }}</span>
               </template>
@@ -469,7 +486,7 @@
         <template #header>
           <div class="forward-head">
             <span class="forward-set-title">{{ $t('tgBot') }}</span>
-            <el-tooltip effect="dark" :content="$t('tgBotDesc')">
+            <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('tgBotDesc')">
               <NavigationIcon name="info" class="warning" />
             </el-tooltip>
           </div>
@@ -531,7 +548,7 @@
         <template #header>
           <div class="forward-head">
             <span class="forward-set-title">{{ $t('otherEmail') }}</span>
-            <el-tooltip effect="dark" :content="$t('otherEmailDesc')">
+            <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('otherEmailDesc')">
               <NavigationIcon name="info" class="warning" />
             </el-tooltip>
           </div>
@@ -558,7 +575,7 @@
         <template #header>
           <div class="forward-head">
             <span class="forward-set-title">{{ $t('webhook') }}</span>
-            <el-tooltip effect="dark" :content="$t('webhookDesc')">
+            <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('webhookDesc')">
               <NavigationIcon name="info" class="warning" />
             </el-tooltip>
           </div>
@@ -601,7 +618,7 @@ Authorization: &lt;secret&gt;</pre>
         <template #header>
           <div class="forward-head">
             <span class="forward-set-title">{{ $t('forwardingRules') }}</span>
-            <el-tooltip effect="dark" :content="$t('forwardingRulesDesc')">
+            <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('forwardingRulesDesc')">
               <NavigationIcon name="info" class="warning" />
             </el-tooltip>
           </div>
@@ -612,10 +629,8 @@ Authorization: &lt;secret&gt;</pre>
         </div>
         <template #footer>
           <div class="dialog-footer">
-            <el-radio-group v-model="ruleType">
-              <el-radio :value="0">{{ $t('forwardAll') }}</el-radio>
-              <el-radio :value="1">{{ $t('rules') }}</el-radio>
-            </el-radio-group>
+            <el-segmented v-model="ruleType"
+                          :options="[{ label: $t('forwardAll'), value: 0 }, { label: $t('rules'), value: 1 }]" />
             <el-button :loading="settingLoading" type="primary" @click="ruleEmailSave">
               {{ $t('save') }}
             </el-button>
@@ -736,7 +751,7 @@ Authorization: &lt;secret&gt;</pre>
           <div class="force-path-style">
             <div class="force-path-style-left">
               <span>ForcePathStyle</span>
-              <el-tooltip effect="dark" :content="$t('forcePathStyleDesc')">
+              <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('forcePathStyleDesc')">
                 <NavigationIcon name="info" class="warning" />
               </el-tooltip>
             </div>
@@ -768,7 +783,7 @@ Authorization: &lt;secret&gt;</pre>
         <template #header>
           <div class="forward-head">
             <span class="forward-set-title">{{ $t('blackList') }}</span>
-            <el-tooltip effect="dark" :content="$t('blackListDesc')">
+            <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('blackListDesc')">
               <NavigationIcon name="info" class="warning" />
             </el-tooltip>
           </div>
@@ -806,7 +821,7 @@ Authorization: &lt;secret&gt;</pre>
         <template #header>
           <div class="forward-head">
             <span class="forward-set-title">{{ $t('codeRecognitionRules') }}</span>
-            <el-tooltip effect="dark" :content="$t('codeRecognitionRulesDesc')">
+            <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="$t('codeRecognitionRulesDesc')">
               <NavigationIcon name="info" class="warning" />
             </el-tooltip>
           </div>
@@ -825,7 +840,7 @@ Authorization: &lt;secret&gt;</pre>
 <script setup>
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import {computed, defineOptions, nextTick, reactive, ref} from "vue";
-import {deleteBackground, setBackground, setBlackList, settingQuery, settingSet} from "@/request/setting.js";
+import {deleteBackground, setBackground, setBlackList, setDailySendLimit, settingQuery, settingSet} from "@/request/setting.js";
 import {useSettingStore} from "@/store/setting.js";
 import {useUiStore} from "@/store/ui.js";
 import {useUserStore} from "@/store/user.js";
@@ -857,6 +872,8 @@ defineOptions({
 const {t, locale} = useI18n();
 const firstLoading = ref(true)
 const settingReady = ref(false)
+const dailyQuotaInput = ref()
+const dailyQuotaSaving = ref(false)
 const backgroundImage = ref('')
 const localUpShow = ref(false)
 const accountStore = useAccountStore();
@@ -996,6 +1013,7 @@ function getSettings() {
   settingReady.value = false
   settingQuery().then(settingData => {
     setting.value = settingData
+    dailyQuotaInput.value = settingData.dailySendLimit
     settingStore.domainList = settingData.domainList;
     resendTokenForm.domain = setting.value.domainList[0]
     loginOpacity.value = setting.value.loginOpacity
@@ -1510,6 +1528,22 @@ function beforeChange() {
   return settingReady.value && !settingLoading.value
 }
 
+async function saveDailyQuota() {
+  const limit = dailyQuotaInput.value
+  if (!settingReady.value || dailyQuotaSaving.value || !Number.isInteger(limit) || limit === setting.value.dailySendLimit) return
+  dailyQuotaSaving.value = true
+  try {
+    await setDailySendLimit(limit)
+    setting.value.dailySendLimit = limit
+    dailyQuotaInput.value = limit
+    ElMessage({ message: t('saveSuccessMsg'), type: 'success', plain: true })
+  } catch {
+    // The request interceptor displays the error. Keep the draft available to retry.
+  } finally {
+    dailyQuotaSaving.value = false
+  }
+}
+
 function changeField(key, value) {
   if (!beforeChange()) return
   const previous = setting.value[key]
@@ -1656,12 +1690,33 @@ function editSetting(settingForm, refreshStatus = true, onFailure) {
   align-items: flex-start;
 }
 
+.setting-item.daily-quota > div:first-child {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.daily-quota #daily-send-limit-note {
+  color: var(--mail-shell-muted);
+  font-size: 12px;
+}
+
+.daily-quota form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.daily-quota :deep(.el-input-number) { width: 106px; }
+
 @container (max-width: 480px) {
-  .setting-item.personalized {
+  .setting-item.personalized,
+  .setting-item.daily-quota {
     grid-template-columns: 1fr;
   }
 
-  .setting-item.personalized > div:last-child {
+  .setting-item.personalized > div:last-child,
+  .setting-item.daily-quota > div:last-child {
     justify-content: flex-start;
   }
 }

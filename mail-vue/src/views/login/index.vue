@@ -41,14 +41,12 @@
         <div class="login-content">
           <div class="login-brand">
             <img src="/mail.svg" alt="" class="login-mark" />
-            <span>mail</span>
+            <span>Mail</span>
           </div>
-          <div v-if="settingStore.settings.register === 0" class="login-mode" :class="{ 'is-register': show === 'register' }"
-               role="group" :aria-label="$t('authMode')">
-            <span class="login-mode-thumb" aria-hidden="true" />
-            <button type="button" :aria-pressed="show === 'login'" @click="switchMode('login')">{{ $t('loginBtn') }}</button>
-            <button type="button" :aria-pressed="show === 'register'" @click="switchMode('register')">{{ $t('regBtn') }}</button>
-          </div>
+          <el-segmented v-if="settingStore.settings.register === 0" class="login-mode" block
+                        :model-value="show" :aria-label="$t('authMode')"
+                        :options="[{ label: $t('loginBtn'), value: 'login' }, { label: $t('regBtn'), value: 'register' }]"
+                        @change="switchMode" />
           <div class="auth-stack" :class="'is-' + show">
           <header class="login-heading auth-pane auth-login" :class="{ 'is-active': show === 'login' }" :inert="show !== 'login'">
             <h1>{{ $t('loginHeading') }}</h1>
@@ -202,8 +200,20 @@ function showForgot() {
   }).catch(() => {})
 }
 
-function switchMode(mode) {
+async function switchMode(mode) {
+  if (show.value === mode) return
+  const stacks = [...(loginPanel.value?.querySelectorAll('.auth-stack') || [])]
+  const heights = stacks.map(element => element.getBoundingClientRect().height)
+  stacks.forEach(element => element.getAnimations().forEach(animation => animation.cancel()))
   show.value = mode
+  await nextTick()
+  if (!uiStore.reduceMotion) stacks.forEach((element, index) => {
+    const height = element.getBoundingClientRect().height
+    if (Math.abs(height - heights[index]) > 1) element.animate([
+      { height: `${heights[index]}px`, overflow: 'clip' },
+      { height: `${height}px`, overflow: 'clip' },
+    ], { duration: 360, easing: 'cubic-bezier(.25, .1, .25, 1)' })
+  })
   loginPanel.value?.scrollTo({ top: 0 })
 }
 
@@ -794,49 +804,8 @@ function submitRegister() {
   min-width: 0;
 }
 
-/* 分段控件：滑块像开关一样以弹簧滑到另一侧 */
-.login-mode {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-block-end: 20px;
-  padding: 3px;
-  border-radius: 10px;
-  background: rgb(0 0 0 / 6%);
-}
-#login-box.is-dark .login-mode { background: rgb(255 255 255 / 8%); }
-
-.login-mode-thumb {
-  position: absolute;
-  inset-block: 3px;
-  inset-inline-start: 3px;
-  width: calc(50% - 3px);
-  border-radius: 8px;
-  background: var(--login-surface);
-  box-shadow: 0 0 0 .5px rgb(0 0 0 / 8%), 0 2px 6px rgb(0 0 0 / 12%);
-  transition: transform var(--mac-dur-3) var(--mac-spring);
-}
-#login-box.is-dark .login-mode-thumb { background: #3A3A3C; }
-.login-mode.is-register .login-mode-thumb { transform: translateX(100%); }
-
-.login-mode button {
-  position: relative;
-  min-height: 30px;
-  border: 0;
-  border-radius: 8px;
-  color: var(--login-muted);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: color var(--mac-dur-2) ease;
-}
-
-.login-mode button:hover { color: var(--login-ink); }
-
-.login-mode button[aria-pressed="true"] {
-  color: var(--login-ink);
-  font-weight: 600;
-}
+.login-mode.el-segmented { width: 100%; margin-block-end: 20px; }
+.login-mode :deep(.el-segmented__item) { min-height: 32px; }
 
 /* 登录与注册叠放在同一格：外框与位置不变，内容交叉淡入并带方向位移 */
 .auth-stack {
@@ -1047,14 +1016,19 @@ function submitRegister() {
   .login-shell {
     width: min(100%, 470px);
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    height: auto;
   }
 
   .login-scene { display: none; }
 
   .login-panel {
-    padding: clamp(20px, 5vw, 36px);
+    padding: clamp(24px, 5vw, 32px);
     border-inline-start: 0;
+    overflow: visible;
   }
+  .auth-stack { position: relative; }
+  .auth-stack > .auth-pane:not(.is-active) { position: absolute; inset: 0; }
 }
 
 @media (max-height: 680px) {

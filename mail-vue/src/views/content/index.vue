@@ -13,6 +13,7 @@
             <div class="subject-row">
               <h2 class="email-title">{{ email.subject || $t('noSubject') }}</h2>
               <span v-if="mailboxLabel" class="mailbox-label">{{ $t(mailboxLabel) }}</span>
+              <LabelChips :ids="email.labelIds" />
             </div>
             <div class="envelope">
               <span class="sender-icon" aria-hidden="true">{{ senderInitial }}</span>
@@ -20,7 +21,7 @@
                 <div class="sender-line">
                   <strong>{{ senderName }}</strong>
                   <span v-if="senderAddress" class="sender-email">&lt;{{ senderAddress }}&gt;</span>
-                  <el-tooltip v-if="sentViaEmail" effect="dark" :content="$t('sentVia', { email: sentViaEmail })">
+                  <el-tooltip :show-after="0" :hide-after="0" v-if="sentViaEmail" effect="dark" :content="$t('sentVia', { email: sentViaEmail })">
                     <el-tag size="small" disable-transitions>{{ $t('sentViaTag') }}</el-tag>
                   </el-tooltip>
                 </div>
@@ -126,6 +127,7 @@
 </template>
 <script setup>
 import NavigationIcon from '@/components/navigation-icon/index.vue'
+import LabelChips from '@/components/label-chips/index.vue'
 import ToolbarButton from '@/components/toolbar-button/index.vue'
 import ShadowHtml from '@/components/shadow-html/index.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
@@ -396,6 +398,7 @@ const handleDelete = () => {
   background-color: var(--mac-app);
 }
 .reader-surface {
+  container: mail-reader / inline-size;
   --reader-gutter: 24px;
   --reader-dock: 76px;
   position: relative;
@@ -571,6 +574,7 @@ const handleDelete = () => {
   overflow-wrap: anywhere;
   dt {
     color: var(--mac-text-2);
+    font-weight: 650;
     text-align: end;
   }
   dd {
@@ -608,13 +612,6 @@ const handleDelete = () => {
 .shadow-html {
   position: relative;
 }
-.shadow-html::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--message-block-color);
-  pointer-events: none;
-}
 .email-text {
   margin: 0;
   color: var(--mac-text);
@@ -647,7 +644,7 @@ const handleDelete = () => {
 }
 .att-box {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: 8px;
 }
 .att-item {
@@ -721,7 +718,24 @@ const handleDelete = () => {
   .box {
     padding: 4px 6px 0;
   }
-  .reader-surface { --reader-gutter: 16px; }
+  .envelope-panel { min-width: 0; }
+}
+/* A split desktop pane can be as narrow as a phone. Adapt to the pane itself. */
+@container mail-reader (max-width: 620px) {
+  .reader, .reader-footer { --reader-gutter: 16px; }
+  .mail-toolbar { flex-wrap: wrap; gap: 0 4px; padding: 4px 8px; }
+  .mail-toolbar :deep(.message-actions) { flex: 1; gap: 4px; }
+  .mail-toolbar:has(.admin-reader-actions) :deep(.message-actions) { flex-basis: calc(100% - 44px); }
+  .mail-toolbar :deep(.toolbar-group) { gap: 0; }
+  .mail-toolbar :deep(.reader-page-actions) {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+    justify-content: flex-end;
+  }
+  .mail-toolbar :deep(.admin-reader-actions) { order: 1; flex-basis: 40px; justify-content: center; }
+  .mail-toolbar :deep(.reader-page-actions) { order: 2; }
+  .mail-toolbar:has(.admin-reader-actions) :deep(.reader-page-actions) { flex-basis: calc(100% - 44px); }
+  .mail-toolbar :deep(.reader-position) { margin-inline-end: auto; }
   .reader {
     --avatar-size: 36px;
     --avatar-gap: 10px;
@@ -734,13 +748,19 @@ const handleDelete = () => {
     grid-template-columns: var(--avatar-size) minmax(0, 1fr);
   }
   .envelope-actions {
-    grid-column: 2;
+    grid-column: 1 / -1;
     justify-content: flex-start;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     margin-top: 4px;
   }
+  .email-date { flex: 1; min-width: 0; white-space: normal; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .recipient-chevron { transition: none; }
+
+@media (max-width: 767px) {
+  .envelope-actions { gap: 0; margin-inline-end: -5px; }
+  .email-date { font-size: 11px; line-height: 16px; }
+  .reply-button { min-width: 92px; height: 36px; gap: 6px; padding-inline: 14px; }
+  .reply-button svg { width: 14px; height: 14px; }
 }
+
 </style>

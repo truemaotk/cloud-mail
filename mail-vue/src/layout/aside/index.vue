@@ -1,33 +1,31 @@
 <template>
-  <div class="sidebar" :class="{ 'is-compact': compact }"
-       @pointerover="showRailHint" @pointerout="hideRailHintOnExit"
-       @pointerdown.capture="clearRailHint" @click.capture="clearRailHint"
-       @focusin="showRailHint" @focusout="hideRailHintOnExit" @keydown.esc="dismissRailHint">
+  <div class="sidebar" :class="{ 'is-compact': compact }">
     <div class="mobile-bar">
-      <span class="mobile-bar-title">mail</span>
-      <ToolbarButton icon="panel-left" :label="$t('toggleMailNavigation')" @click="uiStore.asideShow = false" />
+      <span class="mobile-bar-title">Mail</span>
+      <ToolbarButton icon="close" :label="$t('toggleMailNavigation')" @click="uiStore.asideShow = false" />
     </div>
     <MailboxSwitcher v-if="showMailboxes" :compact="compact" />
     <div v-else class="brand">
       <img class="brand-mark" src="/mail.svg" alt="" />
-      <span>mail</span>
+      <span>Mail</span>
     </div>
-    <button v-if="can('email:send')" class="compose-bar" type="button" :aria-label="$t('compose')"
-            :data-rail-label="compact ? $t('compose') : undefined" @click="uiStore.writerRef.open()">
-      <NavigationIcon name="compose" />
+    <button v-if="can('email:send')" class="compose-bar mail-compose-trigger" type="button" :aria-label="$t('compose')"
+            :data-rail-label="compact ? $t('compose') : undefined" @click="openComposer">
+      <NavigationIcon name="compose" :size="20" />
       <span>{{ $t('compose') }}</span>
     </button>
 
-    <el-scrollbar class="navigation-scroll" @scroll="clearRailHint">
+    <el-scrollbar class="navigation-scroll">
       <nav class="side-navigation" :class="{ 'nav-sorting': dragging }" :aria-label="$t('mailNavigation')"
-           @pointerdown="begin" @click.capture="blockDragClick" @keydown="keyboardMove" @dragstart.prevent>
-        <div class="mail-navigation-group">
+           @pointerdown="begin" @touchstart.passive="beginTouch" @contextmenu="preventHoldMenu"
+           @click.capture="blockDragClick" @keydown="keyboardMove" @dragstart.prevent>
+        <TransitionGroup name="nav-order" tag="div" class="mail-navigation-group">
           <RouterLink v-for="item in visibleMail" :key="item.name" :to="{ name: item.name }"
                       custom v-slot="{ href, navigate }">
             <a :href="href" class="nav-main"
                :class="itemClass(item.name)" data-nav-sort="mail" :data-nav-key="item.name"
                :data-rail-label="compact ? $t(item.label) : undefined" :aria-label="compact ? $t(item.label) : undefined"
-               :aria-current="item.name === activeMenu ? 'page' : undefined" @click="followLink($event, navigate)">
+               :aria-current="item.name === activeMenu && !(item.name === 'email' && activeLabelId) ? 'page' : undefined" @click="followLink($event, navigate)">
               <NavigationIcon :name="item.icon" />
               <span class="nav-label">{{ $t(item.label) }}</span>
               <UnreadBadge v-if="item.name === 'email'" :count="inboxUnread" />
@@ -35,8 +33,45 @@
                            :label="$t('mailDraftCount', { count: draftStore.count })" />
             </a>
           </RouterLink>
-        </div>
-        <div class="utility-navigation-group">
+        <section key="label-group" class="nav-group" :aria-label="$t('mailLabels')">
+          <button v-if="compact" class="nav-main label-nav-compact" type="button" :aria-label="$t('mailLabels')"
+                  :data-rail-label="$t('mailLabels')" :aria-current="activeLabelId ? 'page' : undefined" @click="openLabels()">
+            <NavigationIcon name="tag" />
+          </button>
+          <template v-else>
+            <button class="nav-group-toggle" type="button" :class="{ 'has-current': activeLabelId }"
+                    :aria-expanded="labelsOpen" aria-controls="mail-nav-labels" @click="labelsOpen = !labelsOpen">
+              <NavigationIcon name="tag" />
+              <span class="nav-label">{{ $t('mailLabels') }}</span>
+              <NavigationIcon class="nav-chevron" name="chevron" :size="15" />
+            </button>
+            <div id="mail-nav-labels" class="nav-disclosure" :class="{ 'is-open': labelsOpen }" :inert="!labelsOpen">
+              <div class="nav-disclosure-body">
+                <ul class="nav-children">
+                  <li>
+                    <button class="nav-child" type="button" @click="openLabels()">
+                      <NavigationIcon name="settings" />
+                      <span class="nav-label">{{ $t('mailManageLabels') }}</span>
+                    </button>
+                  </li>
+                  <li v-for="label in labelStore.messageLabels" :key="label.id" class="label-navigation-row">
+                    <RouterLink :to="{ name: 'email', query: { label: label.id } }" custom v-slot="{ href, navigate }">
+                      <a :href="href" class="nav-child label-nav-link" :style="{ '--tag-color': labelColors[label.color] }"
+                         :aria-current="activeLabelId === label.id ? 'page' : undefined" @click="followLink($event, navigate)">
+                        <NavigationIcon name="tag" />
+                        <span class="nav-label">{{ label.name }}</span>
+                      </a>
+                    </RouterLink>
+                    <ToolbarButton class="label-nav-edit" icon="more" :label="$t('mailEditLabelNamed', { name: label.name })"
+                                   @click="openLabels(label)" />
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </template>
+        </section>
+        </TransitionGroup>
+        <TransitionGroup name="nav-order" tag="div" class="utility-navigation-group">
         <template v-for="group in navigation" :key="group.key">
           <RouterLink v-if="group.route" :to="{ name: group.route }" custom v-slot="{ href, navigate }">
             <a :href="href" class="nav-main"
@@ -61,7 +96,7 @@
             >
               <NavigationIcon :name="group.icon" />
               <span class="nav-label">{{ $t(group.label) }}</span>
-              <NavigationIcon v-if="!compact" class="nav-chevron" name="chevron" :size="15" />
+              <NavigationIcon class="nav-chevron" name="chevron" :size="15" />
             </button>
             <div
               :id="'mail-nav-' + group.key"
@@ -70,7 +105,7 @@
               :inert="!openGroups[group.key]"
             >
               <div class="nav-disclosure-body">
-                <ul class="nav-children">
+                <TransitionGroup name="nav-order" tag="ul" class="nav-children">
                   <li v-for="item in group.items" :key="item.route">
                     <RouterLink :to="{ name: item.route }" custom v-slot="{ href, navigate }">
                       <a
@@ -86,19 +121,18 @@
                       </a>
                     </RouterLink>
                   </li>
-                </ul>
+                </TransitionGroup>
               </div>
             </div>
           </div>
         </template>
-        </div>
+        </TransitionGroup>
       </nav>
     </el-scrollbar>
 
+    <span v-if="dragging" class="nav-sort-status" role="status">{{ $t('navSortingHint') }}</span>
+
     <AccountMenu :compact="compact" />
-    <span v-if="railHint" class="rail-hint" role="tooltip" :style="{ top: railHint.top + 'px' }">
-      {{ railHint.label }}
-    </span>
   </div>
 </template>
 
@@ -110,6 +144,7 @@ import { useUserStore } from '@/store/user.js'
 import { useEmailStore } from '@/store/email.js'
 import { useSettingStore } from '@/store/setting.js'
 import { useAccountStore } from '@/store/account.js'
+import { labelColors, useLabelsStore } from '@/store/labels.js'
 import { userDraftStore } from '@/store/draft.js'
 import { mailFolders } from '@/utils/mail-workspace.js'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
@@ -123,50 +158,26 @@ const props = defineProps({ compact: Boolean })
 
 const route = useRoute()
 const uiStore = useUiStore()
+function openComposer(event) {
+  if (window.innerWidth < 1025) uiStore.asideShow = false
+  uiStore.writerRef.open(event.currentTarget)
+}
 const userStore = useUserStore()
 const emailStore = useEmailStore()
 const settingStore = useSettingStore()
 const accountStore = useAccountStore()
 const draftStore = userDraftStore()
 const userId = computed(() => userStore.user?.userId)
-const { ordered, begin, blockDragClick, keyboardMove, itemClass, dragging } = useNavigationOrder(uiStore, userId)
-const railHint = ref(null)
-
-function railTarget(element) {
-  return element?.closest?.('[data-rail-label]')
+const labelStore = useLabelsStore()
+const activeLabelId = computed(() => activeMenu.value === 'email' ? Number(route.query.label) : 0)
+const labelsOpen = ref(false)
+watch(userId, id => { labelStore.load(id ?? null).catch(() => {}) }, { immediate: true })
+function openLabels(label) {
+  if (window.innerWidth < 1025) uiStore.asideShow = false
+  if (label) labelStore.edit('message', label)
+  else labelStore.manage('message')
 }
-
-function showRailHint(event) {
-  if (!props.compact || dragging.value) return
-  const target = railTarget(event.target)
-  if (!target || target === railTarget(event.relatedTarget)) return
-  if (event.type === 'pointerover' && (event.pointerType === 'touch' || event.buttons)) return
-  if (event.type === 'focusin' && !target.matches(':focus-visible')) return
-  if (target.matches('[aria-haspopup="dialog"][aria-expanded="true"]')) return
-
-  const bounds = target.getBoundingClientRect()
-  const rail = event.currentTarget.getBoundingClientRect()
-  railHint.value = {
-    label: target.dataset.railLabel,
-    top: Math.min(rail.height - 18, Math.max(18, bounds.top + bounds.height / 2 - rail.top)),
-  }
-}
-
-function clearRailHint() {
-  railHint.value = null
-}
-
-function hideRailHintOnExit(event) {
-  if (railTarget(event.target) !== railTarget(event.relatedTarget)) clearRailHint()
-}
-
-function dismissRailHint(event) {
-  if (!railHint.value) return
-  event.preventDefault()
-  clearRailHint()
-}
-
-watch([() => props.compact, dragging], clearRailHint)
+const { ordered, begin, beginTouch, preventHoldMenu, blockDragClick, keyboardMove, itemClass, dragging } = useNavigationOrder(uiStore, userId)
 const mailEntries = [
   ...mailFolders,
   { name: 'all-email', label: 'allMail', icon: 'list', permission: 'all-email:query' },
@@ -234,14 +245,30 @@ function followLink(event, navigate) {
   width: 100%;
   height: 100%;
   border-radius: var(--r-sheet);
-  background: var(--glass-sidebar);
+  transition: border-radius var(--mac-slide-duration) var(--mac-slide-ease);
+  isolation: isolate;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 5%), 0 10px 28px rgb(0 0 0 / 9%);
+}
+.sidebar.is-compact { border-radius: 16px; }
+
+/* The material and its single inner edge share the parent's exact curve.
+   A circular clip-path over a superellipse produces doubled, dirty corners.
+   Keep clipping off the parent so nested menus can extend beyond the rail. */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  corner-shape: inherit;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--mac-surface) 64%, var(--mac-sidebar)), color-mix(in srgb, var(--mac-surface) 46%, var(--glass-sidebar)));
+  box-shadow: inset 0 0 0 1px var(--mac-line-strong);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-edge), 0 0 0 .5px rgb(0 0 0 / 8%), 0 8px 24px rgb(0 0 0 / 6%);
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .sidebar { background: var(--mac-sidebar); }
+  .sidebar::before { background: var(--mac-sidebar); }
 }
 
 .mobile-bar { display: none; }
@@ -285,36 +312,42 @@ function followLink(event, navigate) {
 }
 
 .compose-bar {
-  display: flex;
+  display: grid;
   align-items: center;
-  justify-content: center;
+  grid-template-columns: 36px minmax(0, 1fr);
+  justify-content: start;
   flex-shrink: 0;
-  gap: 8px;
-  height: 34px;
+  gap: 0;
+  height: 38px;
   margin: 0 12px 12px;
-  padding: 0 12px;
+  padding: 0;
   overflow: hidden;
   white-space: nowrap;
-  border-radius: var(--r-item);
-  background: var(--mail-shell-action);
-  color: var(--mail-shell-action-text);
-  box-shadow: 0 1px 1px rgb(0 0 0 / 8%), inset 0 .5px 0 rgb(255 255 255 / 18%);
+  border: 0;
   cursor: pointer;
   font-size: var(--mac-fs-chrome);
   line-height: var(--mac-lh-chrome);
   font-weight: 600;
+  text-align: left;
 }
+.compose-bar > svg { justify-self: center; }
 
-.compose-bar:hover {
-  background: var(--mail-shell-action-hover);
-}
-
-.compose-bar { transition: background-color var(--mac-dur-1) ease, transform var(--mac-dur-1) var(--mac-ease), width var(--mac-dur-3) var(--mac-ease); }
-.compose-bar:active { transform: scale(.97); }
+.compose-bar { transition: width var(--mac-slide-duration) var(--mac-slide-ease); }
 
 .navigation-scroll {
   flex: 1 1 0;
   min-height: 0;
+}
+
+.label-nav-edit { width: 28px; height: 28px; flex-basis: 28px; }
+.label-navigation-row { position: relative; }
+.label-navigation-row .label-nav-link { padding-inline-end: 30px; }
+.label-navigation-row .label-nav-link > svg { color: var(--tag-color); }
+.label-navigation-row .label-nav-edit { position: absolute; inset: 50% 2px auto auto; translate: 0 -50%; }
+.label-nav-edit > :deep(.toolbar-button-surface) { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .label-nav-edit { opacity: 0; }
+  .label-navigation-row:is(:hover, :focus-within) .label-nav-edit { opacity: 1; }
 }
 
 .side-navigation {
@@ -324,14 +357,23 @@ function followLink(event, navigate) {
 
 .mail-navigation-group,
 .utility-navigation-group {
+  position: relative;
   display: grid;
   gap: 2px;
 }
-
 .utility-navigation-group {
-  margin-block-start: 12px;
-  padding-block-start: 12px;
-  border-block-start: 1px solid var(--mail-shell-line);
+  margin-block-start: 8px;
+  padding-block-start: 8px;
+  border-block-start: 0;
+}
+.utility-navigation-group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 6px;
+  right: 6px;
+  height: 1px;
+  background: var(--mac-line-strong);
 }
 
 .nav-main,
@@ -355,7 +397,8 @@ function followLink(event, navigate) {
   transition: background-color var(--mac-dur-1) ease, color var(--mac-dur-1) ease, transform var(--mac-dur-1) var(--mac-ease);
 }
 
-.nav-main:active, .nav-group-toggle:active, .nav-child:active { transform: scale(.985); background: var(--mac-press); }
+.nav-main:active, .nav-group-toggle:active, .nav-child:active { background: var(--mac-press); }
+.nav-group { min-width: 0; }
 
 .nav-main,
 .nav-group-toggle {
@@ -419,7 +462,7 @@ function followLink(event, navigate) {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows var(--mac-dur-3) var(--mac-ease), opacity var(--mac-dur-2) ease;
+  transition: grid-template-rows var(--mac-slide-duration) var(--mac-slide-ease), opacity var(--mac-slide-duration) ease;
 }
 
 .nav-disclosure.is-open {
@@ -430,7 +473,10 @@ function followLink(event, navigate) {
 .nav-disclosure-body {
   min-height: 0;
   overflow: hidden;
+  transform: translateY(-6px);
+  transition: transform var(--mac-slide-duration) var(--mac-slide-ease);
 }
+.nav-disclosure.is-open .nav-disclosure-body { transform: translateY(0); }
 
 /* 二级菜单：目录树。竖线与父级图标中心对齐，选中项在竖线上加粗一段 */
 .nav-children {
@@ -441,16 +487,17 @@ function followLink(event, navigate) {
   padding-left: 12px;
   list-style: none;
 }
+.nav-children > li { min-width: 0; }
 
 .nav-children::before {
   position: absolute;
   inset-block: 4px;
   inset-inline-start: 0;
-  width: 1px;
-  background: rgb(0 0 0 / 16%);
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--mac-line-strong);
   content: '';
 }
-:global(html.dark) .nav-children::before { background: rgb(255 255 255 / 18%); }
 
 .nav-child {
   grid-template-columns: 16px minmax(0, 1fr) auto;
@@ -460,19 +507,19 @@ function followLink(event, navigate) {
 .nav-child::before {
   position: absolute;
   inset-block: 7px;
-  inset-inline-start: -13px;
-  width: 3px;
+  inset-inline-start: -12px;
+  width: 4px;
   border-radius: 2px;
   background: var(--mac-accent-ink);
   content: '';
   opacity: 0;
-  transform: scaleY(.3);
+  transform: translateX(-50%) scaleY(.3);
   transition: opacity var(--mac-dur-2) ease, transform var(--mac-dur-3) var(--mac-spring);
 }
 
 .nav-child[aria-current='page']::before {
   opacity: 1;
-  transform: none;
+  transform: translateX(-50%);
 }
 
 .nav-child > svg {
@@ -482,7 +529,22 @@ function followLink(event, navigate) {
 
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-sorting :is(.nav-main, .nav-child, .nav-group-toggle) { cursor: grabbing; }
-.nav-sort-held { opacity: .55; }
+.nav-sort-held { opacity: .8; box-shadow: inset 0 0 0 1px var(--mac-accent-ink) !important; }
+.nav-order-move { transition: transform var(--mac-slide-duration) var(--mac-slide-ease) !important; }
+.side-navigation a { -webkit-touch-callout: none; }
+.nav-sort-status {
+  position: absolute;
+  bottom: 66px;
+  left: 12px;
+  z-index: 5;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--glass-bg-solid);
+  box-shadow: var(--mac-shadow-pop);
+  white-space: nowrap;
+  font-size: var(--mac-fs-caption);
+  pointer-events: none;
+}
 :is(.nav-sort-before, .nav-sort-after)::after {
   position: absolute;
   inset-inline: 5px;
@@ -500,8 +562,7 @@ function followLink(event, navigate) {
   justify-content: center;
   padding-inline: 0;
 }
-.is-compact .brand > span,
-.is-compact .compose-bar > span { display: none; }
+.is-compact .brand > span { display: none; }
 /* 折叠时图标位置不变，只让文字淡出，宽度随侧栏一起流动 */
 .nav-label { transition: opacity var(--mac-dur-2) ease; }
 .is-compact .nav-label { opacity: 0; }
@@ -517,11 +578,43 @@ function followLink(event, navigate) {
 .is-compact .nav-children { margin: 2px 0; padding: 0; border: 0; }
 .is-compact .nav-children::before, .is-compact .nav-child::before { display: none; }
 .is-compact :is(.nav-main, .nav-group-toggle, .nav-child) {
-  width: 36px;
+  width: 100%;
   min-height: 36px;
   overflow: hidden;
-  padding-inline: 10px 0;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 0;
+  padding: 0;
 }
+@media (min-width: 1025px) {
+  /* Keep the vertical rhythm fixed. Expanded controls retain their own
+     hierarchy; horizontal indentation eases into the compact icon rail. */
+  .compose-bar {
+    height: 36px;
+    width: min(calc((var(--mail-sidebar-width) - 24px) / 2), calc(100% - 24px));
+    padding: 0;
+  }
+  .compose-bar > svg { flex: 0 0 20px; width: 20px; height: 20px; }
+  .compose-bar > span { overflow: hidden; text-overflow: ellipsis; transition: opacity var(--mac-dur-2) ease; }
+  .is-compact .compose-bar > span { opacity: 0; }
+  .is-compact .compose-bar { align-self: auto; margin-inline: 12px; gap: 0; }
+  .nav-main, .nav-group-toggle, .nav-child { height: 36px; min-height: 36px; }
+  :is(.nav-main, .nav-group-toggle, .nav-child),
+  .is-compact :is(.nav-main, .nav-group-toggle, .nav-child) {
+    grid-template-columns: 18px minmax(0, 1fr) var(--rail-trailing-width);
+    padding-inline: 9px var(--rail-trailing-inset);
+    gap: 8px;
+    justify-items: stretch;
+  }
+  .nav-children {
+    margin: 2px 0 4px 18px;
+    padding-left: 10px;
+    transition: margin-left var(--mac-slide-duration) var(--mac-slide-ease), padding-left var(--mac-slide-duration) var(--mac-slide-ease);
+  }
+  .is-compact .nav-children { margin: 2px 0 4px; padding: 0; }
+  .nav-child::before { inset-inline-start: -10px; }
+}
+.is-compact .nav-label, .is-compact .nav-chevron { opacity: 0; pointer-events: none; }
 .is-compact .nav-group-toggle[aria-expanded='true'] {
   color: var(--el-text-color-primary);
   background: var(--mail-shell-hover);
@@ -535,40 +628,6 @@ function followLink(event, navigate) {
   transform-origin: top right;
 }
 
-.rail-hint {
-  position: absolute;
-  corner-shape: var(--mac-corner);
-  z-index: 3;
-  inset-inline-start: calc(100% + 8px);
-  transform: translateY(-50%);
-  width: max-content;
-  max-width: calc(100vw - 88px);
-  padding: 5px 10px;
-  border: 1px solid var(--mac-line);
-  border-radius: var(--mail-radius-control);
-  background: var(--mac-chrome);
-  color: var(--mac-text);
-  box-shadow: var(--mac-shadow-pop);
-  font-size: var(--mac-fs-chrome);
-  font-weight: 500;
-  line-height: var(--mac-lh-chrome);
-  overflow-wrap: anywhere;
-  pointer-events: none;
-}
-
-.rail-hint::before {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: -4px;
-  width: 6px;
-  height: 6px;
-  transform: translateY(-50%) rotate(45deg);
-  border-inline-start: 1px solid var(--mail-shell-line);
-  border-block-end: 1px solid var(--mail-shell-line);
-  background: inherit;
-  content: '';
-}
-
 .compose-bar:focus-visible,
 .nav-main:focus-visible,
 .nav-group-toggle:focus-visible,
@@ -577,19 +636,14 @@ function followLink(event, navigate) {
   outline-offset: -2px;
 }
 
-@media (max-width: 767px) {
-  .compose-bar {
-    display: none;
-  }
+@media (max-width: 1024px) {
+  .nav-main, .nav-group-toggle { min-height: 40px; }
+  .nav-child { min-height: 40px; }
+  .compose-bar { height: 40px; width: calc((100% - 24px) / 2); }
+  .mobile-bar :deep(.toolbar-button) { width: 40px; height: 40px; }
+  .compose-bar > svg { width: 18px; height: 18px; }
+  .nav-main > svg, .nav-group-toggle > svg:first-child { width: 18px; height: 18px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .nav-group-toggle .nav-chevron,
-  .nav-main,
-  .nav-group-toggle,
-  .nav-child,
-  .nav-disclosure {
-    transition: none;
-  }
-}
+
 </style>

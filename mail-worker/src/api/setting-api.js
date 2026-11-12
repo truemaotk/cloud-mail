@@ -5,6 +5,7 @@ import userContext from "../security/user-context";
 import BizError from '../error/biz-error';
 import { t } from '../i18n/i18n';
 import chatBotService, { postBotMessage, validBotUrl, validChannel } from '../service/chat-bot-service';
+import dailySendQuota from '../service/daily-send-quota';
 
 app.put('/setting/set', async (c) => {
 	await settingService.set(c, await c.req.json());
@@ -12,8 +13,14 @@ app.put('/setting/set', async (c) => {
 });
 
 app.get('/setting/query', async (c) => {
-	const setting = await settingService.get(c);
-	return c.json(result.ok(setting));
+	const [setting, { dailySendLimit }] = await Promise.all([settingService.get(c), dailySendQuota.get(c.env)]);
+	return c.json(result.ok({ ...setting, dailySendLimit }));
+});
+
+app.put('/setting/dailySendLimit', async (c) => {
+	const data = await c.req.json();
+	await dailySendQuota.setLimit(c.env, data?.dailySendLimit);
+	return c.json(result.ok());
 });
 
 app.get('/setting/websiteConfig', async (c) => {

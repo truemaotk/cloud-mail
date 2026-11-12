@@ -21,15 +21,15 @@ export function emailRead(emailIds, unread = false) {
     return http.put('/email/read', {emailIds, unread})
 }
 
-export function workspaceList(folder, accountId, offset, size, search, unread) {
+export function workspaceList(folder, accountId, offset, size, search, unread, labelId) {
     return http.get('/email/workspace/list', { params: {
-        folder, accountId, offset, size, unread: unread ? 1 : 0,
+        folder, accountId, offset, size, labelId, unread: unread ? 1 : 0,
         searchType: search?.type, text: search?.text, startDate: search?.startDate, endDate: search?.endDate,
     }, timeout: 15000 })
 }
 
-export function workspaceDetail(folder, accountId, emailId) {
-    return http.get('/email/workspace/detail', { params: { folder, accountId, emailId }, timeout: 15000 })
+export function workspaceDetail(folder, accountId, emailId, labelId) {
+    return http.get('/email/workspace/detail', { params: { folder, accountId, emailId, labelId }, timeout: 15000 })
 }
 
 export function workspaceMove(action, emailIds, until) {

@@ -1,12 +1,13 @@
 <template>
-  <div class="send" :class="{ 'send-expanded': expanded }" v-show="show">
+  <Transition name="composer" @after-leave="finishDismiss">
+  <div class="send" ref="composer" :class="{ 'send-expanded': expanded }" v-show="show" :inert="!show">
     <div class="write-box" :class="{ 'write-expanded': expanded }" role="region" :aria-label="$t('mailNewMessage')">
       <div class="title">
         <span class="title-text">{{ $t(form.sendType === 'reply' ? 'reply' : form.sendType === 'forward' ? 'forward' : 'mailNewMessage') }}</span>
         <div class="window-actions">
           <ToolbarButton :icon="expanded ? 'minimize' : 'maximize'"
                          :label="$t(expanded ? 'mailRestoreComposer' : 'mailExpandComposer')" @click="expanded = !expanded" />
-          <ToolbarButton class="mail-window-close" icon="close" :label="$t('closeComposer')" @click="close" />
+          <ToolbarButton icon="close" :label="$t('closeComposer')" @click="close" />
         </div>
       </div>
       <div class="container">
@@ -22,7 +23,7 @@
           </div>
           <div class="compose-field">
             <span class="compose-label">{{ fieldLabel('recipient') }}</span>
-            <el-input-tag @add-tag="addTagChange" tag-type="primary"
+            <el-input-tag ref="recipientInput" @add-tag="addTagChange" tag-type="primary"
                           size="default" v-model="form.receiveEmail" :aria-label="$t('recipient')">
               <template #suffix>
                 <div class="recipient-tools">
@@ -81,6 +82,7 @@
       </div>
     </div>
   </div>
+  </Transition>
 </template>
 <script setup>
 import ToolbarButton from '@/components/toolbar-button/index.vue'
@@ -120,6 +122,8 @@ const settingStore = useSettingStore()
 const emailStore = useEmailStore();
 const accountStore = useAccountStore()
 const editor = ref({})
+const composer = ref(null)
+const recipientInput = ref(null)
 const userStore = useUserStore();
 const show = ref(false);
 const expanded = ref(false)
@@ -128,6 +132,8 @@ const showBcc = ref(false)
 const percent = ref(0)
 let percentMessage = null
 let sending = false
+let resetAfterLeave = false
+let opener = null
 const defValue = ref('')
 const backReply = reactive({
   receiveEmail: [],
@@ -348,6 +354,7 @@ async function sendEmail() {
 }
 
 function resetForm() {
+  resetAfterLeave = false
   form.receiveEmail = []
   form.cc = []
   form.bcc = []
@@ -448,11 +455,13 @@ function formatImage(content) {
   return content.replace(/{{domain}}/g, toOssDomain(domain) + '/');
 }
 
-function open() {
+function open(trigger = null) {
   if (show.value) {
     editor.value.focus()
     return
   }
+  if (resetAfterLeave) resetForm()
+  opener = trigger
   if (!accountStore.currentAccount.email) {
     form.sendEmail = userStore.user.email;
     form.accountId = userStore.user.account.accountId;
@@ -463,7 +472,11 @@ function open() {
     form.name = accountStore.currentAccount.name;
   }
   show.value = true;
-  editor.value.focus()
+  nextTick(() => {
+    if (!show.value) return
+    if (form.sendType) editor.value.focus()
+    else recipientInput.value?.focus()
+  })
 }
 
 function openDraft(draft) {
@@ -471,6 +484,8 @@ function openDraft(draft) {
     editor.value.focus()
     return
   }
+  if (resetAfterLeave) resetForm()
+  opener = null
   Object.assign(form, { ...draft, cc: draft.cc || [], bcc: draft.bcc || [], manyType: draft.manyType || 'together' })
   showCc.value = !!form.cc.length
   showBcc.value = !!form.bcc.length
@@ -499,6 +514,23 @@ function hasDraftContent() {
   return !!(form.content || form.subject || form.receiveEmail.length || form.cc.length || form.bcc.length || form.attachments.length)
 }
 
+function dismissComposer() {
+  resetAfterLeave = true
+  show.value = false
+}
+
+function finishDismiss() {
+  if (!resetAfterLeave) return
+  resetForm()
+  const trigger = opener
+  opener = null
+  const focused = document.activeElement
+  if (!trigger || (focused !== document.body && !composer.value?.contains(focused))) return
+  const target = trigger.getClientRects().length && !trigger.closest('[inert]')
+    ? trigger : document.querySelector('.header .mail-compose-trigger')
+  target?.focus({ preventScroll: true })
+}
+
 async function discardComposer() {
   try {
     if (hasDraftContent() || form.draftId) {
@@ -510,8 +542,7 @@ async function discardComposer() {
       await removeDrafts([form.draftId])
       draftStore.refreshList++
     }
-    show.value = false
-    resetForm()
+    dismissComposer()
   } catch (error) {
     if (error !== 'cancel' && error !== 'close') ElMessage.error(t('mailSaveDraftFailed'))
   }
@@ -530,8 +561,7 @@ async function close() {
       if (hasDraftContent()) await saveDraft(toRaw(form), form.draftId)
       else await removeDrafts([form.draftId])
       draftStore.refreshList++
-      show.value = false
-      resetForm()
+      dismissComposer()
     } catch {
       ElMessage.error(t('mailSaveDraftFailed'))
     }
@@ -539,8 +569,7 @@ async function close() {
   }
 
   if (!hasDraftContent()) {
-    show.value = false
-    resetForm()
+    dismissComposer()
     return;
   }
 
@@ -552,8 +581,7 @@ async function close() {
       receiveFlag = true;
     }
     if (subjectFlag && contentFlag && receiveFlag && !form.cc.length && !form.bcc.length && !form.attachments.length) {
-      resetForm();
-      close()
+      dismissComposer()
       return;
     }
   }
@@ -566,14 +594,10 @@ async function close() {
   }).then(async () => {
     await saveDraft({ ...toRaw(form), createTime: dayjs().utc().format('YYYY-MM-DD HH:mm:ss') })
     draftStore.refreshList++
-    show.value = false
-    await nextTick(() => {
-      resetForm()
-    })
+    dismissComposer()
   }).catch((action) => {
     if (action === 'cancel') {
-      show.value = false
-      resetForm()
+      dismissComposer()
     } else if (action !== 'close') {
       ElMessage.error(t('mailSaveDraftFailed'))
     }
@@ -599,6 +623,13 @@ async function close() {
   justify-content: center;
   padding-block: 18px;
 }
+
+.composer-enter-active { transition: opacity 180ms var(--mac-ease); }
+.composer-leave-active { transition: opacity 130ms var(--mac-ease); }
+.composer-enter-active .write-box { transition: transform 180ms var(--mac-ease); }
+.composer-leave-active .write-box { transition: transform 130ms var(--mac-ease); }
+.composer-enter-from, .composer-leave-to { opacity: 0; }
+.composer-enter-from .write-box, .composer-leave-to .write-box { transform: translateY(8px); }
 
 .write-box {
   --compose-gutter: v-bind(composeGutter);
@@ -724,7 +755,10 @@ async function close() {
 .att-size { font-size: 11px; color: var(--mail-shell-muted); }
 
 @media (max-width: 767px) {
-  .send { padding: 0; }
+  .send {
+    padding: 0 max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .send-expanded { padding-top: max(12px, env(safe-area-inset-top)); }
   .write-box, .write-box.write-expanded {
     width: 100%;
     height: min(100%, 660px);

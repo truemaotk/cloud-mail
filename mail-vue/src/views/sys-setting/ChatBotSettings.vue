@@ -1,5 +1,9 @@
 <template>
   <div>
+    <div v-if="loadFailed" class="bot-load-error" role="status">
+      <span>{{ $t('chatBotLoadFailed') }}</span>
+      <el-button size="small" :loading="loading" @click="load">{{ $t('chatBotReload') }}</el-button>
+    </div>
     <div v-for="channel in channels" :key="channel" class="bot-row">
       <span>{{ $t(names[channel]) }}</span>
       <div class="bot-actions">
@@ -10,7 +14,7 @@
           {{ $t('chatBotPaused') }}
         </span>
         <ConfigStatus v-if="ready" :configured="Boolean(bots[channel]?.configured)" />
-        <el-button v-perm="'setting:set'" size="small" :disabled="!ready" @click="open(channel)">
+        <el-button v-perm="'setting:set'" size="small" :disabled="!ready || loading" @click="open(channel)">
           {{ $t('configure') }}
         </el-button>
       </div>
@@ -18,7 +22,7 @@
     <el-dialog v-model="visible" :title="$t(names[activeChannel])" width="min(460px, calc(100vw - 32px))"
                append-to-body close-icon="MailCloseIcon" :close-on-click-modal="!busy"
                :close-on-press-escape="!busy" :show-close="!busy">
-      <form class="bot-form" @submit.prevent="save">
+      <form class="bot-form" autocomplete="off" @submit.prevent="save">
         <p class="bot-muted">{{ $t('chatBotDescription') }}</p>
         <div class="bot-field">
           <span>{{ $t('chatBotUrl') }}</span>
@@ -71,6 +75,8 @@ const channels = ['feishu', 'wecom']
 const names = { feishu: 'chatBotFeishu', wecom: 'chatBotWeCom' }
 const bots = ref({})
 const ready = ref(false)
+const loading = ref(false)
+const loadFailed = ref(false)
 const activeChannel = ref('feishu')
 const active = computed(() => bots.value[activeChannel.value])
 const visible = ref(false)
@@ -85,12 +91,18 @@ watch(hasAddress, value => { if (!value) enabled.value = false })
 onMounted(load)
 
 async function load() {
+  if (loading.value) return false
+  loading.value = true
   try {
     bots.value = await http.get('/setting/chatBots/status')
     ready.value = true
+    loadFailed.value = false
     return true
   } catch {
+    loadFailed.value = true
     return false
+  } finally {
+    loading.value = false
   }
 }
 
@@ -114,6 +126,7 @@ async function save() {
     })
     url.value = undefined
     secret.value = undefined
+    enabled.value = Boolean(active.value?.enabled)
     ElMessage.success(t('chatBotSaved'))
   } catch {
     // The request layer displays errors.
@@ -149,6 +162,15 @@ async function retry() {
 </script>
 
 <style scoped>
+.bot-load-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
 .bot-row, .bot-toggle, .bot-actions {
   display: flex;
   align-items: center;

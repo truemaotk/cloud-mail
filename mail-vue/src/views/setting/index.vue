@@ -43,7 +43,7 @@
             <h3>{{ $t('deleteUser') }}</h3>
             <p>{{ $t('delAccountMsg') }}</p>
           </div>
-          <el-tooltip :disabled="!protectedSelf" :content="$t('protectedUserDelete')" placement="top">
+          <el-tooltip :show-after="0" :hide-after="0" :disabled="!protectedSelf" :content="$t('protectedUserDelete')" placement="top">
             <span><el-button :disabled="protectedSelf" @click="deleteConfirm">{{ $t('deleteUserBtn') }}</el-button></span>
           </el-tooltip>
         </div>
@@ -72,6 +72,12 @@
             <h3>{{ $t('paletteTitle') }}</h3>
             <p class="palette-hint">{{ $t('paletteHint') }}</p>
             <PaletteSelector />
+          </div>
+          <div class="theme-section">
+            <h3>{{ $t('interfaceMotion') }}</h3>
+            <p class="palette-hint">{{ $t('interfaceMotionHint') }}</p>
+            <el-segmented v-model="uiStore.motion" :aria-label="$t('interfaceMotion')" class="motion-options"
+                          :options="[{ label: $t('motionSystem'), value: 'system' }, { label: $t('motionFull'), value: 'full' }, { label: $t('motionReduce'), value: 'reduce' }]" />
           </div>
         </div>
       </section>
@@ -197,14 +203,8 @@ function setName() {
 }
 
 function changeLang(lang) {
-  let setting = {}
-  try {
-    setting = JSON.parse(localStorage.getItem('setting') || '{}')
-  } catch (e) {
-    setting = {}
-  }
-  localStorage.setItem('setting', JSON.stringify({...setting, lang}))
-  window.location.reload()
+  langSelect.value = lang
+  settingStore.lang = lang
 }
 
 const pwdShow = ref(false)
@@ -292,6 +292,8 @@ function submitPwd() {
 
 .personal-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   gap: 18px;
 }
 

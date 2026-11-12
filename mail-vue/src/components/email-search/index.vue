@@ -18,20 +18,21 @@
         <span v-if="appliedFilters" class="filter-dot" aria-hidden="true" />
       </button>
     </div>
-    <Transition name="search-panel">
+    <Transition name="search-panel" @before-enter="beforeOpen" @enter="opening" @after-enter="afterOpen" @before-leave="beforeClose" @leave="closing">
       <section v-if="visible" id="mail-search-filters" class="search-filters" :aria-label="t('mailSearchFilters')">
+        <div class="search-filter-body">
         <div class="search-filter-title">{{ t('searchType') }}</div>
         <el-segmented v-model="searchType" :options="searchOptions" :props="{ label: 'label', value: 'type' }" />
         <div v-if="!hideDates" class="search-dates">
-          <label>
+          <label @click.capture="openDateFromInput($event, startPicker)">
             <span>{{ t('searchDateFrom') }}</span>
-            <el-date-picker v-model="startDate" type="date" :editable="false" :teleported="false"
+            <el-date-picker ref="startPicker" v-model="startDate" type="date" :editable="false" :teleported="false" popper-class="mail-search-date-popper"
                             placement="bottom-start" :fallback-placements="['bottom-start', 'bottom-end']"
                             value-format="YYYY-MM-DD" :placeholder="t('searchStartDate')" />
           </label>
-          <label>
+          <label @click.capture="openDateFromInput($event, endPicker)">
             <span>{{ t('searchDateTo') }}</span>
-            <el-date-picker v-model="endDate" type="date" :editable="false" :teleported="false"
+            <el-date-picker ref="endPicker" v-model="endDate" type="date" :editable="false" :teleported="false" popper-class="mail-search-date-popper"
                             placement="bottom-end" :fallback-placements="['bottom-end', 'bottom-start']"
                             value-format="YYYY-MM-DD" :placeholder="t('searchEndDate')" :disabled-date="disableEndDate" />
           </label>
@@ -39,6 +40,7 @@
         <div class="search-actions">
           <el-button @click="resetSearch">{{ t('reset') }}</el-button>
           <el-button type="primary" @click="applySearch">{{ t('search') }}</el-button>
+        </div>
         </div>
       </section>
     </Transition>
@@ -61,6 +63,8 @@ const { t } = useI18n()
 const searchRef = ref(null)
 const inputRef = ref(null)
 const filterButton = ref(null)
+const startPicker = ref(null)
+const endPicker = ref(null)
 const searchText = ref('')
 const searchType = ref('subject')
 const startDate = ref('')
@@ -93,6 +97,19 @@ function toggleFilters() {
   if (visible.value) closeFilters()
   else visible.value = true
 }
+
+function openDateFromInput(event, picker) {
+  // A readonly field may not receive focus when tapped in mobile WebKit.
+  if (event.target instanceof HTMLInputElement) picker?.handleOpen()
+}
+
+// Animate the panel's actual box so it unfolds from the search field. Release
+// overflow after entry so calendars and other poppers are never clipped.
+function beforeOpen(el) { el.style.height = '0px'; el.style.overflow = 'hidden' }
+function opening(el) { el.style.height = el.scrollHeight + 'px' }
+function afterOpen(el) { el.style.height = ''; el.style.overflow = '' }
+function beforeClose(el) { el.style.height = el.getBoundingClientRect().height + 'px'; el.style.overflow = 'hidden'; void el.offsetHeight }
+function closing(el) { el.style.height = '0px' }
 
 function closeFilters() {
   visible.value = false
@@ -229,7 +246,7 @@ onBeforeUnmount(() => {
   inset-block-start: calc(100% + 6px);
   inset-inline-end: 0;
   width: min(440px, calc(100vw - 24px));
-  padding: 16px;
+  padding: 0;
   border-radius: var(--mail-radius-menu);
   background: var(--glass-bg-strong);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -237,21 +254,19 @@ onBeforeUnmount(() => {
   box-shadow: var(--glass-edge), var(--mac-shadow-pop);
   transform-origin: top right;
 }
+.search-filter-body { padding: 16px; }
 .search-filter-title { margin-bottom: 8px; font-size: var(--mac-fs-chrome); line-height: var(--mac-lh-chrome); font-weight: 600; }
 .search-filters :deep(.el-segmented) { max-width: 100%; }
 .search-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .search-dates label { display: grid; gap: 4px; min-width: 0; font-size: var(--mac-fs-caption); color: var(--mac-text-2); }
 .search-dates :deep(.el-date-editor) { width: 100%; }
 .search-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
-.search-panel-enter-active { transition: opacity var(--mac-dur-2) var(--mac-ease), transform var(--mac-dur-3) var(--mac-spring); }
-.search-panel-leave-active { transition: opacity var(--mac-dur-1) ease, transform var(--mac-dur-1) ease; }
-.search-panel-enter-from, .search-panel-leave-to { opacity: 0; transform: scale(.96) translateY(-4px); }
+.search-panel-enter-active, .search-panel-leave-active { transition: height var(--mac-slide-duration) var(--mac-slide-ease), opacity var(--mac-slide-duration) ease; }
+.search-panel-enter-from, .search-panel-leave-to { opacity: 0; }
 @media (max-width: 767px) {
   .email-search { flex: 1 1 auto; }
   .search-shortcut { display: none; }
   .search-filters { width: min(440px, calc(100vw - 20px)); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .search-panel-enter-active, .search-panel-leave-active { transition: none; }
-}
+
 </style>

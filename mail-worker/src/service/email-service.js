@@ -17,7 +17,7 @@ import roleService from './role-service';
 import user from '../entity/user';
 import starService from './star-service';
 import dayjs from 'dayjs';
-import kvConst from '../const/kv-const';
+import dailySendQuota from './daily-send-quota';
 import { t } from '../i18n/i18n'
 import domainUtils from '../utils/domain-uitls';
 import account from "../entity/account";
@@ -503,9 +503,14 @@ const emailService = {
 			throw new BizError(t('attLimit'));
 		}
 
+		const reserved = envelopeRecipients.length;
+		const quotaDay = await dailySendQuota.reserve(c.env, reserved);
+		let accepted = 0;
+
 		// sendParams 用于渠道请求，saveParams 保留保存记录所需的账号、权限和附件数据。
 		const context = {
 			separate, allInternal, useCloudflareEmail, resendToken, sendParams,
+			recordAccepted: recipients => { accepted += recipients.length + cc.length + bcc.length; },
 			saveParams: {
 				accountId, userId, name, subject, text, html, cc, bcc,
 				sendEmail: accountRow.email,
@@ -529,13 +534,20 @@ const emailService = {
 		let sendError = '';
 
 		// 渠道每完成一组发送并保存记录后返回结果，后续发送失败仍保留已完成部分。
-		for await (const delivery of deliveries) {
-			if (delivery.error) {
-				sendError = delivery.error.message;
-				break;
-			}
+		try {
+			for await (const delivery of deliveries) {
+				if (delivery.error) {
+					sendError = delivery.error.message;
+					break;
+				}
 
-			emailResults.push(...delivery.emails);
+				emailResults.push(...delivery.emails);
+			}
+		} finally {
+			// A quota write failure must not turn a delivered email into a retry.
+			await dailySendQuota.settle(c.env, quotaDay, reserved, accepted).catch(error => {
+				console.error('Could not settle daily send quota', error);
+			});
 		}
 
 		if (!separate) {
@@ -555,12 +567,13 @@ const emailService = {
 	},
 
 	// 站内发送：普通发送共用一条发件记录，分开发送则每人一条，再写入站内收件箱。
-	async *sendInternal(c, { separate, sendParams, saveParams }) {
+	async *sendInternal(c, { separate, sendParams, saveParams, recordAccepted }) {
 		const recipientGroups = separate
 			? sendParams.receiveEmail.map(address => [address])
 			: [sendParams.receiveEmail];
 		for (const receiveEmail of recipientGroups) {
 			const emailResult = await this.saveSentEmail(c, { ...saveParams, receiveEmail });
+			recordAccepted(receiveEmail);
 			const envelopeRecipients = [...receiveEmail, ...sendParams.cc, ...sendParams.bcc];
 			const emailRowList = await this.HandleOnSiteEmail(c, envelopeRecipients, emailResult, emailResult.attList);
 			await this.forwardOnSiteEmail(c, emailRowList, { sendParams: { ...sendParams, receiveEmail } });
@@ -569,7 +582,7 @@ const emailService = {
 	},
 
 	// CF 发送：普通发送一次提交所有收件人，分开发送逐人调用并保存结果。
-	async *sendCloudflare(c, { separate, sendParams, saveParams }) {
+	async *sendCloudflare(c, { separate, sendParams, saveParams, recordAccepted }) {
 		const recipientGroups = separate
 			? sendParams.receiveEmail.map(address => [address])
 			: [sendParams.receiveEmail];
@@ -583,6 +596,7 @@ const emailService = {
 				yield { error: { message: error.message } };
 				return;
 			}
+			recordAccepted(receiveEmail);
 			const emailResult = await this.saveSentEmail(c, {
 				...saveParams, receiveEmail, providerId: result.data.id
 			});
@@ -591,7 +605,7 @@ const emailService = {
 	},
 
 	// Resend 分开发送一次最多提交 100 封独立邮件，普通发送仍调用单封接口。
-	async *sendResend(c, { separate, resendToken, sendParams, saveParams }) {
+	async *sendResend(c, { separate, resendToken, sendParams, saveParams, recordAccepted }) {
 		if (separate && sendParams.receiveEmail.length > 100) {
 			throw new BizError(t('resendRecipientLimit'));
 		}
@@ -613,6 +627,7 @@ const emailService = {
 			yield { error: result.error };
 			return;
 		}
+		recordAccepted(sendParams.receiveEmail);
 		// 严格校验模式下，批量返回的邮件 ID 按提交顺序对应各收件人。
 		const items = separate
 			? sendParams.receiveEmail.map((address, index) => ({
@@ -670,17 +685,6 @@ const emailService = {
 
 		const attList = await attService.selectByEmailIds(c, [emailResult.emailId]);
 		emailResult.attList = attList;
-
-		const dateStr = dayjs().format('YYYY-MM-DD');
-		let daySendTotal = await c.env.kv.get(kvConst.SEND_DAY_COUNT + dateStr);
-
-		//记录每天发件次数统计
-		if (!daySendTotal) {
-			await c.env.kv.put(kvConst.SEND_DAY_COUNT + dateStr, JSON.stringify(recipientCount), { expirationTtl: 60 * 60 * 24 });
-		} else  {
-			daySendTotal = Number(daySendTotal) + recipientCount
-			await c.env.kv.put(kvConst.SEND_DAY_COUNT + dateStr, JSON.stringify(daySendTotal), { expirationTtl: 60 * 60 * 24 });
-		}
 
 		return emailResult;
 	},

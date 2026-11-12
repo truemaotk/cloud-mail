@@ -12,7 +12,7 @@ import {
   PanelLeft, ChevronRight, MailX, MailCheck, CircleCheck, CircleX, CircleAlert, Clock, Clipboard,
   Ban, Mailbox, Image, GitBranch, Coffee, BookOpen, Eye, Download, LoaderCircle, FileArchive,
   FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, File, ArrowUpRight,
-  Archive, ArchiveRestore, ShieldAlert, SlidersHorizontal, Maximize2, Minimize2, Minus, Headset, Columns3, Rows3, EllipsisVertical, CircleUserRound
+  Archive, ArchiveRestore, OctagonAlert, SlidersHorizontal, Maximize2, Minimize2, Minus, Headset, Columns3, Rows3, CircleEllipsis, CircleUserRound, Tag
 } from '@lucide/vue'
 
 defineProps({
@@ -43,6 +43,7 @@ const icons = {
   copy: Copy,
   more: Ellipsis,
   pin: Pin,
+  tag: Tag,
   logout: LogOut,
   'user-add': UserRoundPlus,
   add: Plus,
@@ -89,14 +90,14 @@ const icons = {
   external: ArrowUpRight,
   archive: Archive,
   restore: ArchiveRestore,
-  spam: ShieldAlert,
+  spam: OctagonAlert,
   filter: SlidersHorizontal,
   maximize: Maximize2,
   minimize: Minimize2,
   minus: Minus,
   columns: Columns3,
   rows: Rows3,
-  'more-vertical': EllipsisVertical,
+  'more-vertical': CircleEllipsis,
   'user-circle': CircleUserRound,
 }
 </script>

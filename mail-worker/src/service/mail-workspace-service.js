@@ -11,6 +11,7 @@ import { emailBriefColumns, emailListColumns } from '../lib/email-list-columns';
 import emailService from './email-service';
 import attService from './att-service';
 import starService from './star-service';
+import labels, { messageHasLabel } from './label-service';
 
 const folders = new Set(['inbox', 'starred', 'snoozed', 'sent', 'archived', 'spam', 'trash']);
 const placements = new Set(['archived', 'spam', 'snoozed']);
@@ -71,15 +72,31 @@ async function mailboxScope(c, params, userId) {
 
 function filtersFor(params, scope, userId, now) {
 	const { folder } = params;
-	const type = folder === 'inbox' ? emailConst.type.RECEIVE : folder === 'sent' ? emailConst.type.SEND : undefined;
+	const type = params.labelId ? undefined : folder === 'inbox' ? emailConst.type.RECEIVE : folder === 'sent' ? emailConst.type.SEND : undefined;
 	return and(
 		...emailService.emailListFilters({
 			...scope, userId, type, deleted: folder === 'trash', withCursor: false,
 			text: params.text, searchType: params.searchType, startDate: params.startDate, endDate: params.endDate,
 		}),
-		folderCondition(folder, now, userId),
+		params.labelId ? and(messageHasLabel(userId, params.labelId), or(isNull(state.folder), ne(state.folder, 'spam')))
+			: folderCondition(folder, now, userId),
 		params.unread === '1' ? eq(email.unread, emailConst.unread.UNREAD) : undefined
 	);
+}
+
+async function listLabelId(c, params, userId) {
+	if (params.labelId === undefined) return null;
+	if (params.folder !== 'inbox') fail('workspaceInvalidAction');
+	const labelId = Number(params.labelId);
+	await labels.assertMessageLabel(c.env.db, userId, labelId);
+	return labelId;
+}
+
+async function addLabels(c, userId, rows) {
+	const assignments = await labels.messageAssignments(c.env.db, userId, rows.map(row => row.emailId));
+	for (const row of rows) row.labelIds = [];
+	const byId = new Map(rows.map(row => [row.emailId, row]));
+	for (const { itemId, labelId } of assignments) byId.get(itemId)?.labelIds.push(labelId);
 }
 
 function statusColumns(userId) {
@@ -91,7 +108,8 @@ export default {
 		await ensureMailboxMessageState(c.env.db);
 		const scope = await mailboxScope(c, params, userId);
 		const now = Date.now();
-		const where = filtersFor(params, scope, userId, now);
+		const labelId = await listLabelId(c, params, userId);
+		const where = filtersFor({ ...params, labelId }, scope, userId, now);
 		const size = Math.min(50, Math.max(1, Math.trunc(Number(params.size) || 25)));
 		const offset = Math.max(0, Math.min(1_000_000, Math.trunc(Number(params.offset) || 0)));
 		const db = orm(c);
@@ -102,6 +120,7 @@ export default {
 			withMailRelations(db.select({ next: sql`min(${state.snoozedUntil})`.mapWith(Number) }))
 				.where(filtersFor({ folder: 'snoozed' }, scope, userId, now)).get(),
 		]);
+		await addLabels(c, userId, list);
 		return { list: emailService.applyListText(list), total: result.total, nextSnoozeAt: next.next };
 	},
 
@@ -109,10 +128,12 @@ export default {
 		await ensureMailboxMessageState(c.env.db);
 		const [emailId] = messageIds([Number(params.emailId)]);
 		const scope = await mailboxScope(c, params, userId);
+		const labelId = await listLabelId(c, params, userId);
 		const row = await withMailRelations(orm(c).select({ ...emailListColumns, ...statusColumns(userId) }))
-			.where(and(eq(email.emailId, emailId), filtersFor({ folder: params.folder }, scope, userId, Date.now()))).get();
+			.where(and(eq(email.emailId, emailId), filtersFor({ folder: params.folder, labelId }, scope, userId, Date.now()))).get();
 		if (!row) fail('workspaceMissingMessage', 404);
 		await emailService.emailAddAtt(c, [row]);
+		await addLabels(c, userId, [row]);
 		return row;
 	},
 

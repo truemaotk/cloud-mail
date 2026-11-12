@@ -93,7 +93,5 @@ function showNotice(data) {
 .mail-page-leave-active { transition: opacity 95ms ease-in; }
 .mail-page-enter-from, .mail-page-leave-to { opacity: 0; }
 
-@media (prefers-reduced-motion: reduce) {
-  .mail-page-enter-active, .mail-page-leave-active { transition: none; }
-}
+
 </style>

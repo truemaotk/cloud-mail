@@ -40,6 +40,17 @@ const editorRef = ref(null);
 const showLoading = ref(false);
 const uiStore = useUiStore();
 const settingStore = useSettingStore();
+let pendingContent = props.defValue;
+
+function applyEditorTheme() {
+  const target = editor.value?.getDoc()?.documentElement;
+  if (!target) return;
+  const colors = getComputedStyle(document.documentElement);
+  target.style.setProperty('--mail-editor-surface', colors.getPropertyValue('--mac-surface'));
+  target.style.setProperty('--mail-editor-text', colors.getPropertyValue('--mac-text'));
+}
+
+watch(() => uiStore.palette, () => nextTick(applyEditorTheme), { flush: 'post' });
 
 onMounted(() => {
   initTinyMCE();
@@ -50,14 +61,17 @@ onBeforeUnmount(() => {
 });
 
 watch(() => props.defValue, (newValue) => {
+  pendingContent = newValue;
   if (editor.value && editor.value.getContent() !== newValue) {
     editor.value.setContent(newValue);
   }
 });
 
 watch(() => [uiStore.dark, settingStore.lang], () => {
+  // Recreating the editor must not restore the initial value over unsaved mail.
+  pendingContent = editor.value?.getContent() ?? pendingContent;
   destroyEditor();
-  initEditor();
+  if (window.tinymce) initEditor();
 });
 
 const language = computed(() => {
@@ -99,12 +113,12 @@ function initEditor() {
     skin: `${uiStore.dark ? 'oxide-dark' : 'oxide'}`,
     content_css: `/tinymce/css/index.css,${uiStore.dark ? 'dark' : 'default'}`,
     content_style: `:root {
-         --scrollbar-track-color: ${uiStore.dark ? '#1E1E1F' : '#FFFFFF'};
+         --scrollbar-track-color: var(--mail-editor-surface, ${uiStore.dark ? '#1C1C1E' : '#FAFAFC'});
          --scrollbar-thumb-color: ${uiStore.dark ? '#6B6F78' : '#A8ABB2'};
     }
     html, body.mce-content-body {
-         background: ${uiStore.dark ? '#1E1E1F' : '#FFFFFF'};
-         color: ${uiStore.dark ? '#F5F5F7' : '#1D1D1F'};
+         background: var(--mail-editor-surface, ${uiStore.dark ? '#1C1C1E' : '#FAFAFC'});
+         color: var(--mail-editor-text, ${uiStore.dark ? '#F5F5F7' : '#1D1D1F'});
     }
     body.mce-content-body {
          font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
@@ -129,7 +143,8 @@ function initEditor() {
     setup: (ed) => {
       editor.value = ed;
       ed.on('init', () => {
-        ed.setContent(props.defValue);
+        ed.setContent(pendingContent);
+        applyEditorTheme();
         isInitialized.value = true;
       });
       ed.on('input change', () => {

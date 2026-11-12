@@ -46,71 +46,33 @@ const analysisDao = {
 		return results[0];
 	},
 
-	async userDayCount(c, diffHours) {
-		const { tzMod, tzBack } = this.tzModifiers(diffHours);
+	async userDayCount(c, days) {
 		const { results } = await c.env.db.prepare(`
-            SELECT
-                DATE(create_time, '${tzMod}') AS date,
-                COUNT(*) AS total
-            FROM
-                user
-            WHERE
-                create_time >= datetime('now', '${tzMod}', 'start of day', '-15 days', '${tzBack}')
-                AND create_time < datetime('now', '${tzMod}', 'start of day', '${tzBack}')
-            GROUP BY
-                DATE(create_time, '${tzMod}')
-            ORDER BY
-                date ASC
-        `).all();
+			${dayBuckets}
+			SELECT days.date, COUNT(user.user_id) AS total
+			FROM days
+			LEFT JOIN user ON user.create_time >= days.start_utc AND user.create_time < days.end_utc
+			GROUP BY days.date ORDER BY days.date
+		`).bind(JSON.stringify(days)).all();
 		return results;
 	},
 
-	async receiveDayCount(c, diffHours) {
-		const { tzMod, tzBack } = this.tzModifiers(diffHours);
+	async emailDayCount(c, days) {
 		const { results } = await c.env.db.prepare(`
-            SELECT
-                DATE(create_time, '${tzMod}') AS date,
-                COUNT(*) AS total
-            FROM
-                email
-            WHERE
-                type = 0
-                AND create_time >= datetime('now', '${tzMod}', 'start of day', '-15 days', '${tzBack}')
-                AND create_time < datetime('now', '${tzMod}', 'start of day', '${tzBack}')
-            GROUP BY
-                DATE(create_time, '${tzMod}')
-            ORDER BY
-                date ASC
-        `).all();
+			${dayBuckets}
+			SELECT days.date,
+				SUM(CASE WHEN email.type = 0 THEN 1 ELSE 0 END) AS received,
+				SUM(CASE WHEN email.type = 1 THEN 1 ELSE 0 END) AS sent
+			FROM days
+			LEFT JOIN email ON email.create_time >= days.start_utc AND email.create_time < days.end_utc
+			GROUP BY days.date ORDER BY days.date
+		`).bind(JSON.stringify(days)).all();
 		return results;
 	},
-
-	async sendDayCount(c, diffHours) {
-		const { tzMod, tzBack } = this.tzModifiers(diffHours);
-		const { results } = await c.env.db.prepare(`
-            SELECT
-                DATE(create_time, '${tzMod}') AS date,
-                COUNT(*) AS total
-            FROM
-                email
-            WHERE
-                type = 1
-                AND create_time >= datetime('now', '${tzMod}', 'start of day', '-15 days', '${tzBack}')
-                AND create_time < datetime('now', '${tzMod}', 'start of day', '${tzBack}')
-            GROUP BY
-                DATE(create_time, '${tzMod}')
-            ORDER BY
-                date ASC
-        `).all();
-		return results;
-	},
-
-	tzModifiers(diffHours) {
-		const tzMod = diffHours >= 0 ? `+${diffHours} hours` : `${diffHours} hours`;
-		const tzBack = (-diffHours) >= 0 ? `+${-diffHours} hours` : `${-diffHours} hours`;
-		return { tzMod, tzBack };
-	}
-
 };
+
+const dayBuckets = `WITH days(date, start_utc, end_utc) AS (
+	SELECT json_extract(value, '$[0]'), json_extract(value, '$[1]'), json_extract(value, '$[2]') FROM json_each(?)
+)`;
 
 export default analysisDao;

@@ -12,18 +12,20 @@
       persistent
       effect="light"
       popper-class="mailbox-switch-popover"
+      :popper-style="!compact && triggerWidth ? { width: triggerWidth + 'px' } : undefined"
       @show="focusSelectedMailbox"
     >
       <button ref="trigger" type="button" class="mailbox-switch-trigger"
+              :data-tooltip="$t('mailboxSwitcher')"
               :aria-label="compact ? $t('mailboxSwitcher') + ' ' + currentAddress : undefined"
               :data-rail-label="compact ? $t('mailboxSwitcher') : undefined"
               aria-controls="sidebar-mailbox-picker" :aria-expanded="open" aria-haspopup="dialog"
               @keydown="rememberKeyboard" @keydown.esc.stop="closeFromKeyboard"
               @pointerdown="keyboardOpening = false">
-        <span class="mailbox-switch-icon"><NavigationIcon name="mail" :size="18" /></span>
+        <span class="mailbox-switch-icon"><NavigationIcon name="mail" :size="20" /></span>
         <span class="mailbox-switch-label">
           <strong>{{ $t('mailboxSwitcher') }}</strong>
-          <span :title="currentAddress">{{ currentAddress }}</span>
+          <span>{{ currentAddress }}</span>
         </span>
         <NavigationIcon class="disclosure-chevron" name="chevron" :size="15" />
       </button>
@@ -38,6 +40,7 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
+import { useElementSize } from '@vueuse/core'
 import { useUiStore } from '@/store/ui.js'
 import { useAccountStore } from '@/store/account.js'
 import { useUserStore } from '@/store/user.js'
@@ -51,6 +54,7 @@ const accountStore = useAccountStore()
 const userStore = useUserStore()
 const open = ref(false)
 const trigger = ref(null)
+const { width: triggerWidth } = useElementSize(trigger, undefined, { box: 'border-box' })
 const panel = ref(null)
 let keyboardOpening = false
 const currentAddress = computed(() => accountStore.currentAccount?.email || userStore.user?.email || '')
@@ -91,14 +95,15 @@ function closeFromKeyboard() {
 
 .mailbox-switch-trigger {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) var(--rail-trailing-width);
+  grid-template-columns: 36px minmax(0, 1fr) var(--rail-trailing-width);
   align-items: center;
   gap: 8px;
   width: 100%;
   min-height: 48px;
   padding: 6px 8px 6px 6px;
   padding-inline-end: var(--rail-trailing-inset);
-  border: 1px solid var(--mac-line);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--mac-line);
   border-radius: 10px;
   background: var(--mac-surface);
   color: var(--mac-text);
@@ -114,6 +119,7 @@ function closeFromKeyboard() {
 
 .mailbox-switch-icon {
   display: grid;
+  justify-self: center;
   place-items: center;
   width: 34px;
   height: 34px;
@@ -122,9 +128,13 @@ function closeFromKeyboard() {
   border: 1px solid var(--mac-line);
   color: var(--mac-text-2);
 }
+.mailbox-switcher:not(.is-compact) .mailbox-switch-icon {
+  background: transparent;
+  border-color: transparent;
+}
 
 .mailbox-switch-label { display: grid; min-width: 0; }
-.mailbox-switch-label strong { font-size: var(--mac-fs-chrome); line-height: var(--mac-lh-chrome); font-weight: 600; }
+.mailbox-switch-label strong { font-size: var(--mac-fs-chrome); line-height: var(--mac-lh-chrome); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mailbox-switch-label span {
   overflow: hidden;
   color: var(--mac-text-2);
@@ -149,6 +159,7 @@ function closeFromKeyboard() {
   backdrop-filter: none;
   box-shadow: 0 10px 24px rgb(0 0 0 / 10%) !important;
   transform-origin: top center;
+  clip-path: none;
 }
 .mailbox-switcher:not(.is-compact) .mailbox-switch-trigger[aria-expanded='true'] {
   border-bottom-color: transparent;
@@ -162,13 +173,14 @@ function closeFromKeyboard() {
   background: var(--mac-line);
   content: '';
 }
-.mailbox-switch-trigger { position: relative; transition: background-color var(--mac-dur-1) ease, border-radius var(--mac-dur-1) ease; }
+.mailbox-switch-trigger { position: relative; transition: background-color var(--mac-dur-1) ease, border-radius var(--mac-dur-1) ease, padding var(--mac-slide-duration) var(--mac-slide-ease); }
 .mailbox-switch-trigger .disclosure-chevron { transition: transform var(--mac-dur-3) var(--mac-spring); }
 .mailbox-switch-trigger[aria-expanded='true'] .disclosure-chevron { transform: rotate(90deg); }
 /* 面板像卷帘一样从触发器下沿展开 */
 .mailbox-switcher :deep(.mailbox-switch-popover.el-fade-in-linear-enter-active),
 .mailbox-switcher :deep(.mailbox-switch-popover.el-fade-in-linear-leave-active) {
-  transition: clip-path var(--mac-dur-3) var(--mac-ease), opacity var(--mac-dur-2) ease !important;
+  clip-path: inset(-36px);
+  transition: clip-path var(--mac-slide-duration) var(--mac-slide-ease), opacity var(--mac-slide-duration) ease !important;
 }
 .mailbox-switcher:not(.is-compact) :deep(.mailbox-switch-popover.el-fade-in-linear-enter-from),
 .mailbox-switcher:not(.is-compact) :deep(.mailbox-switch-popover.el-fade-in-linear-leave-to) {
@@ -195,4 +207,12 @@ function closeFromKeyboard() {
 .is-compact .mailbox-switch-trigger:hover { background: var(--mac-hover); }
 .is-compact .mailbox-switch-icon { width: 30px; height: 30px; }
 .is-compact :is(.mailbox-switch-label, .disclosure-chevron) { display: none; }
+@media (min-width: 1025px) {
+  .mailbox-switcher, .mailbox-switcher.is-compact {
+    height: 48px;
+    margin-top: calc(var(--mail-titlebar-center) - var(--mail-sidebar-inset) - 24px);
+    margin-bottom: 6px;
+  }
+  .mailbox-switch-trigger { padding: 0; }
+}
 </style>

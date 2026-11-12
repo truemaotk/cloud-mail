@@ -9,10 +9,10 @@
         aria-controls="mail-sidebar"
         @click="changeAside"
       />
-      <h1 class="breadcrumb-item">{{ $t(currentFolder ? currentFolder.label : route.meta.title) }}</h1>
+      <h1 class="breadcrumb-item">{{ labelTitle || $t(currentFolder ? currentFolder.label : route.meta.title) }}</h1>
     </div>
     <div v-perm="'email:send'" class="writer-box">
-      <ToolbarButton icon="compose" :label="$t('compose')" @click="openSend" />
+      <ToolbarButton class="mail-compose-trigger" icon="compose" :label="$t('compose')" @click="openSend" />
     </div>
     <div v-if="currentFolder" class="workspace-tools">
       <div class="layout-switch" role="radiogroup" :aria-label="$t('mailReadingLayout')">
@@ -50,11 +50,14 @@ import {useI18n} from "vue-i18n";
 import emailSearch from '@/components/email-search/index.vue'
 import {useEmailStore} from '@/store/email.js'
 import {useSendStore} from '@/store/send.js'
+import { useLabelsStore } from '@/store/labels.js'
 
 const {t} = useI18n();
 const route = useRoute();
 const folder = computed(() => workspaceFolder(route))
 const currentFolder = computed(() => workspaceFolders.find(item => item.path === folder.value))
+const labels = useLabelsStore()
+const labelTitle = computed(() => folder.value === 'inbox' && labels.byId[Number(route.query.label)]?.name)
 const uiStore = useUiStore();
 const emailStore = useEmailStore()
 const sendStore = useSendStore()
@@ -85,15 +88,15 @@ const searchOptions = computed(() => folder.value === 'all-mail' ? adminSearchOp
   : folder.value === 'sent' ? sentSearchOptions.value : inboxSearchOptions.value)
 function returnToList() {
   if (route.meta.name !== 'content') return
-  if (currentFolder.value) router.replace({ name: currentFolder.value.name })
+  if (currentFolder.value) router.replace({ name: currentFolder.value.name, query: labelTitle.value ? { label: route.query.label } : undefined })
 }
 
 function setReadingLayout(layout) {
   uiStore.wideReading = layout === 'wide'
 }
 
-function openSend() {
-  uiStore.writerRef.open()
+function openSend(event) {
+  uiStore.writerRef.open(event.currentTarget)
 }
 
 function changeAside() {
@@ -119,13 +122,12 @@ function changeAside() {
   min-width: 0;
 }
 
+@media (min-width: 1025px) {
+  .header { padding-block-start: calc(var(--mail-titlebar-center) * 2 - var(--mail-shell-header)); }
+}
+
 .sidebar-toggle.toolbar-button {
   margin-inline-start: -4px;
-  border-radius: 50%;
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-edge), 0 0 0 .5px rgb(0 0 0 / 8%), 0 2px 8px rgb(0 0 0 / 6%);
 }
 
 .breadcrumb-item {
@@ -156,7 +158,7 @@ function changeAside() {
 .layout-switch {
   position: relative;
   display: inline-grid;
-  grid-template-columns: 34px 34px;
+  grid-template-columns: 30px 30px;
   flex: none;
   padding: 3px;
   border-radius: 999px;
@@ -170,19 +172,20 @@ function changeAside() {
   position: absolute;
   inset-block: 3px;
   inset-inline-start: 3px;
-  width: 34px;
+  width: 30px;
   border-radius: 999px;
   background: var(--mac-surface);
   box-shadow: 0 0 0 .5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 14%);
-  transition: transform var(--mac-dur-3) var(--mac-spring);
+  transition: transform var(--mac-slide-duration) var(--mac-slide-ease);
 }
-:global(html.dark) .layout-thumb { background: #3A3A3C; }
-.layout-thumb.is-wide { transform: translateX(34px); }
+:global(html.dark) .layout-thumb { background: var(--mac-chrome); }
+.layout-thumb.is-wide { transform: translateX(30px); }
 
 .layout-option {
   position: relative;
   display: grid;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   border-radius: 999px;
   color: var(--mac-text-2);
@@ -204,7 +207,5 @@ function changeAside() {
   .workspace-header .breadcrumb-item { display: none; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .layout-option { transition: none; }
-}
+
 </style>

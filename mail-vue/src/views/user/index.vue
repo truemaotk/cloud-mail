@@ -26,7 +26,7 @@
         <ToolbarButton icon="search" :label="$t('search')" @click="search" />
         <ToolbarButton :icon="params.timeSort === 0 ? 'sort-new' : 'sort-old'"
                        :label="$t(params.timeSort === 0 ? 'sortNewest' : 'sortOldest')" @click="changeTimeSort" />
-        <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
+        <ToolbarButton icon="refresh" :label="$t('refreshMail')" :busy="tableLoading" @click="refresh" />
         <ToolbarButton icon="delete" :label="$t('delete')" @click="delUser" />
       </div>
     </div>
@@ -1020,6 +1020,7 @@ function openSetPwd(user) {
 }
 
 function refresh() {
+  if (tableLoading.value) return
   params.email = ''
   params.num = 1
   params.status = -1

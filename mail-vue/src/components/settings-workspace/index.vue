@@ -41,10 +41,8 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
 </script>
 
 <style scoped>
-@media (prefers-reduced-motion: no-preference) {
-  .section-heading,
+.section-heading,
   .section-body :deep(> section) { animation: mail-content-in 180ms ease-out; }
-}
 
 .settings-workspace {
   display: grid;
@@ -126,8 +124,11 @@ watch(() => active.value.key, () => scrollArea.value?.scrollTo(0, 0), { flush: '
 
 .section-body {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
+
+.section-body :deep(> section) { min-width: 0; }
 
 .section-heading {
   border-bottom: 1px solid var(--mac-line);

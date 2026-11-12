@@ -7,13 +7,17 @@
     </div>
     <el-scrollbar class="scrollbar" ref="scrollbarRef">
       <div v-infinite-scroll="getAccountList" :infinite-scroll-distance="600" :infinite-scroll-immediate="false">
-        <el-card shadow="never" class="item" :class="itemBg(item.accountId)" v-for="(item, index) in accounts" :key="item.accountId"
+        <el-card shadow="never" class="item" :class="itemBg(item.accountId)" v-for="item in accounts" :key="item.accountId"
                  @click="selectAccount(item)">
           <button class="account" type="button"
                   :aria-pressed="accountStore.currentAccountId === item.accountId"
+                  :aria-label="isPinned(item) ? $t('pinnedMailbox', { email: item.email }) : undefined"
                   @click.stop="selectAccount(item)">
-            <NavigationIcon v-if="compact" :name="accountStore.currentAccountId === item.accountId ? 'mail-delivered' : 'mail'" :size="15" />
-            <span class="account-address" :title="item.email">{{ item.email }}</span>
+            <NavigationIcon v-if="compact" :name="mailboxIcon(item)" :size="15" />
+            <span class="account-address-line">
+              <span class="account-address" :title="item.email">{{ item.email }}</span>
+              <LabelChips :ids="labels.mailboxAssignments[item.accountId]" />
+            </span>
             <UnreadBadge :count="emailStore.unreadByAccount[item.accountId]" />
           </button>
           <div class="account-actions">
@@ -33,7 +37,7 @@
               <NavigationIcon name="copy" />
             </button>
             <el-dropdown
-              v-if="compact ? pickerOpen : !showNullSetting(item)"
+              v-if="!compact || pickerOpen"
               trigger="click"
               placement="bottom-end"
               :append-to="compact ? '#sidebar-mailbox-picker' : undefined"
@@ -54,7 +58,11 @@
                   <el-dropdown-item v-if="hasPerm('email:send')" @click="openSetName(item)">
                     <NavigationIcon name="compose" />{{ $t('rename') }}
                   </el-dropdown-item>
-                  <el-dropdown-item v-if="item.accountId !== userStore.user.account.accountId" @click="setAsTop(item, index)">
+                  <el-dropdown-item @click="openLabels(item)">
+                    <NavigationIcon name="tag" />{{ $t('mailboxLabels') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="item.accountId !== userStore.user.account.accountId"
+                                    :disabled="refreshing || loading || followLoading" @click="setAsTop(item)">
                     <NavigationIcon name="pin" />{{ $t('pin') }}
                   </el-dropdown-item>
                   <el-dropdown-item v-if="item.accountId !== userStore.user.account.accountId && hasPerm('account:delete')"
@@ -187,6 +195,9 @@ import {useSettingStore} from "@/store/setting.js";
 import {useAccountStore} from "@/store/account.js";
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import UnreadBadge from '@/components/unread-badge/index.vue'
+import LabelChips from '@/components/label-chips/index.vue'
+import { useLabelsStore } from '@/store/labels.js'
+import { useUiStore } from '@/store/ui.js'
 import {useEmailStore} from "@/store/email.js";
 import {useUserStore} from "@/store/user.js";
 import {hasPerm} from "@/perm/perm.js"
@@ -201,6 +212,8 @@ const userStore = useUserStore();
 const accountStore = useAccountStore();
 const settingStore = useSettingStore();
 const emailStore = useEmailStore();
+const labels = useLabelsStore()
+const uiStore = useUiStore()
 const showAdd = ref(false)
 const addLoading = ref(false);
 const domainList = computed(() => settingStore.domainList)
@@ -372,14 +385,24 @@ function setAllReceive(account) {
 }
 
 
-function showNullSetting(item) {
-  return !hasPerm('email:send') && !(item.accountId !== userStore.user.account.accountId && hasPerm('account:delete'))
+function openLabels(item) {
+  emit('dialog-open')
+  if (window.innerWidth < 1025) uiStore.asideShow = false
+  labels.assign('mailbox', [{ id: item.accountId, labelIds: labels.mailboxAssignments[item.accountId] ?? [] }])
 }
 
 function itemBg(accountId) {
   return accountStore.currentAccountId === accountId ? 'item-choose' : ''
 }
 
+function isPinned(account) {
+  return account.accountId === userStore.user.account.accountId || account.sort > 0
+}
+
+function mailboxIcon(account) {
+  if (isPinned(account)) return 'pin'
+  return accountStore.currentAccountId === account.accountId ? 'mail-delivered' : 'mail'
+}
 
 
 function remove(account) {
@@ -440,16 +463,14 @@ function add() {
   showAdd.value = true
 }
 
-function setAsTop(account, index) {
-  accountSetAsTop(account.accountId).then(() => {
+function setAsTop(account) {
+  accountSetAsTop(account.accountId).then(async () => {
+    await refresh()
     ElMessage({
       message: t('setSuccess'),
       type: 'success',
       plain: true,
     })
-
-    const [item] = accounts.splice(index, 1);
-    accounts.splice(1, 0, item);
 
   });
 }
@@ -719,6 +740,8 @@ path[fill="#ffdda1"] {
       white-space: nowrap;
       text-overflow: ellipsis;
     }
+
+    .account-address-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
 
     .account-actions,
     .account-skeleton-actions {

@@ -29,10 +29,10 @@
         @keydown.esc="closeFromKeyboard"
         @pointerdown="keyboardOpening = false"
       >
-        <span class="profile-avatar" aria-hidden="true"><NavigationIcon name="user-circle" :size="30" /></span>
+        <span class="profile-avatar" aria-hidden="true"><NavigationIcon name="user-circle" :size="20" /></span>
         <span class="profile-identity">
           <strong>{{ user.name || user.email }}</strong>
-          <span :title="user.email">{{ user.email }}</span>
+          <span>{{ user.email }}</span>
         </span>
         <NavigationIcon class="profile-chevron" name="chevron" :size="15" />
       </button>
@@ -115,9 +115,11 @@ async function copyEmail() {
 
 function clickLogout() {
   logoutLoading.value = true
-  logout().then(() => {
+  logout().then(async () => {
     localStorage.removeItem('token')
-    router.replace('/login')
+    await router.replace('/login')
+  }).catch(() => {
+    // Request and route error handlers provide the recovery message.
   }).finally(() => {
     logoutLoading.value = false
   })
@@ -143,10 +145,12 @@ function clickLogout() {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow: 0 -10px 24px rgb(0 0 0 / 8%) !important;
+  clip-path: none;
 }
 .account-menu :deep(.mail-profile-popper.el-fade-in-linear-enter-active),
 .account-menu :deep(.mail-profile-popper.el-fade-in-linear-leave-active) {
-  transition: clip-path var(--mac-dur-3) var(--mac-ease), opacity var(--mac-dur-2) ease !important;
+  clip-path: inset(-36px);
+  transition: clip-path var(--mac-slide-duration) var(--mac-slide-ease), opacity var(--mac-slide-duration) ease !important;
 }
 .account-menu:not(.is-compact) :deep(.mail-profile-popper.el-fade-in-linear-enter-from),
 .account-menu:not(.is-compact) :deep(.mail-profile-popper.el-fade-in-linear-leave-to) {
@@ -171,14 +175,15 @@ function clickLogout() {
 
 .profile-trigger {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) var(--rail-trailing-width);
+  grid-template-columns: 36px minmax(0, 1fr) var(--rail-trailing-width);
   align-items: center;
   gap: 8px;
   width: 100%;
   min-height: 48px;
   padding: 6px 8px 6px 6px;
   padding-inline-end: var(--rail-trailing-inset);
-  border: 1px solid var(--mac-line);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--mac-line);
   border-radius: 10px;
   background: var(--mac-surface);
   color: var(--mac-text);
@@ -187,7 +192,7 @@ function clickLogout() {
   transition: background-color 140ms ease;
 }
 
-.profile-trigger { position: relative; transition: background-color var(--mac-dur-1) ease, border-radius var(--mac-dur-1) ease !important; }
+.profile-trigger { position: relative; transition: background-color var(--mac-dur-1) ease, border-radius var(--mac-dur-1) ease, padding var(--mac-slide-duration) var(--mac-slide-ease) !important; }
 .profile-trigger:hover { background: color-mix(in srgb, var(--mac-surface) 94%, var(--mac-text)); }
 .account-menu:not(.is-compact) .profile-trigger[aria-expanded='true'] {
   border-top-color: transparent;
@@ -208,11 +213,19 @@ function clickLogout() {
 /* 账户头像：图标库的圆形用户图标，与左上角方形邮箱图标区分 */
 .profile-avatar {
   display: grid;
-  width: 32px;
-  height: 32px;
+  justify-self: center;
+  width: 34px;
+  height: 34px;
   place-items: center;
+  border: 1px solid var(--mac-line);
+  border-radius: 8px;
+  background: var(--mac-chrome);
   color: var(--mac-text-2);
-  --mail-icon-weight: 1.4;
+  --mail-icon-weight: 1.75;
+}
+.account-menu:not(.is-compact) .profile-avatar {
+  background: transparent;
+  border-color: transparent;
 }
 
 .profile-identity {
@@ -304,10 +317,11 @@ function clickLogout() {
   outline-offset: -2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .profile-trigger,
-  .profile-chevron {
-    transition: none;
-  }
+@media (min-width: 1025px) {
+  .account-menu, .account-menu.is-compact { display: flex; align-items: center; height: 48px; margin-bottom: 12px; }
+  .profile-trigger { padding: 0; }
+  .profile-avatar { justify-self: center; }
 }
+
+
 </style>

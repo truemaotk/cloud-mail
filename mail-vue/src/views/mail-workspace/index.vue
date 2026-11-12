@@ -7,13 +7,16 @@
         <el-checkbox v-model="allSelected" :indeterminate="!!selected.length && !allSelected"
                      :disabled="!rows.length" :aria-label="$t('selectAllMail')" />
         <span v-if="selected.length" class="list-range">{{ $t('mailSelected', { count: selected.length }) }}</span>
-        <span v-else class="list-range" aria-live="polite">{{ range }}</span>
+        <span v-else class="list-range" aria-live="polite" :aria-label="range">
+          <span class="list-range-full">{{ range }}</span>
+          <span class="list-range-compact" aria-hidden="true">{{ $t('mailTotalCompact', { count: total }) }}</span>
+        </span>
         <ToolbarButton v-if="selected.length && isDraft" icon="delete" :label="$t('mailDiscardDraft')"
                        @click="discardDrafts" />
         <ToolbarButton v-else-if="selected.length && isAdmin && canDeleteAdmin" icon="delete"
                        :label="$t('mailPurge')" :busy="deleting" @click="deleteAdmin(selected)" />
         <MessageActions v-else-if="selected.length && !isAdmin" class="list-bulk-actions" :folder="folder" :ids="selected"
-                        :can-file="selectionCanFile"
+                        :can-file="selectionCanFile" :label-items="selectedLabelItems"
                         @change="handleAction" />
         <template v-else-if="!selected.length">
           <span class="toolbar-group">
@@ -95,7 +98,10 @@
                   @click="open(row)">
             <span class="message-sender" :title="isDraft ? row.receiveEmail?.join(', ') : sender(row)">{{ sender(row) }}</span>
             <span class="message-copy">
-              <span class="message-subject" :title="row.subject">{{ row.subject || $t('noSubject') }}</span>
+              <span class="message-subject-line">
+                <span class="message-subject" :title="row.subject">{{ row.subject || $t('noSubject') }}</span>
+                <LabelChips :ids="row.labelIds" />
+              </span>
               <span v-if="row.listText || row.text" class="message-snippet">{{ row.listText || row.text }}</span>
             </span>
             <time>{{ rowTime(row) }}</time>
@@ -109,7 +115,7 @@
         <template #toolbar>
           <ToolbarButton icon="back" class="reader-back" :label="$t('goBack')" @click="closeReader" />
           <MessageActions v-if="actionFolder" :folder="actionFolder" :ids="[activeMessage.emailId]"
-                          :can-reply="false" :can-file="activeMessage.type === 0" reader
+                          :can-reply="false" :can-file="activeMessage.type === 0" :label-items="isAdmin ? [] : [labelItem(activeMessage)]" reader
                           @change="handleAction" @reply="uiStore.writerRef.openReply(activeMessage)"
                           @forward="uiStore.writerRef.openForward(activeMessage)" />
           <div v-if="isAdmin" class="admin-reader-actions">
@@ -177,6 +183,7 @@ import { emailRead, workspaceDetail, workspaceList } from '@/request/email.js'
 import { allEmailDelete, allEmailDetail, allEmailList } from '@/request/all-email.js'
 import { starAdd, starCancel } from '@/request/star.js'
 import { useAccountStore } from '@/store/account.js'
+import { useLabelsStore } from '@/store/labels.js'
 import { useEmailStore } from '@/store/email.js'
 import { useUserStore } from '@/store/user.js'
 import { useSendStore } from '@/store/send.js'
@@ -192,6 +199,7 @@ import { removeDrafts } from '@/db/drafts.js'
 import MailReader from '@/views/content/index.vue'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import ToolbarButton from '@/components/toolbar-button/index.vue'
+import LabelChips from '@/components/label-chips/index.vue'
 import MessageActions from './MessageActions.vue'
 import AdminCleanup from './AdminCleanup.vue'
 
@@ -200,6 +208,7 @@ const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const accountStore = useAccountStore()
+const labelStore = useLabelsStore()
 const emailStore = useEmailStore()
 const userStore = useUserStore()
 const sendStore = useSendStore()
@@ -207,6 +216,13 @@ const uiStore = useUiStore()
 const settingStore = useSettingStore()
 const drafts = userDraftStore()
 const currentFolder = computed(() => workspaceFolders.find(folder => folder.path === props.folder))
+const labelId = computed(() => {
+  const id = Number(route.query.label)
+  return props.folder === 'inbox' && Number.isSafeInteger(id) && id > 0 ? id : undefined
+})
+const labelQuery = computed(() => labelId.value ? { label: labelId.value } : undefined)
+const labelItem = row => ({ id: row.emailId, labelIds: row.labelIds ?? [] })
+const selectedLabelItems = computed(() => rows.value.filter(row => selected.value.includes(row.emailId)).map(labelItem))
 const isAdmin = computed(() => props.folder === 'all-mail')
 const canDeleteAdmin = computed(() => hasPerm('all-email:delete'))
 const search = computed(() => isAdmin.value ? emailStore.adminSearch
@@ -348,7 +364,7 @@ async function reload() {
       result = { total: found.length, list: found.slice(offset.value, offset.value + pageSize) }
     } else {
       if (!accountId) return
-      result = await workspaceList(folder, accountId, offset.value, pageSize, search.value, unreadOnly.value)
+      result = await workspaceList(folder, accountId, offset.value, pageSize, search.value, unreadOnly.value, labelId.value)
     }
     if (version !== listVersion) return
     if (offset.value && offset.value >= result.total) {
@@ -441,7 +457,7 @@ function finishResize(event) {
 }
 
 watch([() => props.folder, () => isAdmin.value ? null : accountStore.currentAccountId,
-  () => isAdmin.value ? null : accountStore.currentAccount?.allReceive, search, unreadOnly, adminType, adminSort],
+  () => isAdmin.value ? null : accountStore.currentAccount?.allReceive, search, unreadOnly, adminType, adminSort, labelId],
   (values, previous) => {
     if (previous.length && values[0] !== previous[0]) unreadOnly.value = false
     if (!isAdmin.value && previous.length && values[0] === previous[0] && values[1] !== previous[1] && route.name === 'content') closeReader()
@@ -454,6 +470,17 @@ watch([() => props.folder, () => isAdmin.value ? null : accountStore.currentAcco
   }, { immediate: true })
 
 watch(() => emailStore.workspaceRevision, () => reload())
+watch(() => labelStore.lastMessageChange, change => {
+  if (!change || isAdmin.value || isDraft.value) return
+  if (activeMessage.value && change.itemIds.includes(activeMessage.value.emailId)) {
+    const ids = new Set(activeMessage.value.labelIds ?? [])
+    for (const id of change.remove) ids.delete(id)
+    for (const id of change.add) ids.add(id)
+    activeMessage.value.labelIds = [...ids]
+    if (labelId.value && !ids.has(labelId.value)) closeReader()
+  }
+  reload()
+})
 watch(() => drafts.refreshList, () => {
   if (isDraft.value) reload()
 })
@@ -465,13 +492,13 @@ async function open(row) {
     uiStore.writerRef.openDraft({ ...row, attachments: attachments?.attachments ?? [] })
     return
   }
-  const to = { name: 'content', params: { mailbox: props.folder, messageId: row.emailId } }
+  const to = { name: 'content', params: { mailbox: props.folder, messageId: row.emailId }, query: labelQuery.value }
   if (route.name === 'content') await router.replace(to)
   else await router.push(to)
 }
 
 function closeReader() {
-  if (currentFolder.value) return router.replace({ name: currentFolder.value.name })
+  if (currentFolder.value) return router.replace({ name: currentFolder.value.name, query: labelQuery.value })
 }
 
 watch([() => route.fullPath, () => isAdmin.value ? null : accountStore.currentAccountId], async () => {
@@ -483,14 +510,14 @@ watch([() => route.fullPath, () => isAdmin.value ? null : accountStore.currentAc
   if (!messageId.value) {
     const previous = emailStore.contentData
     if (previous.mailbox === props.folder && previous.viewerId === userStore.user.userId && previous.email?.emailId) {
-      router.replace({ name: 'content', params: { mailbox: props.folder, messageId: previous.email.emailId } })
+      router.replace({ name: 'content', params: { mailbox: props.folder, messageId: previous.email.emailId }, query: labelQuery.value })
     } else closeReader()
     return
   }
   const folder = props.folder
   try {
     const detail = isAdmin.value ? await allEmailDetail(messageId.value)
-      : await workspaceDetail(folder, accountStore.currentAccountId, messageId.value)
+      : await workspaceDetail(folder, accountStore.currentAccountId, messageId.value, labelId.value)
     if (version !== readerVersion) return
     if (!detail) return closeReader()
     emailStore.openMessage(detail, folder, true)
@@ -629,7 +656,7 @@ onBeforeUnmount(() => {
   --row-pad-end: 16px;
   --row-dot: 0px;
   --row-check: 16px;
-  --row-status: 22px;
+  --row-status: 24px;
   --row-gap: 6px;
   --row-text-start: calc(var(--row-pad-start) + var(--row-check) + var(--row-status) + var(--row-gap) * 2);
   display: grid;
@@ -698,6 +725,12 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 .list-bulk-actions { justify-content: flex-end; }
+.list-range-compact { display: none; }
+@media (max-width: 767px) {
+  .list-range-full { display: none; }
+  .list-range-compact { display: inline; }
+  .message-list-toolbar { gap: 4px; }
+}
 .admin-reader-actions, .reader-page-actions { display: flex; align-items: center; gap: 4px; }
 .reader-page-actions { margin-inline-start: auto; }
 .reader-position { margin-inline-end: 8px; color: var(--mac-text-2); font-size: var(--mac-fs-caption); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -747,9 +780,7 @@ onBeforeUnmount(() => {
 .placeholder-envelope .placeholder-sender { width: min(50%, 230px); }
 .placeholder-paragraph { width: min(66%, 550px); margin-inline-start: 52px; }
 .placeholder-paragraph:last-child { width: min(50%, 400px); }
-@media (prefers-reduced-motion: no-preference) {
-  .message-loaded { animation: mail-content-in var(--mac-dur-3) var(--mac-ease-out); }
-}
+.message-loaded { animation: mail-content-in var(--mac-dur-3) var(--mac-ease-out); }
 
 /* 邮件行：三栏 72px，三行文本。未读点、复选框、星标都与发件人同一行 */
 .message-row {
@@ -775,17 +806,17 @@ onBeforeUnmount(() => {
 .message-row.message-current, .message-row.message-selected { background: var(--mac-selected-solid); }
 .message-row:is(.message-current, .message-selected)::after,
 .message-row:has(+ :is(.message-current, .message-selected))::after { background: transparent; }
-.message-row > :is(.el-checkbox, .row-status) { height: 18px; margin: 0; align-self: start; }
+.message-row > :is(.el-checkbox, .row-status) { height: 20px; margin: 0; align-self: start; }
 .row-status { display: grid; place-items: center; }
 .row-kind { display: grid; place-items: center; color: var(--mac-text-2); }
 .toolbar-button.row-star {
-  flex-basis: 22px;
-  width: 22px;
-  height: 22px;
+  flex-basis: 24px;
+  width: 24px;
+  height: 24px;
   margin-top: -2px;
   border-radius: 6px;
   color: var(--mac-text-3);
-  opacity: 0;
+  opacity: 1;
   transition: opacity var(--mac-dur-1) ease, color var(--mac-dur-1) ease, transform var(--mac-dur-2) var(--mac-spring);
 }
 .message-row:is(:hover, :focus-within) .row-star, .row-star[aria-pressed='true'] { opacity: 1; }
@@ -805,6 +836,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .message-summary::before { position: absolute; inset: 0; content: ''; }
+
+.message-subject-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.message-subject-line .message-subject { min-width: 0; }
 .message-row > .el-checkbox, .row-status > * { position: relative; z-index: 1; }
 .message-summary:focus-visible { outline: none; }
 .message-row:has(.message-summary:focus-visible) { box-shadow: inset 0 0 0 2px var(--mac-focus); border-radius: 6px; }
@@ -815,7 +849,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.message-sender { grid-area: sender; font-size: var(--mac-fs-body); line-height: 18px; font-weight: 600; }
+.message-sender { grid-area: sender; font-size: var(--mac-fs-body); line-height: 20px; font-weight: 600; }
 .message-subject { font-size: var(--mac-fs-chrome); line-height: 18px; }
 .message-snippet { color: var(--mac-text-2); font-size: var(--mac-fs-caption); line-height: 16px; }
 .unread .message-subject { font-weight: 600; }
@@ -829,7 +863,8 @@ onBeforeUnmount(() => {
 }
 
 
-/* 全宽列表：单行 48px */
+/* Desktop wide reading uses one line; phones retain the readable stacked row. */
+@media (min-width: 768px) {
 .wide-reading .message-row {
   align-items: center;
   min-height: 48px;
@@ -850,6 +885,7 @@ onBeforeUnmount(() => {
 .wide-reading .unread .message-sender { font-weight: 600; }
 .wide-reading .message-snippet { flex: 1 1 0; min-width: 0; font-size: var(--mac-fs-chrome); line-height: 20px; }
 .wide-reading .message-snippet::before { content: '  —  '; white-space: pre; }
+}
 .draft-row .message-sender { color: var(--mac-text-2); font-weight: 500; }
 
 .workspace-empty {
@@ -879,9 +915,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 1px var(--mac-line);
   color: var(--mac-text-2);
 }
-@media (prefers-reduced-motion: reduce) {
-  .message-row, .message-resize::after { transition: none; }
-}
+
 @media (max-width: 1024px) {
   .mail-workspace.split-reading { grid-template-columns: minmax(0, 1fr); }
   .split-reading .message-list-pane { border-inline-end: 0; }
@@ -891,5 +925,12 @@ onBeforeUnmount(() => {
 }
 @media (max-width: 767px) {
   .mail-workspace { margin-block-start: 8px; }
+}
+@media (pointer: coarse) {
+  .toolbar-button.row-star { opacity: 1; }
+}
+@media (max-width: 620px) {
+  .message-list-toolbar { gap: 4px; }
+  .message-list-toolbar > .el-checkbox { margin-inline-end: 0; }
 }
 </style>

@@ -2,7 +2,12 @@
   <el-container class="layout" :class="{ 'mail-shell-dark': uiStore.dark, 'mobile-nav-open': isMobile && uiStore.asideShow }">
     <el-aside
         id="mail-sidebar"
+        ref="sidebarRef"
         class="aside"
+        :role="isMobile && uiStore.asideShow ? 'dialog' : undefined"
+        :aria-modal="isMobile && uiStore.asideShow ? true : undefined"
+        :aria-label="$t('mailNavigation')"
+        @keydown="onSidebarKeydown"
         :inert="isMobile && !uiStore.asideShow"
         :class="uiStore.asideShow ? 'aside-show' : 'el-aside-hide'">
       <Aside :compact="!isMobile && !uiStore.asideShow" />
@@ -11,7 +16,7 @@
         :class="(uiStore.asideShow && isMobile)? 'overlay-show':'overlay-hide'"
         @click="uiStore.asideShow = false"
     ></div>
-    <el-container class="main-container">
+    <el-container class="main-container" :inert="isMobile && uiStore.asideShow">
       <el-main>
         <el-header>
             <Header />
@@ -20,6 +25,7 @@
       </el-main>
     </el-container>
     <writer ref="writerRef" />
+    <LabelDialog />
   </el-container>
 </template>
 
@@ -27,11 +33,12 @@
 import Aside from '@/layout/aside/index.vue'
 import Header from '@/layout/header/index.vue'
 import Main from '@/layout/main/index.vue'
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import {useUiStore} from "@/store/ui.js";
 import { useEmailStore } from '@/store/email.js'
 import { useSettingStore } from '@/store/setting.js'
 import writer from '@/layout/write/index.vue'
+import LabelDialog from '@/components/label-dialog/index.vue'
 import { userDraftStore } from '@/store/draft.js'
 import db from '@/db/db.js'
 
@@ -40,8 +47,40 @@ const emailStore = useEmailStore()
 const settingStore = useSettingStore()
 const drafts = userDraftStore()
 const writerRef = ref({})
+const sidebarRef = ref(null)
+let navigationTrigger
 const isMobile = ref(window.innerWidth < 1025)
 let unreadTimer
+
+function onSidebarKeydown(event) {
+  if (!isMobile.value || !uiStore.asideShow) return
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    uiStore.asideShow = false
+  } else if (event.key === 'Tab') {
+    const controls = [...sidebarRef.value.$el.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled), [tabindex="0"]')]
+      .filter(element => element.getClientRects().length && !element.closest('[inert]'))
+    const first = controls[0], last = controls[controls.length - 1]
+    if ((event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last)) {
+      event.preventDefault()
+      ;(event.shiftKey ? last : first)?.focus()
+    }
+  }
+}
+
+watch(() => isMobile.value && uiStore.asideShow, async open => {
+  if (open) {
+    navigationTrigger = document.activeElement
+    await nextTick()
+    sidebarRef.value?.$el.querySelector('button')?.focus()
+  } else if (isMobile.value) {
+    await nextTick()
+    const focused = document.activeElement
+    if (focused === document.body || sidebarRef.value?.$el.contains(focused)) {
+      navigationTrigger?.focus()
+    }
+  }
+})
 
 function refreshUnreadCounts() {
   if (!document.hidden) emailStore.refreshUnreadCounts()
@@ -87,23 +126,21 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
-/* 手机端：菜单展开时占满整屏，内容区和写信窗口让位；菜单关闭后内容区再淡入回来 */
+/* Mobile navigation floats as an inset sheet; the current page stays visible. */
 @media (max-width: 1024px) {
-  .layout.mobile-nav-open {
-    --mail-sidebar-width: calc(100vw - 2 * var(--mail-sidebar-inset));
-  }
   .layout.mobile-nav-open .el-aside.aside-show {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    padding: var(--mail-sidebar-inset);
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    width: min(296px, calc(100vw - 56px));
+    height: auto;
+    padding: 0;
+    overflow: visible;
     transform: none;
     animation: mac-nav-in var(--mac-dur-3) var(--mac-ease-out) both;
   }
-  .layout.mobile-nav-open .main-container,
-  .layout.mobile-nav-open :deep(.send) { display: none !important; }
-  .layout:not(.mobile-nav-open) .main-container { animation: mac-main-in var(--mac-dur-3) var(--mac-ease-out) both; }
-  .overlay-show { display: none; }
+  .layout.mobile-nav-open .overlay-show { display: block; backdrop-filter: blur(2px); }
 }
 @keyframes mac-nav-in { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
 @keyframes mac-main-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
@@ -119,7 +156,7 @@ onBeforeUnmount(() => {
 .aside-show {
   transform: translateX(0);
   z-index: 101;
-  @media (max-width: 1025px) {
+  @media (max-width: 1024px) {
     position: fixed;
     top: 0;
     left: 0;
@@ -142,7 +179,7 @@ onBeforeUnmount(() => {
     width: calc(var(--mail-sidebar-width) + var(--mail-sidebar-inset));
     overflow: visible;
     transform: none;
-    transition: width var(--mac-dur-3) var(--mac-ease);
+    transition: width var(--mac-slide-duration) var(--mac-slide-ease);
   }
 
   .el-aside-hide {
@@ -201,6 +238,15 @@ onBeforeUnmount(() => {
   padding: 0;
 }
 
+/* One desktop titlebar axis for the mailbox, title, layout switch and search.
+   Its lower edge also lines up the content panel with the compose row. */
+@media (min-width: 1025px) {
+  .layout {
+    --mail-shell-header: 66px;
+    --mail-titlebar-center: 46px;
+  }
+}
+
 /* 桌面端各页面自己滚动，外层不出现贴边的页面滚动条 */
 @media (min-width: 1025px) {
   .main-container { overflow: hidden; }
@@ -213,11 +259,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .el-aside {
-    transition: none;
-  }
-}
+
 
 .overlay-show {
   position: fixed;

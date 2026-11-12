@@ -76,8 +76,12 @@ button, input, select, textarea {
 }
 
 .el-message {
-    white-space: nowrap !important;
+    max-width: calc(100vw - 32px);
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
+.el-message__content { min-width: 0; line-height: 1.5; }
+.el-message__icon { flex-shrink: 0; }
 
 .message-bottom {
     top: auto !important;
@@ -96,14 +100,14 @@ button, input, select, textarea {
     background-color: var(--el-bg-color) !important;
 }
 
-.tox .tox-dialog--width-lg {
+.tox .tox-dialog--width-lg:not(:has(textarea[data-mce-name="code"])) {
     height: 850px !important;
     @media (max-width: 1024px) {
         height: calc(100% - 40px) !important;
     }
 }
 
-.tox .tox-dialog__body-content {
+.tox .tox-dialog:not(:has(textarea[data-mce-name="code"])) .tox-dialog__body-content {
     overflow: initial !important;
     max-height: min(850px, calc(100vh - 110px)) !important;
     @media (max-width: 1024px) {
@@ -112,7 +116,7 @@ button, input, select, textarea {
     }
 }
 
-.tox-dialog__body-content {
+.tox-dialog:not(:has(textarea[data-mce-name="code"])) .tox-dialog__body-content {
     height: auto !important;
     flex-basis: auto !important;
 }
@@ -127,16 +131,16 @@ button, input, select, textarea {
  */
 html:root, html:root.dark {
     color-scheme: light;
-    /* 苹果系统灰阶：文字 #1D1D1F、次要 #6E6E73 系、分隔 #E5E5EA、底色 #F5F5F7；按钮用石墨灰而非纯黑 */
-    --mac-app: #F5F5F7;
-    --mac-sidebar: #EDEDF0;
-    --mac-surface: #FFFFFF;
-    --mac-chrome: #FBFBFD;
-    --mac-line: #E5E5EA;
-    --mac-line-strong: #D2D2D7;
+    /* 经典石墨：网页适配的暖灰表面与深灰文字，避免大面积纯白、纯黑。 */
+    --mac-app: #F5F5F3;
+    --mac-sidebar: #ECECE9;
+    --mac-surface: #FAFAF8;
+    --mac-chrome: #F5F5F3;
+    --mac-line: #E1E1DE;
+    --mac-line-strong: #D2D2CE;
     --mac-text: #1D1D1F;
-    --mac-text-2: #6A6A6F;
-    --mac-text-3: #86868B;
+    --mac-text-2: #62625F;
+    --mac-text-3: #6A6A67;
     --mac-hover: rgb(0 0 0 / 4%);
     --mac-press: rgb(0 0 0 / 7%);
     --mac-selected: rgb(0 0 0 / 6%);
@@ -149,7 +153,7 @@ html:root, html:root.dark {
     --mac-accent-hover: #3A3A3C;
     --mac-accent-text: #FFFFFF;
     --mac-accent-ink: var(--mac-text);
-    --mac-star: #D99A00;
+    --mac-star: var(--mac-accent-ink);
     --mac-success: #2B7A3D;
     --mac-danger: #C4291C;
     --mac-warning: #9A5B00;
@@ -158,14 +162,14 @@ html:root, html:root.dark {
 
     /* Liquid Glass：半透明 + 模糊 + 镜面高光；不支持 backdrop-filter 时回退为实色 */
     --glass-bg: rgb(255 255 255 / 72%);
-    --glass-bg-strong: rgb(252 252 253 / 92%);
-    --glass-bg-solid: #FBFBFD;
-    --glass-blur: blur(28px) saturate(180%);
+    --glass-bg-strong: rgb(250 250 248 / 96%);
+    --glass-bg-solid: #FAFAF8;
+    --glass-blur: blur(20px) saturate(140%);
     --glass-edge: inset 0 1px 0 rgb(255 255 255 / 85%), inset 0 0 0 .5px rgb(255 255 255 / 55%), inset 0 -1px 0 rgb(0 0 0 / 4%);
     --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 10%), 0 10px 30px rgb(0 0 0 / 10%), 0 2px 8px rgb(0 0 0 / 6%);
-    --glass-sidebar: rgb(248 248 250 / 74%);
+    --glass-sidebar: rgb(236 236 233 / 92%);
     /* 窗口底色：纯色，侧栏、顶栏、卡片之间的缝隙都是同一种颜色 */
-    --mac-wallpaper: #F0F0F3;
+    --mac-wallpaper: #F1F1EF;
     --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 10%), 0 12px 32px rgb(0 0 0 / 14%), 0 2px 6px rgb(0 0 0 / 6%);
     --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 10%), 0 24px 64px rgb(0 0 0 / 18%), 0 4px 14px rgb(0 0 0 / 8%);
     --mac-sidebar-glass: var(--glass-sidebar);
@@ -178,6 +182,8 @@ html:root, html:root.dark {
     --mac-dur-2: 220ms;
     --mac-dur-3: 340ms;
     --mac-dur-4: 480ms;
+    --mac-slide-duration: 460ms;
+    --mac-slide-ease: cubic-bezier(.4, 0, .2, 1);
 
     /* 圆角：外大内小（内层 = 外层 − 间距），配合 superellipse 连续曲率 */
     --r-window: 24px;
@@ -234,7 +240,7 @@ html:root, html:root.dark {
     --el-color-success: var(--mac-success);
     --el-color-danger: var(--mac-danger);
     --el-color-error: var(--mac-danger);
-    --el-color-warning: var(--mac-star);
+    --el-color-warning: #D99A00;
 
     --el-bg-color: var(--mac-surface);
     --el-bg-color-page: var(--mac-app);
@@ -290,7 +296,7 @@ html:root, html:root.dark {
 
 html:root.dark {
     color-scheme: dark;
-    --mac-app: #121214;
+    --mac-app: #161618;
     --mac-sidebar: #1C1C1E;
     --mac-surface: #1C1C1E;
     --mac-chrome: #232325;
@@ -310,19 +316,20 @@ html:root.dark {
     --mac-accent: #E5E5EA;
     --mac-accent-hover: #D1D1D6;
     --mac-accent-text: #1D1D1F;
-    --mac-star: #F2C14E;
+    --mac-star: var(--mac-accent-ink);
+    --el-color-warning: #F2C14E;
     --mac-success: #4CC27A;
     --mac-danger: #FF6B5E;
     --mac-warning: #F2C14E;
     --mac-badge: rgb(255 255 255 / 12%);
     --mac-badge-text: #E8E8EA;
     --glass-bg: rgb(44 44 46 / 70%);
-    --glass-bg-strong: rgb(40 40 42 / 92%);
+    --glass-bg-strong: rgb(40 40 42 / 96%);
     --glass-bg-solid: #2A2A2C;
     --glass-edge: inset 0 1px 0 rgb(255 255 255 / 14%), inset 0 0 0 .5px rgb(255 255 255 / 10%), inset 0 -1px 0 rgb(0 0 0 / 25%);
     --glass-shadow: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 34px rgb(0 0 0 / 45%), 0 2px 8px rgb(0 0 0 / 30%);
     --glass-sidebar: rgb(36 36 38 / 72%);
-    --mac-wallpaper: #141416;
+    --mac-wallpaper: #161618;
     --mac-shadow-pop: 0 0 0 .5px rgb(0 0 0 / 60%), 0 12px 32px rgb(0 0 0 / 45%), inset 0 0 0 .5px rgb(255 255 255 / 8%);
     --mac-shadow-window: 0 0 0 .5px rgb(0 0 0 / 60%), 0 24px 64px rgb(0 0 0 / 55%), inset 0 0 0 .5px rgb(255 255 255 / 10%);
 
@@ -403,14 +410,7 @@ html:root.dark {
     border-radius: var(--mail-radius-dialog);
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .el-overlay:is(.dialog-fade-enter-active, .dialog-fade-leave-active),
-    .el-overlay.is-message-box:is(.fade-in-linear-enter-active, .fade-in-linear-leave-active),
-    .el-overlay:is(.dialog-fade-enter-active, .dialog-fade-leave-active) .el-overlay-dialog,
-    .el-overlay.is-message-box:is(.fade-in-linear-enter-active, .fade-in-linear-leave-active) .el-overlay-message-box {
-        animation: none;
-    }
-}
+
 
 .el-dialog.mailbox-form-dialog {
     display: flex;
@@ -509,9 +509,7 @@ html:root.dark {
     padding: 12px 0 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .el-skeleton.is-animated .el-skeleton__item { animation: none; }
-}
+
 
 .mail-empty-icon {
     display: inline-grid;
@@ -605,6 +603,74 @@ html:root.dark {
     background: var(--el-overlay-color-lighter);
 }
 
+.tox.tox-tinymce-aux .tox-dialog:has(textarea[data-mce-name="code"]) {
+    align-self: center;
+    box-sizing: border-box;
+    width: min(760px, calc(100% - 32px));
+    height: min(520px, calc(100vh - 40px));
+    height: min(520px, calc(100dvh - 40px));
+    margin: 0;
+    background: var(--mac-surface);
+    color: var(--mac-text);
+    box-shadow: var(--el-box-shadow);
+}
+
+.tox.tox-tinymce-aux .tox-dialog:has(textarea[data-mce-name="code"])
+    :is(.tox-dialog__header, .tox-dialog__footer) {
+    flex-shrink: 0;
+    background: var(--mac-surface);
+    color: var(--mac-text);
+    border-color: var(--mac-line);
+}
+
+.tox.tox-tinymce-aux .tox-dialog:has(textarea[data-mce-name="code"]) .tox-dialog__title {
+    color: var(--mac-text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tox.tox-tinymce-aux .tox-dialog:has(textarea[data-mce-name="code"])
+    :is(.tox-dialog__content-js, .tox-dialog__body, .tox-dialog__body-content, .tox-form, .tox-form__group) {
+    min-height: 0;
+}
+
+.tox.tox-tinymce-aux .tox-dialog:has(textarea[data-mce-name="code"]) .tox-dialog__body-content {
+    height: auto;
+    max-height: none;
+    padding-block: 8px 12px;
+}
+
+.tox.tox-tinymce-aux .tox-textarea-wrap:has(> textarea[data-mce-name="code"]) {
+    min-height: 0;
+    background: var(--mac-app);
+    border-color: var(--mac-line-strong);
+    border-radius: var(--mail-radius-control);
+}
+
+.tox.tox-tinymce-aux .tox-textarea-wrap:has(> textarea[data-mce-name="code"]):focus-within {
+    border-color: var(--mac-focus);
+    box-shadow: var(--mac-focus-ring);
+}
+
+.tox.tox-tinymce-aux .tox-dialog textarea.tox-textarea[data-mce-name="code"] {
+    min-height: 0;
+    background: transparent;
+    color: var(--mac-text);
+    border-color: transparent;
+    box-shadow: none;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.tox.tox-tinymce-aux .tox-dialog:has(textarea[data-mce-name="code"]) .tox-button--secondary {
+    background: var(--mac-app);
+    border-color: var(--mac-line);
+    color: var(--mac-text);
+}
+
+.tox.tox-tinymce-aux .tox-dialog:has(textarea[data-mce-name="code"]) .tox-button--secondary:hover {
+    background: var(--mac-selected);
+}
+
 .el-popper.mail-envelope-popover {
     width: min(380px, calc(100vw - 32px));
     padding: 14px 16px;
@@ -617,7 +683,9 @@ html:root.dark {
 }
 
 .el-dropdown__popper .el-dropdown-menu {
-    min-width: 160px;
+    min-width: 116px;
+    width: max-content;
+    max-width: min(300px, calc(100vw - 32px));
 }
 
 .el-dropdown__popper .el-dropdown-menu__item,
@@ -743,18 +811,38 @@ html:root.dark {
 }
 
 .toolbar-button {
+    --toolbar-surface-inset: 0px;
+    position: relative;
+    isolation: isolate;
     display: grid;
     flex: 0 0 var(--mail-shell-control, 32px);
     width: var(--mail-shell-control, 32px);
     height: var(--mail-shell-control, 32px);
+    aspect-ratio: 1;
+    flex-shrink: 0;
     place-items: center;
+    padding: 0;
     border: 0;
     border-radius: var(--mail-radius-control);
     background: transparent;
     color: var(--mac-text-2);
     cursor: pointer;
-    transition: background-color 140ms ease, color 140ms ease;
+    transition: color 80ms ease, scale 120ms var(--mac-ease);
 }
+
+/* One dedicated visual layer; never reuse the close icon's pseudo-element. */
+.toolbar-button > .toolbar-button-surface {
+    position: absolute;
+    inset: var(--toolbar-surface-inset);
+    z-index: -1;
+    border-radius: inherit;
+    corner-shape: inherit;
+    background: var(--glass-control);
+    box-shadow: inset 0 .5px 0 rgb(255 255 255 / 40%), 0 1px 3px rgb(0 0 0 / 6%);
+    pointer-events: none;
+    transition: box-shadow 80ms ease;
+}
+.toolbar-button.row-star > .toolbar-button-surface { display: none; }
 
 .toolbar-button > svg {
     width: var(--mac-icon);
@@ -762,12 +850,14 @@ html:root.dark {
 }
 
 .toolbar-button:hover:not(:disabled) {
-    background: var(--mac-hover);
     color: var(--mac-text);
+}
+.toolbar-button:hover:not(:disabled) > .toolbar-button-surface {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 50%), 0 2px 6px rgb(0 0 0 / 9%);
 }
 
 .toolbar-button:active:not(:disabled) {
-    background: color-mix(in srgb, var(--mac-hover) 70%, var(--mac-line));
+    scale: .92;
 }
 
 .toolbar-button:focus-visible {
@@ -780,6 +870,52 @@ html:root.dark {
     opacity: .55;
     cursor: default;
 }
+
+.mail-compose-trigger {
+    position: relative;
+    isolation: isolate;
+    border-radius: var(--mail-radius-control);
+    color: var(--mac-accent-ink);
+    background: transparent;
+}
+
+.mail-compose-trigger > .toolbar-button-surface { display: none; }
+
+.mail-compose-trigger::before,
+.mail-compose-trigger::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    corner-shape: inherit;
+    pointer-events: none;
+}
+
+.mail-compose-trigger::before {
+    background: var(--glass-compose);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mac-accent) 20%, var(--mac-line)), var(--glass-control-shadow);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+    transition: box-shadow 120ms var(--mac-ease);
+}
+
+.mail-compose-trigger::after {
+    background: color-mix(in srgb, var(--mac-accent-ink) 10%, transparent);
+    opacity: 0;
+    transition: opacity 110ms var(--mac-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .mail-compose-trigger:hover::after { opacity: 1; }
+}
+
+.mail-compose-trigger:active::before {
+    box-shadow: inset 0 1px 4px color-mix(in srgb, var(--mac-accent) 22%, transparent), inset 0 0 0 1px var(--mac-line-strong);
+}
+
+.toolbar-button.mail-compose-trigger:active:not(:disabled) { scale: 1; }
+.mail-compose-trigger:active::after { opacity: 1; }
 
 .el-select .el-select__caret:not(.el-select__clear),
 .el-dropdown__caret-button .el-dropdown__icon {
@@ -807,24 +943,15 @@ html:root.dark {
 
 .mail-spinner {
     animation: mail-spin 900ms linear infinite;
+    transform-origin: center;
+    transform-box: fill-box;
 }
 
 @keyframes mail-spin {
     to { transform: rotate(360deg); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .toolbar-button,
-    .el-select .el-select__caret,
-    .el-dropdown__caret-button .el-dropdown__icon,
-    .disclosure-chevron {
-        transition: none;
-    }
 
-    .mail-spinner {
-        animation: none;
-    }
-}
 
 .mail-address-input .el-input-group__append {
     flex: 0 0 auto;
@@ -1023,6 +1150,30 @@ html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !import
 .el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-input-tag__wrapper {
     transition: box-shadow var(--mac-dur-2) var(--mac-ease), background-color var(--mac-dur-1) ease !important;
 }
+/* Fit the actual input height (including themed padding), not Element's fixed
+   11/15px halves; otherwise a pale horizontal slit appears between arrows. */
+.el-input-number.is-controls-right :is(.el-input-number__increase, .el-input-number__decrease) {
+    height: calc((100% - 2px) / 2) !important;
+    line-height: 1;
+    background: var(--mac-chrome);
+    border-color: var(--mac-line-strong);
+}
+.el-input-number.is-controls-right .el-input-number__increase {
+    border-start-end-radius: calc(var(--mail-radius-control) - 1px);
+}
+.el-input-number.is-controls-right .el-input-number__decrease {
+    border-end-end-radius: calc(var(--mail-radius-control) - 1px);
+}
+/* Browser autofill must use the same opaque paper and ink as the field.
+   Keep a visible focus border; do not disable password managers on login. */
+html input:is(:autofill, :-webkit-autofill),
+html textarea:is(:autofill, :-webkit-autofill) {
+    -webkit-box-shadow: 0 0 0 1000px var(--login-field, var(--el-input-bg-color, var(--mac-surface))) inset !important;
+    box-shadow: 0 0 0 1000px var(--login-field, var(--el-input-bg-color, var(--mac-surface))) inset !important;
+    -webkit-text-fill-color: var(--login-ink, var(--mac-text)) !important;
+    caret-color: var(--login-ink, var(--mac-text));
+    border-radius: 4px;
+}
 /* 聚焦只加深边框，不画外圈光晕 */
 .el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-textarea__inner:focus, .el-input-tag.is-focused .el-input-tag__wrapper {
     box-shadow: 0 0 0 1px var(--mac-text-3) inset !important;
@@ -1070,18 +1221,51 @@ html.dark .el-switch.is-checked .el-switch__action { background: #1D1D1F !import
     --el-segmented-bg-color: rgb(0 0 0 / 6%);
     --el-segmented-item-selected-bg-color: var(--mac-surface);
     --el-segmented-item-selected-color: var(--mac-text);
-    --el-segmented-item-hover-bg-color: transparent;
+    --el-segmented-item-hover-bg-color: var(--mac-hover);
     --el-segmented-item-hover-color: var(--mac-text);
     --el-segmented-color: var(--mac-text-2);
     --el-border-radius-base: 8px;
     padding: 2px;
 }
-html.dark .el-segmented.el-segmented { --el-segmented-bg-color: rgb(255 255 255 / 8%); --el-segmented-item-selected-bg-color: #3A3A3C; }
+html.dark .el-segmented.el-segmented { --el-segmented-bg-color: rgb(255 255 255 / 8%); --el-segmented-item-selected-bg-color: var(--mac-chrome); }
 .el-segmented__item-selected {
-    box-shadow: 0 0 0 .5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 14%);
-    transition: all var(--mac-dur-3) var(--mac-spring) !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%), 0 1px 3px rgb(0 0 0 / 14%);
+    transition: transform var(--mac-slide-duration) var(--mac-slide-ease), width var(--mac-slide-duration) var(--mac-slide-ease), background-color var(--mac-dur-2) ease !important;
 }
+.el-segmented__item { transition: background-color 80ms ease, color 80ms ease; }
+.el-segmented__item.is-selected { background: transparent !important; font-weight: 600; }
 .el-tabs { --el-tabs-header-height: 36px; }
+
+/* Every day uses one square rounded surface in all interaction states. */
+.el-date-table td .el-date-table-cell__text {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    border-radius: 7px !important;
+}
+.el-date-table td.available .el-date-table-cell__text {
+    transition: background-color 80ms ease, color 80ms ease, box-shadow 80ms ease;
+}
+.el-date-table td.available:hover .el-date-table-cell__text {
+    background: var(--mac-selected-solid);
+    color: var(--mac-accent-ink);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 20%);
+}
+.el-date-table td:is(.current, .start-date, .end-date):not(.disabled) .el-date-table-cell__text {
+    background: var(--mac-accent);
+    color: var(--mac-accent-text);
+    font-weight: 600;
+}
+.el-date-table td.today:not(.current) .el-date-table-cell__text {
+    box-shadow: inset 0 0 0 1px var(--mac-line-strong);
+    color: var(--mac-accent-ink);
+}
+.el-date-table td.available:active .el-date-table-cell__text { box-shadow: inset 0 0 0 1px var(--mac-accent-ink); }
+.el-date-table td.available:focus-visible .el-date-table-cell__text { outline: 2px solid var(--mac-focus); outline-offset: 2px; }
+:is(.el-month-table, .el-year-table) td:not(.disabled):hover .cell { background: var(--mac-selected-solid); border-radius: 8px; }
+.el-picker-panel__icon-btn { width: 28px; height: 28px; border-radius: 8px; display: inline-grid; place-items: center; }
+.el-picker-panel__icon-btn:hover { background: var(--mac-hover); color: var(--mac-text); }
+.el-picker-panel__icon-btn:active { background: var(--mac-press); }
 
 /* 链接：黑白灰里用下划线区分 */
 .layout a:not([class]), .el-link.el-link--primary { color: var(--mac-link); text-decoration: underline; text-underline-offset: 2px; }
@@ -1168,7 +1352,7 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
 .el-popper.is-light, .el-dropdown__popper.el-popper, .el-select__popper.el-popper, .el-picker__popper.el-popper,
 .el-popover.el-popper {
     --el-popover-bg-color: var(--glass-bg-strong);
-    --el-bg-color-overlay: transparent;
+    --el-bg-color-overlay: var(--glass-bg-solid);
     border: 0 !important;
     border-radius: var(--mail-radius-menu);
     background: var(--glass-bg-strong) !important;
@@ -1181,11 +1365,26 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
     .el-popover.el-popper { background: var(--glass-bg-solid) !important; }
 }
 .el-dropdown-menu, .el-select-dropdown, .el-picker-panel, .el-date-picker { background: transparent !important; }
+/* Calendar digits need a solid reading plane above mail content. */
+.el-picker__popper.el-popper { background: var(--mac-surface) !important; }
+/* The nested clock is a separate surface, not the transparent calendar body. */
+.el-time-panel {
+    background: var(--glass-bg-solid) !important;
+    color: var(--mac-text);
+    border: 1px solid var(--mac-line-strong);
+    border-radius: var(--r-card);
+    box-shadow: var(--mac-shadow-pop);
+    overflow: hidden;
+}
+.el-date-picker__time-header .el-time-panel { left: auto; right: 0; }
+.el-time-panel__footer { background: var(--mac-chrome); border-top-color: var(--mac-line); }
+.el-time-panel__content::before, .el-time-panel__content::after { border-color: var(--mac-line); }
+.el-date-picker { width: min(322px, calc(100vw - 32px)) !important; }
 .el-popper.is-dark {
-    border: 0;
+    border: 1px solid var(--mac-line-strong);
     border-radius: 7px;
-    background: rgb(40 40 42 / 92%) !important;
-    color: #F5F5F7;
+    background: var(--glass-bg-solid) !important;
+    color: var(--mac-text) !important;
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     font-size: var(--mac-fs-caption);
@@ -1196,14 +1395,22 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
 .el-zoom-in-top-enter-active, .el-zoom-in-top-leave-active,
 .el-zoom-in-bottom-enter-active, .el-zoom-in-bottom-leave-active,
 .el-fade-in-linear-enter-active, .el-fade-in-linear-leave-active {
-    transition: opacity var(--mac-dur-2) var(--mac-ease), scale var(--mac-dur-2) var(--mac-ease-out) !important;
+    transition: clip-path 360ms cubic-bezier(.25, .1, .25, 1), opacity 240ms ease, scale 360ms cubic-bezier(.25, .1, .25, 1) !important;
 }
 .el-zoom-in-top-leave-active, .el-zoom-in-bottom-leave-active, .el-fade-in-linear-leave-active {
-    transition: opacity var(--mac-dur-1) ease, scale var(--mac-dur-1) ease !important;
+    transition: clip-path 240ms ease, opacity 180ms ease, scale 240ms ease !important;
 }
 .el-zoom-in-top-enter-from, .el-zoom-in-top-leave-to,
 .el-zoom-in-bottom-enter-from, .el-zoom-in-bottom-leave-to,
 .el-popper.is-light.el-fade-in-linear-enter-from, .el-popper.is-light.el-fade-in-linear-leave-to { opacity: 0; scale: .97; }
+.el-popper:not(.is-dark) { clip-path: none; }
+.el-popper:not(.is-dark):is(.el-zoom-in-top-enter-active, .el-zoom-in-top-leave-active, .el-zoom-in-bottom-enter-active, .el-zoom-in-bottom-leave-active, .el-fade-in-linear-enter-active, .el-fade-in-linear-leave-active) { clip-path: inset(-36px); }
+.el-popper:not(.is-dark)[data-popper-placement^='bottom']:is(.el-zoom-in-top-enter-from, .el-zoom-in-top-leave-to, .el-fade-in-linear-enter-from, .el-fade-in-linear-leave-to) {
+    clip-path: inset(0 0 100% 0);
+}
+.el-popper:not(.is-dark)[data-popper-placement^='top']:is(.el-zoom-in-top-enter-from, .el-zoom-in-top-leave-to, .el-fade-in-linear-enter-from, .el-fade-in-linear-leave-to) {
+    clip-path: inset(100% 0 0 0);
+}
 /* 缩放原点随弹出方向：从触发器那一侧展开，不产生位移 */
 .el-popper[data-popper-placement="bottom-start"] { transform-origin: top left; }
 .el-popper[data-popper-placement="bottom-end"] { transform-origin: top right; }
@@ -1248,7 +1455,7 @@ html.dark .el-radio-button.is-active .el-radio-button__inner { background: #3A3A
 .el-tree-node:focus-visible > .el-tree-node__content { box-shadow: inset 0 0 0 2px var(--mac-focus); }
 .el-tree-node__content:hover { background: var(--mac-hover) !important; }
 .el-tree-node__expand-icon {
-    transition: transform var(--mac-dur-2) var(--mac-ease) !important;
+    transition: transform var(--mac-slide-duration) var(--mac-slide-ease) !important;
 }
 
 /* 表格与分页 */
@@ -1295,14 +1502,7 @@ html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
 /* 进度条 */
 #nprogress .bar { background: var(--mac-accent) !important; height: 2px !important; }
 
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        scroll-behavior: auto !important;
-        animation-duration: 1ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 1ms !important;
-    }
-}
+
 
 
 /* ===== 连续曲率圆角（不支持时自动退回普通圆角） ===== */
@@ -1382,41 +1582,203 @@ html.dark .el-scrollbar__thumb { background: rgb(255 255 255 / 40%); }
 
 
 /* ===== 配色方案（外观设置里切换）=====
- * 底色、文字、分隔线始终是苹果系统灰阶；方案只改变强调色：主按钮、选中、链接、焦点、侧栏选中图标。
- * 每套给浅色和深色各一个值，深色用更亮的色值并配深色按钮文字，保证对比度 ≥ 4.5:1。
+ * 石墨保留中性灰阶；其他方案让窗口、侧栏、卡片、控件与弹层一起染色。
+ * 原始色样与强调色由 utils/palettes.js 统一提供。
  */
-html:root[data-palette="ocean"]      { --pal: #1F5FBF; --pal-dark: #7FB2FF; }
-html:root[data-palette="indigo"]     { --pal: #5452CC; --pal-dark: #A5A3FF; }
-html:root[data-palette="sage"]       { --pal: #2D7457; --pal-dark: #7FD1A8; }
-html:root[data-palette="terracotta"] { --pal: #A9512B; --pal-dark: #F0A07C; }
-html:root[data-palette="rose"]       { --pal: #AE3B5C; --pal-dark: #F29AB3; }
-html:root[data-palette="plum"]       { --pal: #7A3E8F; --pal-dark: #D3A2E3; }
+/* Accent values have a single source in utils/palettes.js. */
 
 html:root[data-palette]:not([data-palette="graphite"]) {
+    --mac-wallpaper: color-mix(in srgb, var(--pal-swatch) 34%, #F0F0F3);
+    --mac-app: color-mix(in srgb, var(--pal-swatch) 22%, #F5F5F7);
+    --mac-sidebar: color-mix(in srgb, var(--pal-swatch) 32%, #EDEDF0);
+    --mac-surface: color-mix(in srgb, var(--pal-swatch) 10%, #FAFAFC);
+    --mac-chrome: color-mix(in srgb, var(--pal-swatch) 22%, #F5F5F7);
+    --mac-text-2: #45454D;
+    --mac-text-3: #47474F;
+    --mac-line: color-mix(in srgb, var(--pal) 15%, var(--mac-surface));
+    --mac-line-strong: color-mix(in srgb, var(--pal) 28%, var(--mac-surface));
+    --mac-hover: color-mix(in srgb, var(--pal) 8%, transparent);
+    --mac-press: color-mix(in srgb, var(--pal) 14%, transparent);
+    --glass-bg: color-mix(in srgb, var(--mac-surface) 78%, transparent);
+    --glass-bg-strong: color-mix(in srgb, var(--mac-surface) 97%, transparent);
+    --glass-bg-solid: var(--mac-surface);
+    --glass-sidebar: color-mix(in srgb, var(--mac-sidebar) 94%, transparent);
     --mac-accent: var(--pal);
     --mac-accent-hover: color-mix(in srgb, var(--pal) 86%, #000);
     --mac-accent-text: #FFFFFF;
     --mac-accent-ink: var(--pal);
     --mac-selected: color-mix(in srgb, var(--pal) 12%, transparent);
-    --mac-selected-solid: color-mix(in srgb, var(--pal) 10%, #FFFFFF);
+    --mac-selected-solid: color-mix(in srgb, var(--pal) 16%, var(--mac-surface));
     --mac-link: var(--pal);
     --mac-focus: color-mix(in srgb, var(--pal) 60%, transparent);
     --mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--pal) 18%, transparent);
-    --mail-primary-tint: #FFFFFF;
+    --mail-primary-tint: var(--mac-surface);
 }
 html:root.dark[data-palette]:not([data-palette="graphite"]) {
+    --mac-wallpaper: color-mix(in srgb, var(--pal-swatch) 11%, #161618);
+    --mac-app: color-mix(in srgb, var(--pal-swatch) 9%, #161618);
+    --mac-sidebar: color-mix(in srgb, var(--pal-swatch) 16%, #1C1C1E);
+    --mac-surface: color-mix(in srgb, var(--pal-swatch) 12%, #1C1C1E);
+    --mac-chrome: color-mix(in srgb, var(--pal-swatch) 18%, #232325);
+    --mac-line: color-mix(in srgb, var(--pal-dark) 18%, var(--mac-surface));
+    --mac-line-strong: color-mix(in srgb, var(--pal-dark) 30%, var(--mac-surface));
+    --mac-text-2: #BCBCC2;
+    --mac-text-3: #B8B8C0;
+    --mac-hover: color-mix(in srgb, var(--pal-dark) 10%, transparent);
+    --mac-press: color-mix(in srgb, var(--pal-dark) 17%, transparent);
     --mac-accent: var(--pal-dark);
     --mac-accent-hover: color-mix(in srgb, var(--pal-dark) 86%, #fff);
     --mac-accent-text: #141416;
     --mac-accent-ink: var(--pal-dark);
     --mac-selected: color-mix(in srgb, var(--pal-dark) 16%, transparent);
-    --mac-selected-solid: color-mix(in srgb, var(--pal-dark) 13%, #1C1C1E);
+    --mac-selected-solid: color-mix(in srgb, var(--pal-dark) 16%, var(--mac-surface));
     --mac-link: var(--pal-dark);
     --mac-focus: color-mix(in srgb, var(--pal-dark) 60%, transparent);
     --mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--pal-dark) 20%, transparent);
-    --mail-primary-tint: #1C1C1E;
+    --mail-primary-tint: var(--mac-surface);
 }
-/* 彩色方案下链接不再需要下划线区分 */
-html:root[data-palette]:not([data-palette="graphite"]) :is(.layout a:not([class]), .el-link.el-link--primary) { text-decoration: none; }
+
+/* Glass is reserved for controls and navigation; reading surfaces stay calm. */
+html:root, html:root.dark {
+    --glass-control: linear-gradient(180deg, color-mix(in srgb, var(--mac-surface) 92%, #fff), color-mix(in srgb, var(--mac-surface) 84%, transparent));
+    --glass-control-shadow: var(--glass-edge), 0 2px 5px rgb(0 0 0 / 7%);
+    --glass-compose: linear-gradient(160deg, color-mix(in srgb, var(--mac-surface) 85%, transparent), color-mix(in srgb, var(--mac-accent) 15%, var(--mac-surface)));
+    --mac-nav-selected: color-mix(in srgb, var(--mac-accent-ink) 22%, var(--mac-sidebar));
+    --mac-nav-hover: color-mix(in srgb, var(--mac-accent-ink) 12%, var(--mac-sidebar));
+}
+.el-button:not(.is-text, .is-link, .is-disabled, .el-button--danger, .el-button--success, .el-button--warning) {
+    background-image: var(--glass-control);
+    box-shadow: var(--glass-control-shadow);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+}
+.el-button.el-button--primary:not(.is-plain, .is-text, .is-link, .is-disabled) {
+    background-image: linear-gradient(180deg, rgb(255 255 255 / 14%), transparent 70%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 26%), inset 0 -1px 0 rgb(0 0 0 / 10%), 0 2px 6px rgb(0 0 0 / 12%);
+}
+.el-button:not(.is-disabled, .is-text, .is-link):hover { filter: brightness(1.025); }
+.el-button:not(.is-disabled, .is-text, .is-link):active { filter: brightness(.97); }
+.mail-toolbar .toolbar-group, .message-list-toolbar .toolbar-group { gap: 4px; align-items: center; }
+/* The four shell controls share one optical size and glass enclosure. */
+.layout .sidebar.is-compact :is(.mailbox-switch-trigger, .profile-trigger) {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: var(--glass-control);
+    color: var(--mac-text-2);
+    box-shadow: inset 0 0 0 1px var(--mac-line), var(--glass-control-shadow);
+    backdrop-filter: blur(12px) saturate(140%);
+    transition: scale 180ms var(--mac-spring), background-color 180ms ease, gap var(--mac-slide-duration) var(--mac-slide-ease), padding var(--mac-slide-duration) var(--mac-slide-ease), border-radius var(--mac-slide-duration) var(--mac-slide-ease);
+}
+.layout .header .sidebar-toggle.toolbar-button {
+    width: 36px; height: 36px; min-width: 36px; min-height: 36px;
+    border-radius: 10px;
+}
+.layout .sidebar.is-compact :is(.mailbox-switch-icon, .profile-avatar) {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    background: transparent;
+}
+.layout .sidebar.is-compact :is(.mailbox-switch-trigger, .compose-bar, .profile-trigger) svg,
+.layout .header .sidebar-toggle.toolbar-button svg { width: 20px; height: 20px; }
+.layout .sidebar.is-compact :is(.mailbox-switch-trigger, .profile-trigger):active { scale: .94; }
+@media (max-width: 767px) {
+    .layout .toolbar-button:not(.row-star),
+    .layout .header .sidebar-toggle.toolbar-button {
+        --toolbar-surface-inset: 5px;
+        flex-basis: 40px;
+        width: 40px; height: 40px; min-width: 40px; min-height: 40px;
+        border-radius: 9px;
+    }
+    .layout .toolbar-button:not(.row-star) > svg,
+    .layout .header .sidebar-toggle.toolbar-button > svg { width: 17px; height: 17px; }
+}
 /* 切换方案时颜色平滑过渡 */
-html.palette-switching, html.palette-switching * { transition: background-color var(--mac-dur-3) var(--mac-ease), color var(--mac-dur-3) var(--mac-ease), border-color var(--mac-dur-3) var(--mac-ease) !important; }
+html.palette-switching, html.palette-switching :is(.layout, .sidebar, .mail-workspace, .settings-workspace) { transition: background-color var(--mac-dur-3) var(--mac-ease), color var(--mac-dur-3) var(--mac-ease), border-color var(--mac-dur-3) var(--mac-ease); }
+
+@media (pointer: coarse) {
+    .toolbar-button:not(.row-star), .section-link, .nav-main, .nav-child, .nav-group-toggle { min-height: 40px; }
+    .toolbar-button:not(.row-star) { min-width: 40px; }
+    /* Dense mail rows reserve a separate column for this control. */
+    .toolbar-button.row-star { min-width: 24px; min-height: 24px; opacity: 1; }
+    .el-dialog__headerbtn { min-width: 36px; min-height: 36px; }
+}
+
+/* App preference resolves system motion once; all surfaces use the same result. */
+html:root[data-motion='reduce'] *,
+html:root[data-motion='reduce'] *::before,
+html:root[data-motion='reduce'] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+}
+html:root[data-motion='reduce'] .mail-spinner { animation: none !important; }
+html:root[data-motion='reduce'] :is(.mailbox-switcher, .account-menu) .el-popper {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+}
+.motion-options { max-width: 100%; }
+
+/* The sidebar is one glass surface. Resting rows stay unboxed; only the
+   hovered/selected item adds a highlight, avoiding a stack of raised tiles. */
+html .layout :is(.sidebar, .settings-workspace) :is(.nav-main, .nav-group-toggle, .nav-child, .section-link, .profile-action),
+html .el-dropdown-menu__item {
+    background-image: none !important;
+    box-shadow: none;
+    transition: background-color 80ms ease, box-shadow 80ms ease, transform 120ms ease;
+}
+html .layout :is(.sidebar, .settings-workspace) :is(.nav-main, .nav-group-toggle, .nav-child, .section-link, .profile-action):hover,
+html .el-dropdown-menu__item:not(.is-disabled):hover {
+    background-color: var(--mac-nav-hover);
+    background-image: linear-gradient(180deg, rgb(255 255 255 / 5%), transparent) !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%);
+    backdrop-filter: none;
+}
+html .layout .sidebar :is(.nav-main, .nav-child)[aria-current='page'],
+html .layout .settings-workspace .section-link[aria-current='page'],
+html .layout .sidebar .nav-group-toggle.has-current[aria-expanded='false'] {
+    background-color: var(--mac-nav-selected);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%);
+    color: var(--mac-text);
+}
+html .layout .sidebar :is(.nav-main, .nav-child)[aria-current='page'] > svg,
+html .layout .sidebar .nav-group-toggle.has-current[aria-expanded='false'] > svg:first-child,
+html .layout .settings-workspace .section-link[aria-current='page'] > svg {
+    color: color-mix(in srgb, var(--mac-accent-ink) 88%, var(--mac-text));
+}
+html .toolbar-button:not(.row-star),
+html .toolbar-button:not(.row-star):is(:hover, :active, :focus-visible) {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+html .el-popper.is-dark .el-popper__arrow::before { background: var(--glass-bg-solid) !important; border-color: var(--mac-line); }
+/* Hints appear immediately; disclosure animations belong to menus, not labels. */
+html .el-popper.is-dark {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+}
+html .el-popper.is-dark[class*='enter-'] { opacity: 1 !important; scale: 1 !important; }
+
+/* A calendar cannot fit above or below a centered dialog on a short phone. */
+@media (max-width: 767px) {
+    .el-picker__popper:not(.mail-search-date-popper):has(> .el-date-picker) {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        transform-origin: center !important;
+    }
+    .el-picker__popper > .el-date-picker {
+        max-height: calc(100dvh - 32px);
+        overflow-y: auto;
+    }
+}

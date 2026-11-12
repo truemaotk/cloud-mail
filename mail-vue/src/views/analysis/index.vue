@@ -6,12 +6,24 @@
           <h2 id="analysis-heading">{{ t('analysisOverview') }}</h2>
           <p>{{ t('analysisDescription') }}</p>
         </div>
-        <div class="analysis-actions">
-          <span v-if="lastRead">{{ t('analysisLastRead', { time: lastRead }) }}</span>
-          <el-button :loading="loading" @click="loadAnalysis">
-            <template #icon><NavigationIcon name="refresh" :size="15" /></template>
-            {{ t('refreshMail') }}
-          </el-button>
+        <div class="analysis-toolbar">
+          <form class="analysis-date-filter" :aria-label="t('analysisDateFilter')" @submit.prevent="applyDates">
+            <el-date-picker v-model="startDate" type="date" :editable="false" size="small"
+                            value-format="YYYY-MM-DD" popper-class="mail-search-date-popper"
+                            :placeholder="t('searchStartDate')" :aria-label="t('searchStartDate')" @change="onStartDateChange" />
+            <el-date-picker v-model="endDate" type="date" :editable="false" size="small"
+                            value-format="YYYY-MM-DD" popper-class="mail-search-date-popper"
+                            :placeholder="t('searchEndDate')" :aria-label="t('searchEndDate')" :disabled-date="disableEndDate" />
+            <el-button native-type="submit" size="small" :disabled="loading || !validDateRange">{{ t('analysisApplyDates') }}</el-button>
+          </form>
+          <div class="analysis-actions">
+            <el-button v-if="activeRange" size="small" :disabled="loading" @click="clearDates">{{ t('reset') }}</el-button>
+            <span v-if="lastRead">{{ t('analysisLastRead', { time: lastRead }) }}</span>
+            <el-button :disabled="loading" :aria-busy="loading || undefined" @click="loadAnalysis">
+              <template #icon><NavigationIcon name="refresh" :size="16" :class="{ 'mail-spinner': loading }" /></template>
+              {{ t('refreshMail') }}
+            </el-button>
+          </div>
         </div>
       </header>
 
@@ -19,10 +31,10 @@
         <el-skeleton v-if="loading" animated>
           <template #template>
             <div class="analysis-metrics">
-              <el-skeleton-item v-for="card in 5" :key="card" variant="rect" class="analysis-placeholder" />
+              <el-skeleton-item v-for="card in 4" :key="card" variant="rect" class="analysis-placeholder" />
             </div>
             <div class="analysis-charts">
-              <el-skeleton-item v-for="card in 2" :key="card" variant="rect" class="analysis-placeholder is-chart" />
+              <el-skeleton-item v-for="card in 3" :key="card" variant="rect" class="analysis-placeholder is-chart" />
             </div>
           </template>
         </el-skeleton>
@@ -36,7 +48,10 @@
               <h3>{{ t(metric.label) }}</h3>
               <span class="metric-icon"><NavigationIcon :name="metric.icon" :size="18" /></span>
             </div>
-            <strong class="metric-value">{{ formatNumber(metric.total) }}</strong>
+            <div class="metric-value">
+              <strong>{{ formatNumber(metric.total) }}</strong>
+              <span v-if="metric.label === 'sentToday'" class="metric-limit">{{ t('analysisQuotaTotal', { count: formatNumber(quotaLimit) }) }}</span>
+            </div>
             <dl v-if="metric.active !== undefined" class="metric-breakdown">
               <div><dt>{{ t('active') }}</dt><dd>{{ formatNumber(metric.active) }}</dd></div>
               <div><dt>{{ t('deleted') }}</dt><dd>{{ formatNumber(metric.deleted) }}</dd></div>
@@ -46,13 +61,35 @@
         </div>
 
         <div class="analysis-charts">
+          <section class="analysis-card analysis-users">
+            <header class="analysis-card-heading">
+              <div>
+                <h3>{{ t('userGrowth') }}</h3>
+                <p>{{ t('analysisUserTrendNote') }}</p>
+              </div>
+              <el-select :model-value="activeRange ? 'custom' : userPeriod" class="analysis-range" size="small" suffix-icon="MailChevronDown"
+                         :aria-label="t('analysisUserRange')" :disabled="loading" @change="selectPeriod('user', $event)">
+                <el-option v-if="activeRange" value="custom" :label="t('analysisPeriod.custom')" disabled />
+                <el-option v-for="period in periods" :key="period" :value="period" :label="t(`analysisPeriod.${period}`)" />
+              </el-select>
+            </header>
+            <div class="analysis-plot-frame">
+              <div ref="userPlot" class="analysis-plot" role="img" :aria-label="userChartLabel"></div>
+              <p v-if="!usersInRange" class="analysis-plot-empty">{{ t('analysisNoUserTrend') }}</p>
+            </div>
+          </section>
+
           <section class="analysis-card analysis-mail">
             <header class="analysis-card-heading">
               <div>
                 <h3>{{ t('emailGrowth') }}</h3>
                 <p>{{ t('analysisMailTrendNote') }}</p>
               </div>
-              <span class="analysis-range">{{ t('analysisDays', { count: mailDays.length }) }}</span>
+              <el-select :model-value="activeRange ? 'custom' : mailPeriod" class="analysis-range" size="small" suffix-icon="MailChevronDown"
+                         :aria-label="t('analysisMailRange')" :disabled="loading" @change="selectPeriod('mail', $event)">
+                <el-option v-if="activeRange" value="custom" :label="t('analysisPeriod.custom')" disabled />
+                <el-option v-for="period in periods" :key="period" :value="period" :label="t(`analysisPeriod.${period}`)" />
+              </el-select>
             </header>
             <div class="analysis-plot-frame">
               <div ref="mailPlot" class="analysis-plot" role="img" :aria-label="mailChartLabel"></div>
@@ -60,42 +97,17 @@
             </div>
           </section>
 
-          <section class="analysis-card analysis-sources-card">
+          <section class="analysis-card analysis-quota">
             <header class="analysis-card-heading">
               <div>
-                <h3>{{ t('emailSource') }}</h3>
-                <p>{{ t('analysisSourcesNote') }}</p>
+                <h3>{{ t('sentToday') }}</h3>
+                <p>{{ t('analysisTodayNote') }}</p>
               </div>
             </header>
-            <ol v-if="sources.length" class="analysis-sources">
-              <li v-for="(source, index) in sources" :key="source.name">
-                <span class="source-position">{{ index + 1 }}</span>
-                <div class="source-detail">
-                  <span class="source-name" :title="source.name">{{ source.name }}</span>
-                  <span class="source-track" aria-hidden="true">
-                    <span :style="{ width: (100 * source.total / sources[0].total) + '%' }"></span>
-                  </span>
-                </div>
-                <strong>{{ formatNumber(source.total) }}</strong>
-              </li>
-            </ol>
-            <div v-else class="analysis-source-empty">
-              <span class="metric-icon"><NavigationIcon name="inbox" /></span>
-              <p>{{ t('analysisNoSources') }}</p>
-            </div>
-          </section>
-
-          <section class="analysis-card analysis-users">
-            <header class="analysis-card-heading">
-              <div>
-                <h3>{{ t('userGrowth') }}</h3>
-                <p>{{ t('analysisUserTrendNote') }}</p>
-              </div>
-              <span class="analysis-range">{{ t('analysisDays', { count: userDays.length }) }}</span>
-            </header>
-            <div class="analysis-plot-frame">
-              <div ref="userPlot" class="analysis-plot" role="img" :aria-label="userChartLabel"></div>
-              <p v-if="!usersInRange" class="analysis-plot-empty">{{ t('analysisNoUserTrend') }}</p>
+            <div class="analysis-plot-frame quota-frame" role="progressbar" :aria-label="t('dailySendLimit')"
+                 :aria-valuemax="quotaLimit" :aria-valuenow="Math.min(quotaUsed, quotaLimit)"
+                 :aria-valuetext="t('analysisQuotaUsage', { used: formatNumber(quotaUsed), limit: formatNumber(quotaLimit) })">
+              <div ref="quotaPlot" class="analysis-plot" aria-hidden="true"></div>
             </div>
           </section>
         </div>
@@ -111,6 +123,7 @@ import NavigationIcon from '@/components/navigation-icon/index.vue'
 import echarts from '@/echarts/index.js'
 import { analysisEcharts } from '@/request/analysis.js'
 import { useUiStore } from '@/store/ui.js'
+import { getPalette } from '@/utils/palettes.js'
 
 defineOptions({ name: 'analysis' })
 
@@ -121,21 +134,31 @@ const loading = ref(true)
 const requestedAt = ref(null)
 const mailPlot = ref(null)
 const userPlot = ref(null)
+const quotaPlot = ref(null)
+const periods = ['thisWeek', 'lastWeek', 'thisMonth', 'lastMonth']
+const mailPeriod = ref('thisWeek')
+const userPeriod = ref('thisWeek')
+const startDate = ref('')
+const endDate = ref('')
+const activeRange = ref(null)
+const validDateRange = computed(() => Boolean(startDate.value && endDate.value && startDate.value <= endDate.value))
 
 const metrics = computed(() => {
   const counts = data.value.numberCount
   return [
     { label: 'totalReceived', icon: 'inbox', total: counts.receiveTotal, active: counts.normalReceiveTotal, deleted: counts.delReceiveTotal },
     { label: 'totalSent', icon: 'send', total: counts.sendTotal, active: counts.normalSendTotal, deleted: counts.delSendTotal },
-    { label: 'totalMailboxes', icon: 'mailbox', total: counts.accountTotal, active: counts.normalAccountTotal, deleted: counts.delAccountTotal },
-    { label: 'totalUsers', icon: 'user', total: counts.userTotal, active: counts.normalUserTotal, deleted: counts.delUserTotal },
-    { label: 'sentToday', icon: 'mail-delivered', total: data.value.daySendTotal },
+    { label: 'totalMailboxes', icon: 'list', total: counts.accountTotal, active: counts.normalAccountTotal, deleted: counts.delAccountTotal },
+    { label: 'sentToday', icon: 'mail-delivered', total: quotaUsed.value },
   ]
 })
-const sources = computed(() => data.value?.receiveRatio.nameRatio.filter(row => row.total > 0) ?? [])
 const mailDays = computed(() => data.value?.emailDayCount.receiveDayCount ?? [])
 const sentDays = computed(() => data.value?.emailDayCount.sendDayCount ?? [])
 const userDays = computed(() => data.value?.userDayCount ?? [])
+const quotaUsed = computed(() => data.value?.daySendTotal ?? 0)
+const quotaLimit = computed(() => data.value?.dailySendLimit ?? 100)
+const accent = computed(() => getPalette(uiStore.palette)[uiStore.dark ? 'dark' : 'light'])
+const accentRgb = computed(() => accent.value.slice(1).match(/../g).map(hex => parseInt(hex, 16)).join(', '))
 const numberFormatter = computed(() => new Intl.NumberFormat(locale.value))
 const lastRead = computed(() => requestedAt.value?.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' }))
 const formatNumber = value => numberFormatter.value.format(Number(value) || 0)
@@ -151,17 +174,60 @@ const userChartLabel = computed(() => t('analysisUserSummary', {
 }))
 
 let pending = false
+let loadedSelection = { mailPeriod: mailPeriod.value, userPeriod: userPeriod.value, range: null }
+
+function disableEndDate(date) {
+  return Boolean(startDate.value && date < new Date(`${startDate.value}T00:00:00`))
+}
+
+function onStartDateChange(date) {
+  if (date && endDate.value && endDate.value < date) endDate.value = ''
+}
+
+function applyDates() {
+  if (pending || !validDateRange.value) return
+  activeRange.value = { startDate: startDate.value, endDate: endDate.value }
+  loadAnalysis()
+}
+
+function resetDateFields() {
+  activeRange.value = null
+  startDate.value = ''
+  endDate.value = ''
+}
+
+function clearDates() {
+  resetDateFields()
+  loadAnalysis()
+}
+
+function selectPeriod(chart, period) {
+  if (chart === 'mail') mailPeriod.value = period
+  else userPeriod.value = period
+  resetDateFields()
+  loadAnalysis()
+}
 
 async function loadAnalysis() {
   if (pending) return
   pending = true
   loading.value = true
+  const started = Date.now()
   try {
-    data.value = await analysisEcharts(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    const selection = { mailPeriod: mailPeriod.value, userPeriod: userPeriod.value, range: activeRange.value }
+    data.value = await analysisEcharts({
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      mailPeriod: selection.mailPeriod, userPeriod: selection.userPeriod, ...selection.range,
+    })
+    loadedSelection = selection
     requestedAt.value = new Date()
   } catch {
-    // Keep the current data visible if refreshing fails.
+    // Keep the displayed data and filters in sync if the request fails.
+    mailPeriod.value = loadedSelection.mailPeriod
+    userPeriod.value = loadedSelection.userPeriod
+    activeRange.value = loadedSelection.range
   } finally {
+    await new Promise(resolve => setTimeout(resolve, Math.max(0, 600 - (Date.now() - started))))
     loading.value = false
     pending = false
   }
@@ -173,8 +239,10 @@ const splitFor = height => (height < 150 ? 2 : height < 230 ? 3 : 4)
 const resizeObserver = new ResizeObserver(entries => {
   for (const { target, contentRect } of entries) {
     const chart = echarts.getInstanceByDom(target)
-    if (!chart || contentRect.width <= 0) continue
-    chart.setOption({ yAxis: { splitNumber: splitFor(contentRect.height) } })
+    if (!chart || contentRect.width <= 0 || contentRect.height <= 0) continue
+    if (target === mailPlot.value || target === userPlot.value) {
+      chart.setOption({ yAxis: { splitNumber: splitFor(contentRect.height) } })
+    }
     chart.resize()
   }
 })
@@ -189,25 +257,26 @@ function updateChart(element, options) {
 }
 
 watchEffect(() => {
-  if (!data.value || !mailPlot.value || !userPlot.value) return
+  if (!data.value || !mailPlot.value || !userPlot.value || !quotaPlot.value) return
 
   const dark = uiStore.dark
   const palette = dark
-    ? { ink: '#F5F5F7', muted: '#B4B4B8', line: '#343436', received: '#F2F2F4', sent: '#6E6E73', background: '#1E1E1F' }
-    : { ink: '#1D1D1F', muted: '#5E5E62', line: '#E3E3E3', received: '#1D1D1F', sent: '#A1A1A6', background: '#FFFFFF' }
+    ? { ink: '#F5F5F7', muted: '#B4B4B8', line: '#48484D', background: '#242426' }
+    : { ink: '#1D1D1F', muted: '#5E5E62', line: '#D9D9DE', background: '#F6F6F8' }
+  const animation = !uiStore.reduceMotion
+  const tooltip = {
+    confine: true,
+    backgroundColor: palette.background,
+    borderColor: palette.line,
+    textStyle: { color: palette.ink },
+  }
   const dateFormatter = new Intl.DateTimeFormat(locale.value, { month: 'short', day: 'numeric', timeZone: 'UTC' })
   const dates = rows => rows.map(({ date }) => dateFormatter.format(new Date(date + 'T00:00:00Z')))
   const chartOptions = (rows, top, element) => ({
-    animation: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    animation,
     animationDuration: 240,
     grid: { top, left: 14, right: 16, bottom: 12, containLabel: true },
-    tooltip: {
-      trigger: 'axis',
-      confine: true,
-      backgroundColor: palette.background,
-      borderColor: palette.line,
-      textStyle: { color: palette.ink },
-    },
+    tooltip: { ...tooltip, trigger: 'axis' },
     xAxis: {
       type: 'category',
       data: dates(rows),
@@ -237,8 +306,8 @@ watchEffect(() => {
     ...chartOptions(mailDays.value, 30, mailPlot.value),
     legend: { top: 0, right: 12, icon: 'roundRect', itemWidth: 12, itemHeight: 8, textStyle: { color: palette.muted, fontSize: 11 } },
     series: [
-      bars(t('received'), palette.received, mailDays.value.map(row => row.total)),
-      bars(t('sent'), palette.sent, mailDays.value.map(row => sentByDate.get(row.date) ?? 0)),
+      bars(t('received'), accent.value, mailDays.value.map(row => row.total)),
+      bars(t('sent'), `rgba(${accentRgb.value}, 0.52)`, mailDays.value.map(row => sentByDate.get(row.date) ?? 0)),
     ],
   })
   updateChart(userPlot.value, {
@@ -248,10 +317,29 @@ watchEffect(() => {
       type: 'line',
       symbol: 'circle',
       symbolSize: 5,
-      itemStyle: { color: palette.received },
+      itemStyle: { color: accent.value },
       lineStyle: { width: 2 },
       areaStyle: { opacity: .10 },
       data: userDays.value.map(row => row.total),
+    }],
+  })
+  updateChart(quotaPlot.value, {
+    animation,
+    tooltip,
+    color: [accent.value],
+    series: [{
+      name: t('sentToday'),
+      type: 'gauge',
+      max: quotaLimit.value,
+      splitNumber: Math.min(10, quotaLimit.value),
+      progress: { show: true, roundCap: true, clip: true, itemStyle: { color: accent.value } },
+      pointer: { itemStyle: { color: accent.value } },
+      axisLabel: { color: palette.muted, formatter: value => formatNumber(Math.round(value)) },
+      axisLine: { roundCap: true, lineStyle: { color: [[1, `rgba(${accentRgb.value}, ${dark ? 0.23 : 0.14})`]] } },
+      splitLine: { lineStyle: { color: palette.muted } },
+      axisTick: { lineStyle: { color: palette.muted } },
+      detail: { valueAnimation: animation, formatter: value => formatNumber(Math.round(value)), color: palette.ink },
+      data: [{ value: quotaUsed.value, name: t('total'), title: { color: palette.ink } }],
     }],
   })
 }, { flush: 'post' })
@@ -259,7 +347,7 @@ watchEffect(() => {
 onMounted(loadAnalysis)
 onBeforeUnmount(() => {
   resizeObserver.disconnect()
-  for (const element of [mailPlot.value, userPlot.value]) {
+  for (const element of [mailPlot.value, userPlot.value, quotaPlot.value]) {
     if (element) echarts.getInstanceByDom(element)?.dispose()
   }
 })
@@ -289,9 +377,7 @@ onBeforeUnmount(() => {
 .analysis-placeholder.is-chart { height: 244px; }
 .analysis-loading .analysis-charts { grid-template-rows: none; grid-template-areas: none; margin-top: var(--mail-shell-gutter); }
 
-@media (prefers-reduced-motion: no-preference) {
-  .analysis-metric, .analysis-card { animation: mail-content-in 180ms ease-out; }
-}
+.analysis-metric, .analysis-card { animation: mail-content-in 180ms ease-out; }
 
 .analysis-heading,
 .analysis-actions,
@@ -328,13 +414,33 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 
+.analysis-toolbar {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  max-width: 100%;
+  margin-inline-start: auto;
+}
+
+.analysis-date-filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 128px)) auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.analysis-date-filter :deep(.el-date-editor) { width: 100%; min-width: 0; }
+.analysis-actions { justify-content: flex-end; gap: 8px; }
+
 .analysis-actions .el-button :deep(.el-icon) {
   height: 16px;
 }
 
 .analysis-metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--mail-shell-gutter);
 }
 
@@ -371,12 +477,23 @@ onBeforeUnmount(() => {
 }
 
 .metric-value {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 5px;
   margin-top: 2px;
   font-size: 26px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
+}
+
+.metric-value strong { font-weight: inherit; }
+
+.metric-limit {
+  color: var(--mail-shell-muted);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .metric-breakdown,
@@ -402,14 +519,14 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas: "mail sources" "users sources";
+  grid-template-areas: "mail quota" "users quota";
   gap: var(--mail-shell-gutter);
   min-height: 0;
 }
 
 .analysis-mail { grid-area: mail; }
 .analysis-users { grid-area: users; }
-.analysis-sources-card { grid-area: sources; }
+.analysis-quota { grid-area: quota; }
 
 .analysis-card {
   display: flex;
@@ -423,11 +540,7 @@ onBeforeUnmount(() => {
 
 .analysis-range {
   flex-shrink: 0;
-  padding: 3px 8px;
-  border: 1px solid var(--mail-shell-line);
-  border-radius: 6px;
-  color: var(--mail-shell-muted);
-  font-size: 11px;
+  width: 110px;
 }
 
 .analysis-plot-frame { position: relative; flex: 1; min-height: 96px; }
@@ -441,43 +554,12 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
-.analysis-sources {
-  display: grid;
-  flex: 1;
-  align-content: start;
-  gap: 2px;
-  min-height: 0;
-  overflow: hidden;
-  padding: 0 2px 8px;
+.quota-frame {
+  width: min(100%, 350px);
+  max-height: 350px;
+  margin: auto;
 }
 
-.analysis-sources li {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 9px;
-  padding-block: 7px;
-  border-top: 1px solid var(--mail-shell-line);
-  font-size: 13px;
-}
-
-.source-position {
-  display: grid;
-  height: 23px;
-  place-items: center;
-  border-radius: 6px;
-  background: var(--mail-shell-rail);
-  color: var(--mail-shell-muted);
-  font-size: 11px;
-}
-
-.source-detail { display: grid; min-width: 0; gap: 5px; }
-.source-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.source-track { height: 3px; overflow: hidden; border-radius: 3px; background: var(--mail-shell-hover); }
-.source-track > span { display: block; height: 100%; border-radius: inherit; background: var(--mail-shell-marker); }
-.analysis-sources strong { font-size: 12px; font-variant-numeric: tabular-nums; }
-
-.analysis-source-empty,
 .analysis-state {
   display: grid;
   align-content: center;
@@ -496,8 +578,8 @@ onBeforeUnmount(() => {
   .analysis-card-heading { align-items: center; }
 }
 
-@container (max-width: 960px) {
-  .analysis-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@container (max-width: 680px) {
+  .analysis-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* Too small for a single screen (phones, very short windows): fall back to
@@ -514,8 +596,8 @@ onBeforeUnmount(() => {
   .analysis-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .analysis-charts {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 260px auto 220px;
-    grid-template-areas: "mail" "sources" "users";
+    grid-template-rows: 250px 225px 350px;
+    grid-template-areas: "mail" "users" "quota";
   }
 }
 </style>

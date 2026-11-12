@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import {useId} from 'vue'
+import {useId, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {useUiStore} from '@/store/ui.js'
 
@@ -36,6 +36,7 @@ const themeOptions = [
   {label: 'lightTheme', dark: false},
   {label: 'darkTheme', dark: true},
 ]
+let activeTransition
 
 function selectTheme(dark, event) {
   const bounds = event.currentTarget.closest('.theme-card')?.getBoundingClientRect()
@@ -51,15 +52,15 @@ function changeDark(nextIsDark, origin) {
   const root = document.documentElement
   const applyTheme = () => {
     root.classList.toggle('dark', nextIsDark)
-    const isMobile = !window.matchMedia("(pointer: fine) and (hover: hover)").matches
     document.getElementById('theme-color-meta')?.setAttribute(
       'content',
-      nextIsDark ? '#161617' : '#F2F2F2'
+      nextIsDark ? '#161618' : '#F0F0F3'
     )
     uiStore.dark = nextIsDark
   }
 
-  if (!document.startViewTransition) {
+  activeTransition?.skipTransition()
+  if (!document.startViewTransition || uiStore.reduceMotion) {
     applyTheme()
     return
   }
@@ -72,8 +73,15 @@ function changeDark(nextIsDark, origin) {
   root.style.setProperty('--vt-x', `${origin.x}px`)
   root.style.setProperty('--vt-y', `${origin.y}px`)
   root.style.setProperty('--vt-end-radius', `${endRadius + 10}px`)
-  const transition = document.startViewTransition(applyTheme)
-  transition.finished.finally(() => root.removeAttribute('data-theme-to'))
+  const transition = document.startViewTransition(async () => { applyTheme(); await nextTick() })
+  activeTransition = transition
+  const cleanup = () => {
+    if (activeTransition === transition) {
+      root.removeAttribute('data-theme-to')
+      activeTransition = undefined
+    }
+  }
+  transition.finished.then(cleanup, cleanup)
 }
 </script>
 
@@ -91,7 +99,7 @@ function changeDark(nextIsDark, origin) {
   min-width: 0;
   padding: 7px;
   border: 1px solid var(--el-border-color);
-  border-radius: 8px;
+  border-radius: var(--r-card);
   cursor: pointer;
 
   &:hover,
@@ -115,7 +123,7 @@ function changeDark(nextIsDark, origin) {
   overflow: hidden;
   border: 1px solid #dfe1e5;
   border-radius: 4px;
-  background: #ffffff;
+  background: #FAFAFC;
 
   i {
     display: block;

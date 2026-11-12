@@ -19,6 +19,8 @@
       <ToolbarButton :icon="reader ? 'mail' : 'mark-read'"
                      :label="$t(reader ? 'mailMarkedUnread' : 'markAsRead')" :disabled="working"
                      @click="mark(reader)" />
+      <ToolbarButton v-if="labelItems?.length" icon="tag" :label="$t('mailMessageLabels')" :disabled="working"
+                     @click="labels.assign('message', labelItems)" />
       <el-dropdown trigger="click" placement="bottom-end" :show-arrow="false" @command="selectAction">
         <ToolbarButton icon="more" :label="$t('mailMoreActions')" :disabled="working" />
         <template #dropdown>
@@ -50,7 +52,7 @@
       </div>
       <label class="snooze-label" for="mail-snooze-time">{{ $t('mailPickTime') }}</label>
       <el-date-picker id="mail-snooze-time" v-model="snoozeDate" type="datetime"
-                      :placeholder="$t('mailSnoozeUntil')" :teleported="false" />
+                      :placeholder="$t('mailSnoozeUntil')" />
       <template #footer>
         <el-button @click="snoozeOpen = false">{{ $t('cancel') }}</el-button>
         <el-button type="primary" :disabled="!snoozeDate" :loading="working"
@@ -68,10 +70,12 @@ import { emailRead, workspaceMove } from '@/request/email.js'
 import { hasPerm } from '@/perm/perm.js'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import ToolbarButton from '@/components/toolbar-button/index.vue'
+import { useLabelsStore } from '@/store/labels.js'
 
-const props = defineProps({ folder: String, ids: Array, reader: Boolean, canReply: Boolean, canFile: Boolean })
+const props = defineProps({ folder: String, ids: Array, reader: Boolean, canReply: Boolean, canFile: Boolean, labelItems: Array })
 const emit = defineEmits(['change', 'reply', 'forward'])
 const { t } = useI18n()
+const labels = useLabelsStore()
 const trashFolder = computed(() => props.folder === 'trash')
 const canDelete = computed(() => hasPerm('email:delete'))
 const working = ref(false)
@@ -137,9 +141,10 @@ async function mark(unread) {
 </script>
 
 <style scoped>
-.message-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.message-actions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .message-actions > .toolbar-group + .toolbar-group { margin-inline-start: 0; }
 .snooze-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .snooze-options .el-button + .el-button { margin: 0; }
 .snooze-label { display: block; margin-bottom: 6px; }
+.el-date-editor { width: 100%; }
 </style>

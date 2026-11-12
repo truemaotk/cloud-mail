@@ -14,12 +14,17 @@ export const useUiStore = defineStore('ui', {
         key: 0,
         dark: false,
         palette: 'graphite',
+        motion: 'system',
+        systemReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         asideCount: {
             email: 0,
             send: 0,
             sysEmail: 0
         }
     }),
+    getters: {
+        reduceMotion: state => state.motion === 'reduce' || (state.motion !== 'full' && state.systemReducedMotion),
+    },
     actions: {
         showNotice() {
             this.changeNotice ++
@@ -30,6 +35,6 @@ export const useUiStore = defineStore('ui', {
         }
     },
     persist: {
-        pick: ['accountShow','dark','wideReading','navigationOrder','palette'],
+        pick: ['accountShow','dark','wideReading','navigationOrder','palette','motion'],
     },
 })

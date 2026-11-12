@@ -1,3 +1,5 @@
+import emailUtils from '../utils/email-utils';
+
 const channels = ['feishu', 'wecom'];
 const maxAttempts = 8;
 const encoder = new TextEncoder();
@@ -14,6 +16,20 @@ export const chatBotSchema = [
 	)`,
 	'CREATE INDEX IF NOT EXISTS idx_chat_bot_delivery_due ON chat_bot_delivery(due_at)',
 ];
+
+// Existing installations may predate these tables. Share concurrent setup work,
+// and allow the next request to retry if D1 was temporarily unavailable.
+const schemaReady = new WeakMap();
+export function ensureChatBotSchema(db) {
+	if (!schemaReady.has(db)) {
+		const pending = db.batch(chatBotSchema.map(sql => db.prepare(sql))).catch(error => {
+			schemaReady.delete(db);
+			throw error;
+		});
+		schemaReady.set(db, pending);
+	}
+	return schemaReady.get(db);
+}
 
 export function validChannel(channel) {
 	return channels.includes(channel);
@@ -46,12 +62,28 @@ function safeLine(value) {
 }
 
 export function mailNotice(email) {
-	return [
+	const heading = [
 		'mail · 新邮件',
 		'主题：' + safeLine(email.subject),
 		'发件人：' + safeLine(email.sendEmail || email.name),
 		'收件邮箱：' + safeLine(email.toEmail),
-	].join('\n');
+		'', '正文：',
+	].join('\n') + '\n';
+	const text = (emailUtils.formatText(email.text) || emailUtils.htmlToText(email.content) || '（无文字正文）')
+		.replace(/</g, '＜').replace(/>/g, '＞');
+	// Budget the entire UTF-8 message, including metadata and the truncation note.
+	// A shared conservative size keeps Chinese and emoji safe on both channels.
+	const suffix = '\n…（正文已截断，请在邮箱查看完整邮件）';
+	const budget = 1900 - encoder.encode(heading).length;
+	if (encoder.encode(text).length <= budget) return heading + text;
+	let preview = '', used = 0;
+	for (const char of text) {
+		const bytes = encoder.encode(char).length;
+		if (used + bytes > budget - encoder.encode(suffix).length) break;
+		preview += char;
+		used += bytes;
+	}
+	return heading + preview + suffix;
 }
 
 export async function postBotMessage(bot, message, send = fetch) {
@@ -94,6 +126,7 @@ export async function postBotMessage(bot, message, send = fetch) {
 
 const chatBotService = {
 	async status(db) {
+		await ensureChatBotSchema(db);
 		const { results } = await db.prepare(`
 			SELECT b.channel, b.url <> '' AS configured, b.secret <> '' AS signed, b.enabled,
 				COUNT(CASE WHEN d.attempts < ? THEN 1 END) AS pending,
@@ -106,10 +139,12 @@ const chatBotService = {
 	},
 
 	async get(db, channel) {
+		await ensureChatBotSchema(db);
 		return db.prepare('SELECT * FROM chat_bot WHERE channel = ?').bind(channel).first();
 	},
 
 	async save(db, channel, { url, secret, enabled }, previous) {
+		await ensureChatBotSchema(db);
 		const target = previous?.url === url ? previous.target_id : crypto.randomUUID();
 		await db.batch([
 			db.prepare(`INSERT INTO chat_bot VALUES (?, ?, ?, ?, ?)
@@ -121,6 +156,7 @@ const chatBotService = {
 
 	async enqueue(db, emails) {
 		if (!emails.length) return;
+		await ensureChatBotSchema(db);
 		await db.batch(emails.map(email => db.prepare(`
 			INSERT OR IGNORE INTO chat_bot_delivery (channel, email_id, target_id, message, due_at)
 			SELECT channel, ?, target_id, ?, ? FROM chat_bot WHERE enabled = 1
@@ -128,11 +164,13 @@ const chatBotService = {
 	},
 
 	async retryFailed(db, channel) {
+		await ensureChatBotSchema(db);
 		await db.prepare('UPDATE chat_bot_delivery SET attempts = 0, due_at = ? WHERE channel = ? AND attempts >= ?')
 			.bind(Date.now(), channel, maxAttempts).run();
 	},
 
 	async deliverDue(db, limit = 20) {
+		await ensureChatBotSchema(db);
 		const now = Date.now();
 		const { results } = await db.prepare(`
 			SELECT d.channel, d.email_id, d.target_id FROM chat_bot_delivery d

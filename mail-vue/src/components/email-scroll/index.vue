@@ -21,7 +21,7 @@
         <slot name="first"></slot>
         <div class="toolbar-group">
           <slot name="actions"></slot>
-          <ToolbarButton icon="refresh" :label="$t('refreshMail')" @click="refresh" />
+          <ToolbarButton icon="refresh" :label="$t('refreshMail')" :busy="loading" @click="refresh" />
           <ToolbarButton v-if="checkedEmailCount > 0" v-perm="'email:delete'"
                          icon="delete" :label="$t('delete')" @click="handleDelete" />
           <ToolbarButton v-if="checkedEmailCount > 0 && showUnread" v-perm="'email:delete'"
@@ -82,11 +82,11 @@
 
                 <div class="email-sender" :style="(item.unread === EmailUnreadEnum.UNREAD && showUnread) ? 'font-weight: bold' : ''">
                   <div class="email-status" v-if="showStatus && (item.statusIcon || (item.isDel && item.status !== 6))">
-                    <el-tooltip v-if="item.statusIcon" effect="dark" :content="item.statusIcon.content">
+                    <el-tooltip :show-after="0" :hide-after="0" v-if="item.statusIcon" effect="dark" :content="item.statusIcon.content">
                       <NavigationIcon :name="item.statusIcon.icon" :style="{ color: item.statusIcon.color }" :size="17" />
                     </el-tooltip>
                     <div class="del-status" v-if="item.isDel && item.status !== 6">
-                      <el-tooltip effect="dark" :content="item.isDelContent">
+                      <el-tooltip :show-after="0" :hide-after="0" effect="dark" :content="item.isDelContent">
                         <NavigationIcon name="mail-deleted" class="icon" :size="20" />
                       </el-tooltip>
                     </div>
@@ -898,6 +898,7 @@ watch(() => props.highlightText, () => {
 })
 
 function refresh() {
+  if (loading.value) return
   emit('refresh-before')
   if (props.skeleton) {
     scrollbarRef.value?.setScrollTop(0)
@@ -1052,9 +1053,6 @@ function renderHighlight(value) {
     border-radius: 5px;
     color: var(--el-text-color-primary);
 
-    @media (max-width: 1366px) {
-      display: none;
-    }
   }
 
   .title {

@@ -8,6 +8,10 @@ export function settingQuery() {
     return http.get('/setting/query')
 }
 
+export function setDailySendLimit(dailySendLimit) {
+    return http.put('/setting/dailySendLimit', { dailySendLimit })
+}
+
 export function websiteConfig() {
     return http.get('/setting/websiteConfig')
 }

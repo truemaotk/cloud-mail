@@ -2,7 +2,12 @@
   <div class="credential-field">
     <el-input
       type="password"
-      autocomplete="new-password"
+      autocomplete="off"
+      autocapitalize="off"
+      :spellcheck="false"
+      data-form-type="other"
+      data-lpignore="true"
+      data-1p-ignore
       :aria-label="label"
       :model-value="value ?? ''"
       :placeholder="configured && value === undefined ? '********' : label"

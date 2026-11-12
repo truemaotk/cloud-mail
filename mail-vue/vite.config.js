@@ -19,10 +19,10 @@ export default defineConfig(({mode}) => {
             VitePWA({
                 injectRegister: 'script-defer',
                 manifest: {
-                    name: 'mail',
-                    short_name: 'mail',
-                    background_color: '#FFFFFF',
-                    theme_color: '#FFFFFF',
+                    name: 'Mail',
+                    short_name: 'Mail',
+                    background_color: '#F0F0F3',
+                    theme_color: '#F0F0F3',
                     icons: [
                         {
                             src: 'mail.svg',

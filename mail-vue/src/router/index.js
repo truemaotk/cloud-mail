@@ -1,5 +1,7 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import NProgress from 'nprogress';
+import { ElMessageBox } from 'element-plus';
+import i18n from '@/i18n/index.js';
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
 import {cvtR2Url} from "@/utils/convert.js";
@@ -82,6 +84,25 @@ NProgress.configure({
 
 let timer
 let first = true
+let showingLoadError = false
+
+router.onError((error, to) => {
+    clearTimeout(timer)
+    NProgress.done()
+    removeLoading()
+    if (!/Failed to fetch dynamically imported module|Importing a module script failed|Unable to preload CSS|Loading chunk .* failed/i.test(error.message || '') || showingLoadError) return
+    showingLoadError = true
+    const t = i18n.global.t
+    ElMessageBox.confirm(t('routeLoadFailedHint'), t('routeLoadFailed'), {
+        confirmButtonText: t('routeReload'),
+        cancelButtonText: t('routeReloadLater'),
+        type: 'warning',
+    }).then(() => {
+        window.location.assign(to.fullPath)
+    }).catch(() => {
+        // Keep the current page and any unsaved composer content available.
+    }).finally(() => { showingLoadError = false })
+})
 
 router.beforeEach((to, from, next) => {
 
