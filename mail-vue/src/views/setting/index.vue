@@ -79,6 +79,14 @@
             <el-segmented v-model="uiStore.motion" :aria-label="$t('interfaceMotion')" class="motion-options"
                           :options="[{ label: $t('motionSystem'), value: 'system' }, { label: $t('motionFull'), value: 'full' }, { label: $t('motionReduce'), value: 'reduce' }]" />
           </div>
+          <div class="settings-row">
+            <span>{{ $t('newMailSound') }}</span>
+            <div class="sound-controls">
+              <el-button size="small" @click="previewNewMailSound">{{ $t('previewMailSound') }}</el-button>
+              <el-switch v-model="uiStore.newMailSound" :aria-label="$t('newMailSound')"
+                         @change="$event && prepareNewMailSound()" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -119,6 +127,7 @@ import {useUiStore} from "@/store/ui.js";
 import {hasPerm} from '@/perm/perm.js'
 import ThemeSelector from "@/components/theme-selector/index.vue";
 import PaletteSelector from "@/components/palette-selector/index.vue";
+import { prepareNewMailSound, previewNewMailSound } from '@/utils/new-mail-sound.js'
 
 import SettingsWorkspace from "@/components/settings-workspace/index.vue";
 import NavigationIcon from "@/components/navigation-icon/index.vue";
@@ -397,6 +406,8 @@ function submitPwd() {
   margin-bottom: 10px;
   font-size: 14px;
 }
+
+.sound-controls { display: flex; align-items: center; gap: 12px; }
 
 .palette-hint {
   margin: -6px 0 12px;

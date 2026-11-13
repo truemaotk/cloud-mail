@@ -15,6 +15,7 @@ export const useUiStore = defineStore('ui', {
         dark: false,
         palette: 'graphite',
         motion: 'system',
+        newMailSound: true,
         systemReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         asideCount: {
             email: 0,
@@ -35,6 +36,6 @@ export const useUiStore = defineStore('ui', {
         }
     },
     persist: {
-        pick: ['accountShow','dark','wideReading','navigationOrder','palette','motion'],
+        pick: ['accountShow','dark','wideReading','navigationOrder','palette','motion','newMailSound'],
     },
 })

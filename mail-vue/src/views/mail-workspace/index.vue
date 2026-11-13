@@ -13,11 +13,17 @@
         </span>
         <ToolbarButton v-if="selected.length && isDraft" icon="delete" :label="$t('mailDiscardDraft')"
                        @click="discardDrafts" />
-        <ToolbarButton v-else-if="selected.length && isAdmin && canDeleteAdmin" icon="delete"
-                       :label="$t('mailPurge')" :busy="deleting" @click="deleteAdmin(selected)" />
-        <MessageActions v-else-if="selected.length && !isAdmin" class="list-bulk-actions" :folder="folder" :ids="selected"
+        <template v-else-if="selected.length && isAdmin">
+          <ToolbarButton v-if="canDeleteAdmin" icon="delete" :label="$t('mailPurge')" :busy="deleting"
+                         @click="deleteAdmin(selected)" />
+          <MessageActions v-if="selectedReadable.length" class="list-bulk-actions" :folder="folder"
+                          :ids="selectedReadable.map(rowId)" :read-state="selectionReadState"
+                          :read-busy="selectionReadBusy" read-actions-only @mark="markRead" />
+        </template>
+        <MessageActions v-else-if="selected.length" class="list-bulk-actions" :folder="folder" :ids="selected"
                         :can-file="selectionCanFile" :label-items="selectedLabelItems"
-                        @change="handleAction" />
+                        :read-state="selectionReadState" :read-busy="selectionReadBusy"
+                        @change="handleAction" @mark="markSelection" />
         <template v-else-if="!selected.length">
           <span class="toolbar-group">
           <ToolbarButton icon="chevron" class="page-back" :label="$t('mailPreviousPage')"
@@ -45,7 +51,7 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <el-dropdown v-else-if="!isDraft" trigger="click" placement="bottom-end" :show-arrow="false"
+          <el-dropdown v-else-if="!isDraft && folder !== 'sent' && folder !== 'trash'" trigger="click" placement="bottom-end" :show-arrow="false"
                        @command="setUnreadOnly">
             <ToolbarButton icon="filter" :label="$t('mailFilter')" :aria-pressed="unreadOnly" />
             <template #dropdown>
@@ -96,6 +102,7 @@
           </span>
           <button type="button" class="message-summary" :aria-current="messageId === rowId(row) ? 'true' : undefined"
                   @click="open(row)">
+            <span v-if="isUnread(row)" class="visually-hidden">{{ $t('mailUnreadStatus') }}</span>
             <span class="message-sender" :title="isDraft ? row.receiveEmail?.join(', ') : sender(row)">{{ sender(row) }}</span>
             <span class="message-copy">
               <span class="message-subject-line">
@@ -111,12 +118,15 @@
     </section>
 
     <section class="message-reading-pane" :aria-label="$t('mailReadingPane')" :aria-busy="!!messageId && !activeMessage">
-      <MailReader v-if="activeMessage" :key="activeMessage.emailId" class="message-loaded" embedded @toggle-star="toggleStar(activeMessage)">
+      <MailReader v-if="activeMessage" :key="activeMessage.emailId" class="message-loaded" embedded
+                  :read-state="activeReadState" :read-busy="updatingRead.has(activeMessage.emailId)"
+                  @toggle-star="toggleStar(activeMessage)" @mark="markRead([activeMessage.emailId], $event)">
         <template #toolbar>
           <ToolbarButton icon="back" class="reader-back" :label="$t('goBack')" @click="closeReader" />
           <MessageActions v-if="actionFolder" :folder="actionFolder" :ids="[activeMessage.emailId]"
                           :can-reply="false" :can-file="activeMessage.type === 0" :label-items="isAdmin ? [] : [labelItem(activeMessage)]" reader
-                          @change="handleAction" @reply="uiStore.writerRef.openReply(activeMessage)"
+                          :read-state="activeReadState" :read-busy="updatingRead.has(activeMessage.emailId)"
+                          @change="handleAction" @mark="markRead" @reply="uiStore.writerRef.openReply(activeMessage)"
                           @forward="uiStore.writerRef.openForward(activeMessage)" />
           <div v-if="isAdmin" class="admin-reader-actions">
             <ToolbarButton v-if="canDeleteAdmin && !actionFolder" icon="delete" :label="$t('mailPurge')" :busy="deleting"
@@ -259,6 +269,7 @@ const deleting = ref(false)
 const failed = ref(false)
 const unreadOnly = ref(false)
 const starring = reactive(new Set())
+const updatingRead = reactive(new Set())
 const total = ref(0)
 const offset = ref(0)
 const listBody = ref(null)
@@ -282,6 +293,12 @@ const allSelected = computed({
   set: value => { selected.value = value ? rows.value.map(rowId) : [] },
 })
 const selectionCanFile = computed(() => rows.value.every(row => !selected.value.includes(row.emailId) || row.type === 0))
+const selectedReadable = computed(() => rows.value.filter(row => selected.value.includes(rowId(row)) && canMarkRead(row)))
+const selectionReadState = computed(() => selectedReadable.value.length
+  ? selectedReadable.value.some(isUnread) ? 'unread' : 'read' : undefined)
+const selectionReadBusy = computed(() => selectedReadable.value.some(row => updatingRead.has(row.emailId)))
+const activeReadState = computed(() => activeMessage.value && canMarkRead(activeMessage.value)
+  ? isUnread(activeMessage.value) ? 'unread' : 'read' : undefined)
 const activeIndex = computed(() => rows.value.findIndex(row => rowId(row) === messageId.value))
 const previousMessage = computed(() => rows.value[activeIndex.value - 1])
 const nextMessage = computed(() => activeIndex.value >= 0 ? rows.value[activeIndex.value + 1] : undefined)
@@ -291,7 +308,12 @@ function rowId(row) {
 }
 
 function isUnread(row) {
-  return !isDraft.value && row.unread === EmailUnreadEnum.UNREAD
+  return canMarkRead(row) && row.unread === EmailUnreadEnum.UNREAD
+}
+
+function canMarkRead(row) {
+  return !isDraft.value && props.folder !== 'trash' && row.type === 0 && row.isDel === 0
+    && (!isAdmin.value || row.userId === userStore.user.userId)
 }
 
 function sender(row) {
@@ -470,6 +492,12 @@ watch([() => props.folder, () => isAdmin.value ? null : accountStore.currentAcco
   }, { immediate: true })
 
 watch(() => emailStore.workspaceRevision, () => reload())
+watch(() => emailStore.newMail, arrival => {
+  if (!arrival || refreshing.value || selected.value.length || offset.value) return
+  if (isAdmin.value && ['receive', 'all'].includes(adminType.value)) reload()
+  if (props.folder === 'inbox' && (accountStore.currentAccount?.allReceive ? arrival.inboxes.length
+    : arrival.inboxes.includes(accountStore.currentAccountId))) reload()
+})
 watch(() => labelStore.lastMessageChange, change => {
   if (!change || isAdmin.value || isDraft.value) return
   if (activeMessage.value && change.itemIds.includes(activeMessage.value.emailId)) {
@@ -522,11 +550,7 @@ watch([() => route.fullPath, () => isAdmin.value ? null : accountStore.currentAc
     if (!detail) return closeReader()
     emailStore.openMessage(detail, folder, true)
     loadedMessageId.value = detail.emailId
-    if (folder !== 'trash' && !isAdmin.value && isUnread(detail)) {
-      await emailRead([detail.emailId])
-      if (version !== readerVersion) return
-      applyRead([detail.emailId], false)
-    }
+    if (isUnread(detail)) await markRead([detail.emailId], false, { automatic: true })
   } catch (error) {
     if (version === readerVersion && (!activeMessage.value || error?.code === 404)) closeReader()
   }
@@ -539,6 +563,26 @@ function applyRead(ids, unread) {
   }
   if (activeMessage.value && ids.includes(activeMessage.value.emailId)) activeMessage.value.unread = value
   emailStore.refreshUnreadCounts()
+}
+
+function markSelection(ids, unread) {
+  return markRead(selectedReadable.value.filter(row => ids.includes(row.emailId)).map(rowId), unread)
+}
+
+async function markRead(ids, unread, { automatic = false } = {}) {
+  if (!ids.length || ids.some(id => updatingRead.has(id))) return
+  const folder = props.folder
+  for (const id of ids) updatingRead.add(id)
+  try {
+    await emailRead(ids, unread)
+    applyRead(ids, unread)
+    if (props.folder === folder && unread && ids.includes(messageId.value)) closeReader()
+    if (loading.value || (!automatic && unreadOnly.value)) reload()
+  } catch {
+    // The request layer reports failures without changing the displayed state.
+  } finally {
+    for (const id of ids) updatingRead.delete(id)
+  }
 }
 
 async function toggleStar(row) {
@@ -563,12 +607,6 @@ async function toggleStar(row) {
 }
 
 function handleAction({ ids, action }) {
-  if (action === 'read' || action === 'unread') {
-    applyRead(ids, action === 'unread')
-    if (action === 'unread' && ids.includes(messageId.value)) closeReader()
-    if (unreadOnly.value) reload()
-    return
-  }
   if (ids.includes(messageId.value)) closeReader()
   selected.value = []
   reload()
@@ -629,7 +667,7 @@ onMounted(() => {
   timer = window.setInterval(() => {
     ticks++
     const interval = Number(settingStore.settings.autoRefresh)
-    const autoRefresh = props.folder === 'inbox' || (isAdmin.value && adminType.value === 'receive')
+    const autoRefresh = props.folder === 'inbox' || (isAdmin.value && ['receive', 'all'].includes(adminType.value))
     if (autoRefresh && interval > 1 && ticks % interval === 0 && !loading.value
         && !refreshing.value && !document.hidden && !selected.value.length && !offset.value) {
       reload()
@@ -654,7 +692,6 @@ onBeforeUnmount(() => {
 .mail-workspace {
   --row-pad-start: 12px;
   --row-pad-end: 16px;
-  --row-dot: 0px;
   --row-check: 16px;
   --row-status: 24px;
   --row-gap: 6px;
@@ -782,7 +819,7 @@ onBeforeUnmount(() => {
 .placeholder-paragraph:last-child { width: min(50%, 400px); }
 .message-loaded { animation: mail-content-in var(--mac-dur-3) var(--mac-ease-out); }
 
-/* 邮件行：三栏 72px，三行文本。未读点、复选框、星标都与发件人同一行 */
+/* 邮件行：三栏 72px，三行文本。复选框和星标与发件人同一行 */
 .message-row {
   position: relative;
   display: grid;
@@ -803,6 +840,16 @@ onBeforeUnmount(() => {
   content: '';
 }
 .message-row:hover { background: color-mix(in srgb, var(--mac-surface) 96%, var(--mac-text)); }
+.message-row.unread::before {
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--mac-accent-ink);
+  pointer-events: none;
+  content: '';
+}
 .message-row.message-current, .message-row.message-selected { background: var(--mac-selected-solid); }
 .message-row:is(.message-current, .message-selected)::after,
 .message-row:has(+ :is(.message-current, .message-selected))::after { background: transparent; }
@@ -849,10 +896,10 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.message-sender { grid-area: sender; font-size: var(--mac-fs-body); line-height: 20px; font-weight: 600; }
+.message-sender { grid-area: sender; font-size: var(--mac-fs-body); line-height: 20px; font-weight: 400; }
 .message-subject { font-size: var(--mac-fs-chrome); line-height: 18px; }
 .message-snippet { color: var(--mac-text-2); font-size: var(--mac-fs-caption); line-height: 16px; }
-.unread .message-subject { font-weight: 600; }
+.unread :is(.message-sender, .message-subject) { font-weight: 650; }
 .message-summary time {
   grid-area: date;
   color: var(--mac-text-2);
@@ -881,8 +928,6 @@ onBeforeUnmount(() => {
 }
 .wide-reading .message-copy { display: flex; align-items: baseline; gap: 0; }
 .wide-reading .message-subject { flex: 0 1 auto; max-width: 70%; font-size: var(--mac-fs-body); line-height: 20px; }
-.wide-reading .message-sender { line-height: 20px; font-weight: 400; }
-.wide-reading .unread .message-sender { font-weight: 600; }
 .wide-reading .message-snippet { flex: 1 1 0; min-width: 0; font-size: var(--mac-fs-chrome); line-height: 20px; }
 .wide-reading .message-snippet::before { content: '  —  '; white-space: pre; }
 }

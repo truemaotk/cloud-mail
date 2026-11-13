@@ -10,6 +10,9 @@ export const useEmailStore = defineStore('email', {
     state: () => ({
         deleteIds: 0,
         unreadByAccount: {},
+        allUnreadTotal: 0,
+        latestReceivedId: null,
+        newMail: null,
         workspaceRevision: 0,
         starScroll: null,
         emailScroll: null,
@@ -44,9 +47,20 @@ export const useEmailStore = defineStore('email', {
         async refreshUnreadCounts() {
             const version = ++unreadRequestVersion
             try {
-                const rows = await emailUnreadCounts()
+                const result = await emailUnreadCounts()
                 if (version === unreadRequestVersion) {
+                    const rows = Array.isArray(result) ? result : result.counts
                     this.unreadByAccount = Object.fromEntries(rows.map(({ accountId, unread }) => [accountId, unread]))
+                    this.allUnreadTotal = rows.reduce((total, row) => total + (row.allUnread ?? row.unread), 0)
+                    if (Number.isSafeInteger(result.latestId)) {
+                        const previousId = this.latestReceivedId
+                        this.latestReceivedId = Math.max(previousId ?? 0, result.latestId)
+                        if (previousId !== null && result.latestId > previousId) {
+                            const accounts = rows.filter(row => row.latestUnreadId > previousId).map(row => row.accountId)
+                            const inboxes = rows.filter(row => row.latestInboxUnreadId > previousId).map(row => row.accountId)
+                            if (accounts.length) this.newMail = { id: result.latestId, accounts, inboxes }
+                        }
+                    }
                 }
             } catch {
                 // Keep the last successful count while the connection is unavailable.
@@ -55,6 +69,9 @@ export const useEmailStore = defineStore('email', {
         clearUnreadCounts() {
             ++unreadRequestVersion
             this.unreadByAccount = {}
+            this.allUnreadTotal = 0
+            this.latestReceivedId = null
+            this.newMail = null
         },
         setSearchParams(params) {
             this.searchParams = {

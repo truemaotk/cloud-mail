@@ -14,7 +14,7 @@ export function emailLatest(emailId, accountId, allReceive) {
 }
 
 export function emailUnreadCounts() {
-    return http.get('/email/unreadCounts', {noMsg: true, timeout: 10000})
+    return http.get('/email/unreadCounts', {params: {withLatest: 1}, noMsg: true, timeout: 10000})
 }
 
 export function emailRead(emailIds, unread = false) {

@@ -80,7 +80,7 @@ function filtersFor(params, scope, userId, now) {
 		}),
 		params.labelId ? and(messageHasLabel(userId, params.labelId), or(isNull(state.folder), ne(state.folder, 'spam')))
 			: folderCondition(folder, now, userId),
-		params.unread === '1' ? eq(email.unread, emailConst.unread.UNREAD) : undefined
+		params.unread === '1' ? and(eq(email.type, emailConst.type.RECEIVE), eq(email.unread, emailConst.unread.UNREAD)) : undefined
 	);
 }
 

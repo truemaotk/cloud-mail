@@ -32,7 +32,7 @@ app.get('/email/latest', async (c) => {
 });
 
 app.get('/email/unreadCounts', async (c) => {
-	const counts = await emailService.unreadCounts(c, userContext.getUserId(c));
+	const counts = await emailService.unreadCounts(c, userContext.getUserId(c), c.req.query('withLatest') === '1');
 	return c.json(result.ok(counts));
 });
 

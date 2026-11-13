@@ -2,7 +2,7 @@ import orm from '../entity/orm';
 import email from '../entity/email';
 import { emailListColumns, emailBriefColumns, EMAIL_LIST_TEXT_LEN } from '../lib/email-list-columns';
 import { attConst, emailConst, isDel, settingConst } from '../const/entity-const';
-import { and, desc, eq, gt, inArray, notInArray, lt, count, asc, sql, ne, or, like, lte, gte } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, notInArray, lt, count, asc, sql, ne, or, like, lte, gte } from 'drizzle-orm';
 import { star } from '../entity/star';
 import settingService from './setting-service';
 import accountService from './account-service';
@@ -31,24 +31,37 @@ import verifyUtils from '../utils/verify-utils';
 
 const emailService = {
 
-	async unreadCounts(c, userId) {
+	async unreadCounts(c, userId, withLatest = false) {
 		await ensureMailboxMessageState(c.env.db);
-		return orm(c)
-			.select({ accountId: email.accountId, unread: count() })
+		const db = orm(c);
+		const incoming = and(eq(email.userId, userId), eq(account.userId, userId),
+			eq(email.type, emailConst.type.RECEIVE), eq(email.isDel, isDel.NORMAL), eq(account.isDel, isDel.NORMAL));
+		const inbox = inNormalFolder();
+		const counts = db
+			.select({
+				accountId: email.accountId,
+				unread: sql`count(*) FILTER (WHERE ${inbox})`.mapWith(Number),
+				allUnread: count(),
+				...(withLatest && {
+					latestUnreadId: sql`max(${email.emailId})`.mapWith(Number),
+					latestInboxUnreadId: sql`max(${email.emailId}) FILTER (WHERE ${inbox})`.mapWith(Number),
+				}),
+			})
 			.from(email)
 			.innerJoin(account, eq(account.accountId, email.accountId))
 			.leftJoin(mailboxMessageState, eq(mailboxMessageState.emailId, email.emailId))
 			.where(and(
-				eq(email.userId, userId),
-				eq(account.userId, userId),
-				eq(email.type, emailConst.type.RECEIVE),
+				incoming,
 				eq(email.unread, emailConst.unread.UNREAD),
-				eq(email.isDel, isDel.NORMAL),
-				inNormalFolder(),
-				eq(account.isDel, isDel.NORMAL)
+				or(isNull(mailboxMessageState.folder), ne(mailboxMessageState.folder, 'spam')),
 			))
-			.groupBy(email.accountId)
-			.all();
+			.groupBy(email.accountId);
+		if (!withLatest) return counts.all();
+
+		const [rows, latest] = await db.batch([counts, db.select({ id: email.emailId }).from(email)
+			.innerJoin(account, eq(account.accountId, email.accountId))
+			.where(incoming).orderBy(desc(email.emailId)).limit(1)]);
+		return { counts: rows, latestId: latest[0]?.id ?? 0 };
 	},
 
 	async list(c, params, userId) {
@@ -1226,7 +1239,7 @@ const emailService = {
 		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, withCursor: false });
 		const columns = full ? emailListColumns : emailBriefColumns;
 
-		const query = orm(c).select({ ...columns, userEmail: user.email })
+		const query = orm(c).select({ ...columns, userId: email.userId, userEmail: user.email })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
 			.where(and(...filters));

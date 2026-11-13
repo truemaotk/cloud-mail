@@ -18,7 +18,8 @@
               <span class="account-address" :title="item.email">{{ item.email }}</span>
               <LabelChips :ids="labels.mailboxAssignments[item.accountId]" />
             </span>
-            <UnreadBadge :count="emailStore.unreadByAccount[item.accountId]" />
+            <UnreadBadge :count="emailStore.unreadByAccount[item.accountId]"
+                         :arrival="emailStore.newMail?.inboxes.includes(item.accountId) ? emailStore.newMail.id : undefined" />
           </button>
           <div class="account-actions">
             <button

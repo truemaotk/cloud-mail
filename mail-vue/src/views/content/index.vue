@@ -63,12 +63,20 @@
                 <ToolbarButton v-if="emailStore.contentData.showStar" class="reader-star" :icon="email.isStar ? 'star-fill' : 'star'"
                                :label="$t('star')" :aria-pressed="!!email.isStar" @click="embedded ? emit('toggle-star') : changeStar()" />
                 <ToolbarButton v-if="canReply" icon="reply" :label="$t('reply')" @click="openReply" />
-                <el-dropdown v-if="canReply" trigger="click" placement="bottom-end" :show-arrow="false" @command="headerCommand">
+                <el-dropdown v-if="canReply || readState" trigger="click" placement="bottom-end" :show-arrow="false" @command="headerCommand">
                   <ToolbarButton icon="more-vertical" :label="$t('mailMoreMessageActions')" />
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="reply"><NavigationIcon name="reply" :size="16" />{{ $t('reply') }}</el-dropdown-item>
-                      <el-dropdown-item command="forward"><NavigationIcon name="forward" :size="16" />{{ $t('forward') }}</el-dropdown-item>
+                      <el-dropdown-item v-if="canReply" command="reply"><NavigationIcon name="reply" :size="16" />{{ $t('reply') }}</el-dropdown-item>
+                      <el-dropdown-item v-if="canReply" command="forward"><NavigationIcon name="forward" :size="16" />{{ $t('forward') }}</el-dropdown-item>
+                      <template v-if="readState">
+                        <el-dropdown-item command="read" :divided="canReply" :disabled="readBusy">
+                          <NavigationIcon name="mark-read" :size="16" />{{ $t('markAsRead') }}
+                        </el-dropdown-item>
+                        <el-dropdown-item command="unread" :disabled="readBusy">
+                          <NavigationIcon name="mail" :size="16" />{{ $t('mailMarkedUnread') }}
+                        </el-dropdown-item>
+                      </template>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -149,8 +157,8 @@ import {useI18n} from "vue-i18n";
 import {EmailUnreadEnum} from "@/enums/email-enum.js";
 import {hasPerm} from "@/perm/perm.js";
 import { mailFolders } from '@/utils/mail-workspace.js'
-const props = defineProps({ embedded: Boolean })
-const emit = defineEmits(['toggle-star'])
+const props = defineProps({ embedded: Boolean, readState: String, readBusy: Boolean })
+const emit = defineEmits(['toggle-star', 'mark'])
 const { t } = useI18n()
 
 const uiStore = useUiStore();
@@ -211,7 +219,8 @@ const recipientShort = computed(() => {
 const headerDate = computed(() => email.value.createTime ? formatHeaderDate(email.value.createTime) : { text: '', full: '' })
 function headerCommand(command) {
   if (command === 'forward') openForward()
-  else openReply()
+  else if (command === 'reply') openReply()
+  else if (props.readState && !props.readBusy) emit('mark', command === 'unread')
 }
 const copyAddresses = computed(() => addresses(email.value.cc))
 const blindCopyAddresses = computed(() => email.value.type === 1 ? addresses(email.value.bcc) : '')

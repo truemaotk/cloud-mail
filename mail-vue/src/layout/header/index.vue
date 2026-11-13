@@ -1,14 +1,20 @@
 <template>
   <div class="header" :class="{ 'workspace-header': folder }">
     <div class="header-btn">
+      <span class="sidebar-toggle-wrap">
       <ToolbarButton
         icon="panel-left"
         class="sidebar-toggle"
         :label="$t('toggleMailNavigation')"
         :aria-expanded="uiStore.asideShow"
         aria-controls="mail-sidebar"
+        :aria-description="!uiStore.asideShow && emailStore.allUnreadTotal
+          ? $t('unreadMessages', { count: emailStore.allUnreadTotal }) : undefined"
         @click="changeAside"
       />
+      <UnreadBadge v-if="!uiStore.asideShow" class="sidebar-toggle-badge" :count="emailStore.allUnreadTotal"
+                   :arrival="emailStore.newMail?.id" />
+      </span>
       <h1 class="breadcrumb-item">{{ labelTitle || $t(currentFolder ? currentFolder.label : route.meta.title) }}</h1>
     </div>
     <div v-perm="'email:send'" class="writer-box">
@@ -42,6 +48,7 @@
 import router from "@/router";
 import ToolbarButton from '@/components/toolbar-button/index.vue'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
+import UnreadBadge from '@/components/unread-badge/index.vue'
 import {useUiStore} from "@/store/ui.js";
 import {useRoute} from "vue-router";
 import {computed} from "vue";
@@ -128,6 +135,24 @@ function changeAside() {
 
 .sidebar-toggle.toolbar-button {
   margin-inline-start: -4px;
+}
+.sidebar-toggle-wrap { position: relative; display: inline-flex; flex: none; }
+.sidebar-toggle-badge { display: none; }
+@media (max-width: 1024px) {
+  .sidebar-toggle-badge {
+    position: absolute;
+    display: inline-grid;
+    inset-block-start: -5px;
+    inset-inline-end: -6px;
+    height: 15px;
+    min-width: 16px;
+    padding-inline: 3px;
+    z-index: 1;
+    background: var(--mac-accent);
+    color: var(--mac-accent-text);
+    font-size: 10px;
+    pointer-events: none;
+  }
 }
 
 .breadcrumb-item {

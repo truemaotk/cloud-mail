@@ -1,6 +1,7 @@
 <template>
   <div class="message-actions">
-    <template v-if="!trashFolder">
+    <template v-if="!trashFolder || readActionsOnly">
+      <template v-if="!readActionsOnly">
       <span v-if="reader && canReply" class="toolbar-group">
       <ToolbarButton icon="reply" :label="$t('reply')" @click="$emit('reply')" />
       <ToolbarButton icon="forward" :label="$t('forward')" @click="$emit('forward')" />
@@ -15,26 +16,31 @@
       <ToolbarButton v-if="canDelete" icon="delete" :label="$t('mailTrashAction')"
                      :disabled="working" @click="move('trash')" />
       </span>
+      </template>
       <span class="toolbar-group">
-      <ToolbarButton :icon="reader ? 'mail' : 'mark-read'"
-                     :label="$t(reader ? 'mailMarkedUnread' : 'markAsRead')" :disabled="working"
-                     @click="mark(reader)" />
+      <ToolbarButton v-if="readState" :icon="readState === 'read' ? 'mail' : 'mark-read'"
+                     :label="$t(readState === 'read' ? 'mailMarkedUnread' : 'markAsRead')" :disabled="working"
+                     @click="mark(readState === 'read')" />
       <ToolbarButton v-if="labelItems?.length" icon="tag" :label="$t('mailMessageLabels')" :disabled="working"
                      @click="labels.assign('message', labelItems)" />
-      <el-dropdown trigger="click" placement="bottom-end" :show-arrow="false" @command="selectAction">
+      <el-dropdown v-if="readState || canFile" trigger="click" placement="bottom-end" :show-arrow="false" @command="selectAction">
         <ToolbarButton icon="more" :label="$t('mailMoreActions')" :disabled="working" />
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item v-if="canFile && folder !== 'spam'" command="snooze">
               <NavigationIcon name="mail-delay" :size="16" />{{ $t('mailSnoozed') }}
             </el-dropdown-item>
-            <el-dropdown-item v-if="folder === 'snoozed' || folder === 'spam'" command="archive">
+            <el-dropdown-item v-if="canFile && (folder === 'snoozed' || folder === 'spam')" command="archive">
               <NavigationIcon name="archive" :size="16" />{{ $t('mailArchiveAction') }}
             </el-dropdown-item>
-            <el-dropdown-item :command="reader ? 'read' : 'unread'">
-              <NavigationIcon :name="reader ? 'mark-read' : 'mail'" :size="16" />
-              {{ $t(reader ? 'markAsRead' : 'mailMarkedUnread') }}
-            </el-dropdown-item>
+            <template v-if="readState">
+              <el-dropdown-item command="read" :divided="canFile">
+                <NavigationIcon name="mark-read" :size="16" />{{ $t('markAsRead') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="unread">
+                <NavigationIcon name="mail" :size="16" />{{ $t('mailMarkedUnread') }}
+              </el-dropdown-item>
+            </template>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -66,19 +72,21 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { emailRead, workspaceMove } from '@/request/email.js'
+import { workspaceMove } from '@/request/email.js'
 import { hasPerm } from '@/perm/perm.js'
 import NavigationIcon from '@/components/navigation-icon/index.vue'
 import ToolbarButton from '@/components/toolbar-button/index.vue'
 import { useLabelsStore } from '@/store/labels.js'
 
-const props = defineProps({ folder: String, ids: Array, reader: Boolean, canReply: Boolean, canFile: Boolean, labelItems: Array })
-const emit = defineEmits(['change', 'reply', 'forward'])
+const props = defineProps({ folder: String, ids: Array, reader: Boolean, canReply: Boolean, canFile: Boolean, labelItems: Array,
+  readState: String, readBusy: Boolean, readActionsOnly: Boolean })
+const emit = defineEmits(['change', 'reply', 'forward', 'mark'])
 const { t } = useI18n()
 const labels = useLabelsStore()
 const trashFolder = computed(() => props.folder === 'trash')
 const canDelete = computed(() => hasPerm('email:delete'))
-const working = ref(false)
+const moving = ref(false)
+const working = computed(() => moving.value || props.readBusy)
 const snoozeOpen = ref(false)
 const snoozeDate = ref(null)
 
@@ -107,7 +115,7 @@ async function move(action, until) {
     return
   }
   const ids = [...props.ids]
-  working.value = true
+  moving.value = true
   try {
     if (action === 'purge') {
       await ElMessageBox.confirm(t('mailPurgeConfirm'), {
@@ -121,22 +129,13 @@ async function move(action, until) {
   } catch {
     // The request layer shows network and permission errors.
   } finally {
-    working.value = false
+    moving.value = false
   }
 }
 
-async function mark(unread) {
+function mark(unread) {
   if (working.value || !props.ids.length) return
-  const ids = [...props.ids]
-  working.value = true
-  try {
-    await emailRead(ids, unread)
-    emit('change', { ids, action: unread ? 'unread' : 'read' })
-  } catch {
-    // The request layer shows the error.
-  } finally {
-    working.value = false
-  }
+  emit('mark', [...props.ids], unread)
 }
 </script>
 

@@ -36,7 +36,7 @@ import Main from '@/layout/main/index.vue'
 import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import {useUiStore} from "@/store/ui.js";
 import { useEmailStore } from '@/store/email.js'
-import { useSettingStore } from '@/store/setting.js'
+import { playNewMailSound, prepareNewMailSound } from '@/utils/new-mail-sound.js'
 import writer from '@/layout/write/index.vue'
 import LabelDialog from '@/components/label-dialog/index.vue'
 import { userDraftStore } from '@/store/draft.js'
@@ -44,7 +44,6 @@ import db from '@/db/db.js'
 
 const uiStore = useUiStore();
 const emailStore = useEmailStore()
-const settingStore = useSettingStore()
 const drafts = userDraftStore()
 const writerRef = ref({})
 const sidebarRef = ref(null)
@@ -87,6 +86,14 @@ function refreshUnreadCounts() {
 }
 
 watch(() => emailStore.deleteIds, refreshUnreadCounts)
+const canPlayMailSound = () => uiStore.newMailSound && !document.hidden
+watch(() => emailStore.newMail, (arrival, previous) => {
+  if (arrival && arrival.id !== previous?.id && canPlayMailSound()) playNewMailSound(canPlayMailSound)
+})
+
+function enableSoundOnInteraction() {
+  if (uiStore.newMailSound) prepareNewMailSound()
+}
 watch(() => [db.value, drafts.refreshList], async ([database], _, onCleanup) => {
   let active = true
   onCleanup(() => { active = false })
@@ -110,16 +117,18 @@ onMounted(() => {
 
   window.addEventListener('resize', handleResize)
   document.addEventListener('visibilitychange', refreshUnreadCounts)
+  document.addEventListener('click', enableSoundOnInteraction, true)
+  document.addEventListener('keydown', enableSoundOnInteraction, true)
   refreshUnreadCounts()
-  unreadTimer = window.setInterval(() => {
-    if (settingStore.settings.autoRefresh > 1) refreshUnreadCounts()
-  }, 30000)
+  unreadTimer = window.setInterval(refreshUnreadCounts, 30000)
   handleResize()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   document.removeEventListener('visibilitychange', refreshUnreadCounts)
+  document.removeEventListener('click', enableSoundOnInteraction, true)
+  document.removeEventListener('keydown', enableSoundOnInteraction, true)
   window.clearInterval(unreadTimer)
   emailStore.clearUnreadCounts()
 })

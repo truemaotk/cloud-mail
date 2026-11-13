@@ -24,11 +24,14 @@
                       custom v-slot="{ href, navigate }">
             <a :href="href" class="nav-main"
                :class="itemClass(item.name)" data-nav-sort="mail" :data-nav-key="item.name"
-               :data-rail-label="compact ? $t(item.label) : undefined" :aria-label="compact ? $t(item.label) : undefined"
+               :data-rail-label="compact ? $t(item.label) : undefined"
+               :aria-label="compact ? $t(item.label) : undefined"
+               :aria-description="compact && unreadFor(item.name) ? $t('unreadMessages', { count: unreadFor(item.name) }) : undefined"
                :aria-current="item.name === activeMenu && !(item.name === 'email' && activeLabelId) ? 'page' : undefined" @click="followLink($event, navigate)">
               <NavigationIcon :name="item.icon" />
               <span class="nav-label">{{ $t(item.label) }}</span>
-              <UnreadBadge v-if="item.name === 'email'" :count="inboxUnread" />
+              <UnreadBadge v-if="item.name === 'email' || item.name === 'all-email'" :count="unreadFor(item.name)"
+                           :arrival="arrivalFor(item.name)" />
               <UnreadBadge v-if="item.name === 'draft'" :count="draftStore.count"
                            :label="$t('mailDraftCount', { count: draftStore.count })" />
             </a>
@@ -185,6 +188,19 @@ const mailEntries = [
 const visibleMail = computed(() => ordered(mailEntries.filter(item => can(item.permission)), 'mail', item => item.name))
 const inboxUnread = computed(() => accountStore.currentAccount?.allReceive
   ? emailStore.unreadTotal : emailStore.unreadByAccount[accountStore.currentAccountId])
+
+function unreadFor(name) {
+  if (name === 'all-email') return emailStore.allUnreadTotal
+  return name === 'email' ? inboxUnread.value : 0
+}
+
+function arrivalFor(name) {
+  const arrival = emailStore.newMail
+  if (name === 'all-email') return arrival?.id
+  if (arrival && (accountStore.currentAccount?.allReceive ? arrival.inboxes.length
+    : arrival.inboxes.includes(accountStore.currentAccountId))) return arrival.id
+}
+
 const showMailboxes = computed(() => settingStore.settings.manyEmail === 0 && can('account:query'))
 
 const entries = [
