@@ -2,7 +2,7 @@
   <button type="button" class="toolbar-button" :aria-label="label" :data-tooltip="label"
           :aria-busy="showBusy || undefined" :aria-disabled="showBusy || undefined" :disabled="showBusy || disabled">
     <span class="toolbar-button-surface" aria-hidden="true" />
-    <NavigationIcon :name="icon" :class="{ 'mail-spinner': showBusy }" />
+    <NavigationIcon :name="icon" :class="{ 'mail-spinner': showBusy && icon === 'refresh' }" />
   </button>
 </template>
 

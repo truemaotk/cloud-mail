@@ -41,9 +41,9 @@
         <section id="sidebar-profile" class="profile-panel" @keydown.esc="closeFromKeyboard">
           <div class="profile-actions">
             <button ref="copyButton" type="button" class="profile-action profile-email"
-                    :aria-label="$t('profileCopyEmail')" :title="user.email" @click="copyEmail">
+                    :aria-label="$t('profileCopyEmail')" :title="currentAddress" @click="copyEmail">
               <NavigationIcon name="copy" :size="16" />
-              <span>{{ user.email }}</span>
+              <span>{{ currentAddress }}</span>
             </button>
             <RouterLink :to="{ name: 'setting' }" class="profile-action" @click="open = false">
               <NavigationIcon name="settings" :size="16" />
@@ -70,6 +70,7 @@ import router from '@/router'
 import { logout } from '@/request/login.js'
 import { useUiStore } from '@/store/ui.js'
 import { useUserStore } from '@/store/user.js'
+import { useAccountStore } from '@/store/account.js'
 
 defineProps({ compact: Boolean })
 
@@ -77,6 +78,8 @@ const { t } = useI18n()
 const uiStore = useUiStore()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+const accountStore = useAccountStore()
+const currentAddress = computed(() => accountStore.currentAccount?.email || user.value.email || '')
 const trigger = ref(null)
 const { width: triggerWidth } = useElementSize(trigger, undefined, { box: 'border-box' })
 const copyButton = ref(null)
@@ -106,7 +109,7 @@ function focusPanelFromKeyboard() {
 
 async function copyEmail() {
   try {
-    await navigator.clipboard.writeText(user.value.email)
+    await navigator.clipboard.writeText(currentAddress.value)
     ElMessage({ message: t('copySuccessMsg'), type: 'success', plain: true })
   } catch (error) {
     ElMessage({ message: t('copyFailMsg'), type: 'error', plain: true })

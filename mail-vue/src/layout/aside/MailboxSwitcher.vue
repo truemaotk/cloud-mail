@@ -211,7 +211,7 @@ function closeFromKeyboard() {
   .mailbox-switcher, .mailbox-switcher.is-compact {
     height: 48px;
     margin-top: calc(var(--mail-titlebar-center) - var(--mail-sidebar-inset) - 24px);
-    margin-bottom: 6px;
+    margin-bottom: 9px;
   }
   .mailbox-switch-trigger { padding: 0; }
 }

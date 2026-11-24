@@ -608,6 +608,7 @@ function followLink(event, navigate) {
   .compose-bar {
     height: 36px;
     width: min(calc((var(--mail-sidebar-width) - 24px) / 2), calc(100% - 24px));
+    margin-block-end: 9px;
     padding: 0;
   }
   .compose-bar > svg { flex: 0 0 20px; width: 20px; height: 20px; }
